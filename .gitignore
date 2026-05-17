@@ -1,0 +1,76 @@
+# ==============================
+# .NET / Build outputs
+# ==============================
+bin/
+obj/
+out/
+publish/
+
+# ==============================
+# User-specific files (VS / VS Code)
+# ==============================
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ==============================
+# .NET Core / ASP.NET settings
+# ==============================
+appsettings.Development.json
+appsettings.*.json
+
+# ⚠️ 보통 환경별 설정은 제외
+# 필요하면 appsettings.json은 유지하고
+# production secret만 분리 추천
+
+# ==============================
+# Secrets / Keys
+# ==============================
+*.key
+*.pfx
+*.pem
+*.cer
+secrets.json
+
+# ==============================
+# Logs
+# ==============================
+*.log
+logs/
+
+# ==============================
+# OS generated files
+# ==============================
+.DS_Store
+Thumbs.db
+
+# ==============================
+# NuGet
+# ==============================
+*.nupkg
+.nuget/
+
+# ==============================
+# Test results
+# ==============================
+TestResults/
+coverage/
+
+# ==============================
+# Rider / JetBrains (혹시 사용 시)
+# ==============================
+.idea/
+
+# ==============================
+# Local DB files
+# ==============================
+*.db
+*.sqlite
+*.sqlite3
+
+# ==============================
+# Docker (optional)
+# ==============================
+docker-compose.override.yml
