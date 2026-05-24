@@ -11,7 +11,7 @@ public static class AnalyzerFactory
         var type =
             Type.GetType(fullName);
 
-        if(type == null)
+        if (type == null)
         {
             throw new Exception(
                 $"Check class not found: {fullName}");
