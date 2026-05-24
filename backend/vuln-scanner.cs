@@ -1,0 +1,5 @@
+class VulnScanner{
+    public scan(){
+        
+    }
+}
