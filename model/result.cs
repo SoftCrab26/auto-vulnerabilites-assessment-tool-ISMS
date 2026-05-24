@@ -1,8 +1,16 @@
-class Result
+using Model.Vcode;
+
+public class VulnResult
 {
-    private string Category {get;set;}
-    private int Vcode {get;set;}
-    private string status {get;set;}
-    private string detail{get;set;}
-    private string rawConfigDetail {get;set;}
+  
+    public Enum VCode {get;set;}
+    public Status status {get;set;}
+    public string detail{get;set;}
+    public string rawConfigDetail {get;set;}
+
+    public VulnResult(Enum vcode, Status status, string detail,string rawConfigDetail){
+        this.VCode = vcode;
+        this.status = status;
+        this.rawConfigDetail = rawConfigDetail;
+    }
 }
