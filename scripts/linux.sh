@@ -4,6 +4,8 @@
 cat /etc/ssh/sshd_config
 cat /etc/pam.d/login
 cat /etc/securetty
+
+rm -rf
 ############################
 # U-02 패스워드 복잡성
 ############################
