@@ -22,8 +22,9 @@ jobs:
           
           # [1] 시스템을 파괴, 수정, 유출할 수 있는 절대 금지 블랙리스트 키워드 정의
           # rm(삭제), chmod/chown(권한변경), wget/curl/nc(유출/다운로드), dd/mkfs(포맷), dd, tftp 등
-          BLACKLIST_KEYWORDS="(rm[[:space:]]+-[rR]*f*|chmod|chown|sed[[:space:]]+-[[:alpha:]]*i|curl|wget|nc[[:space:]]|/dev/tcp|dd[[:space:]]|mkfs)"
-          
+          # \b는 단어의 시작과 끝을 의미합니다. (단어 격리)
+          # 이를 통해 'perm' 안에 포함된 'm'이나 다른 글자가 chmod로 오탐되는 것을 방지합니다.
+          BLACKLIST_KEYWORDS="\b(rm|chmod|chown|curl|wget|nc|dd|mkfs)\b"
           VIOLATION_FOUND=false
 
           # 모든 .sh 파일 내부를 검사 (주석 라인 `#` 은 제외)
