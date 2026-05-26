@@ -13,7 +13,7 @@ jobs:
       - name: 코드 체크아웃
         uses: actions/checkout@v4
 
-      - name: 블랙리스트 기반 위험 명령어 탐지
+      - name: Check Blacklist-based forbidden commands
         run: |
           echo "==== 🛡️ 블랙리스트 기반 위험 명령어 스캔 시작 ===="
           
@@ -33,8 +33,8 @@ jobs:
             
             # 블랙리스트 키워드가 감지되는지 확인
             if grep -E "$BLACKLIST_KEYWORDS" "$SCRIPT_PATH" | grep -v '^[[:space:]]*#'; then
-              echo "❌ [보안 위반] $SCRIPT_PATH 에서 금지된 쓰기/위험 명령어가 감지되었습니다!"
-              echo "👉 위반 코드 라인:"
+              echo "❌ [Violation] $SCRIPT_PATH 에서 금지된 쓰기/위험 명령어가 감지되었습니다!"
+              echo "👉 Violation:"
               grep -E "$BLACKLIST_KEYWORDS" "$SCRIPT_PATH" | grep -v '^[[:space:]]*#'
               VIOLATION_FOUND=true
             fi
