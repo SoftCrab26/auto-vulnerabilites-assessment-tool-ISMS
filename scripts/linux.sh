@@ -428,3 +428,8 @@ grep -i "ServerSignature" /etc/httpd/conf/httpd.conf
 cat /etc/rsyslog.conf
 cat /etc/syslog.conf
 systemctl status rsyslog
+
+echo "\n####################################33#################################"
+echo "Inpsection Complete"
+echo "\n####################################33#################################"
+
