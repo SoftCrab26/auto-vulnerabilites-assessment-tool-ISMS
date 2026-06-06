@@ -1,22 +1,38 @@
 package main
 
 import (
-	"strconv"
 	"strings"
 )
 
-func checkU03() CheckResult {
-	files, errs := collectFiles("/etc/pam.d/system-auth")
+type U03Input struct {
+	SystemAuth string
+}
 
+func checkU03() CheckResult {
+	const code = "U-03"
+	const description = "Account lockout thresholds should be configured to limit brute-force sign-in attempts."
+
+	input, errs := loadU03Input()
 	if len(errs) > 0 {
-		return CheckResult{
-			Code:   "U-03",
-			Status: StatusError,
-			ErrMsg: strings.Join(errs, "; "),
-		}
+		return errorResult(code, errs)
 	}
 
-	systemAuth := files[0].Content
+	result := evalU03(input)
+	result.Code = code
+	result.Description = description
+	return result
+}
+
+func loadU03Input() (U03Input, []string) {
+	files, errs := collectFiles("/etc/pam.d/system-auth")
+	if len(files) == 0 {
+		return U03Input{}, errs
+	}
+	return U03Input{SystemAuth: files[0].Content}, errs
+}
+
+func evalU03(input U03Input) CheckResult {
+	systemAuth := input.SystemAuth
 	lockModule := "NOT_FOUND"
 	denyValue := "NOT_FOUND"
 	unlockValue := "NOT_FOUND"
@@ -42,27 +58,35 @@ func checkU03() CheckResult {
 	}
 
 	result := StatusVulnerable
-
-	if lockModule != "NOT_FOUND" {
-		if denyValue != "NOT_FOUND" {
-			if deny, err := strconv.Atoi(denyValue); err == nil && deny >= 5 {
-				result = StatusGood
-			}
+	vulnerableConfig := ""
+	if lockModule != "NOT_FOUND" && denyValue != "NOT_FOUND" && safeAtoi(denyValue) >= 5 {
+		result = StatusGood
+	} else {
+		reasons := []string{}
+		if lockModule == "NOT_FOUND" {
+			reasons = append(reasons, "문제점1. 계정 잠금 PAM 모듈이 설정되어 있지 않습니다.")
 		}
+		if denyValue == "NOT_FOUND" {
+			reasons = append(reasons, "문제점2. deny 값이 설정되어 있지 않습니다.")
+		} else if safeAtoi(denyValue) < 5 {
+			reasons = append(reasons, "문제점2. deny 값이 5 미만입니다.")
+		}
+		vulnerableConfig = buildVulnerableConfig(
+			"module="+lockModule,
+			"deny="+denyValue,
+			"unlock_time="+unlockValue,
+			strings.Join(reasons, "\n"),
+		)
 	}
 
 	faillogOutput := run("faillog -a")
 	pamTallyOutput := run("pam_tally2 -u root")
 
 	return CheckResult{
-		Code:        "U-03",
-		Status:      result,
-		Description: "Account lockout thresholds should be configured to limit brute-force sign-in attempts.",
-		RawConfig:   systemAuth + "\n" + faillogOutput + "\n" + pamTallyOutput,
-		ProcessedConfig: "module=" + lockModule +
-			" deny=" + denyValue +
-			" unlock_time=" + unlockValue,
-		ErrMsg: strings.Join(errs, "; "),
+		Status:           result,
+		RawConfig:        systemAuth + "\n" + faillogOutput + "\n" + pamTallyOutput,
+		ProcessedConfig:  buildProcessedConfig("module="+lockModule, "deny="+denyValue, "unlock_time="+unlockValue),
+		VulnerableConfig: vulnerableConfig,
 	}
 }
 

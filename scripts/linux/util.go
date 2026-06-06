@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -78,4 +79,29 @@ func findConfigValue(raw string, target string) string {
 	}
 
 	return "NOT_FOUND"
+}
+
+func joinErrors(errs []string) string {
+	return strings.Join(errs, "\n")
+}
+
+func errorResult(code string, errs []string) CheckResult {
+	return CheckResult{
+		Code:   code,
+		Status: StatusError,
+		ErrMsg: joinErrors(errs),
+	}
+}
+
+func safeAtoi(value string) int {
+	i, _ := strconv.Atoi(value)
+	return i
+}
+
+func buildProcessedConfig(parts ...string) string {
+	return strings.Join(parts, " ")
+}
+
+func buildVulnerableConfig(parts ...string) string {
+	return strings.Join(parts, "\n")
 }

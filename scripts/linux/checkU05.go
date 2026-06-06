@@ -6,8 +6,27 @@ import (
 	"strings"
 )
 
+type U05Input struct {
+	PathEnv string
+}
+
 func checkU05() CheckResult {
-	pathEnv := os.Getenv("PATH")
+	const code = "U-05"
+	const description = "PATH should not contain insecure or relative entries."
+
+	input := loadU05Input()
+	result := evalU05(input)
+	result.Code = code
+	result.Description = description
+	return result
+}
+
+func loadU05Input() U05Input {
+	return U05Input{PathEnv: os.Getenv("PATH")}
+}
+
+func evalU05(input U05Input) CheckResult {
+	pathEnv := input.PathEnv
 	pathParts := strings.Split(pathEnv, ":")
 	issues := []string{}
 
@@ -48,11 +67,23 @@ func checkU05() CheckResult {
 		status = StatusVulnerable
 	}
 
+	vulnerableConfig := ""
+	if status == StatusVulnerable {
+		reasons := []string{}
+		for _, issue := range issues {
+			reasons = append(reasons, "문제점. "+issue)
+		}
+		vulnerableConfig = buildVulnerableConfig(
+			"PATH="+pathEnv,
+			"issues="+strings.Join(issues, ", "),
+			strings.Join(reasons, "\n"),
+		)
+	}
+
 	return CheckResult{
-		Code:            "U-05",
-		Status:          status,
-		Description:     "PATH should not contain insecure or relative entries.",
-		RawConfig:       strings.Join(configContents, "\n"),
-		ProcessedConfig: "PATH=" + pathEnv + " issues=" + strings.Join(issues, ", "),
+		Status:           status,
+		RawConfig:        strings.Join(configContents, "\n"),
+		ProcessedConfig:  buildProcessedConfig("PATH=" + pathEnv + "\n issues=" + strings.Join(issues, ", ")),
+		VulnerableConfig: vulnerableConfig,
 	}
 }

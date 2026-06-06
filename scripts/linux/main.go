@@ -44,6 +44,10 @@ func main() {
 		fmt.Println("STATUS:", result.Status)
 		fmt.Println("DESCRIPTION:", result.Description)
 		fmt.Println("PROCESSED:", result.ProcessedConfig)
+		if result.VulnerableConfig != "" {
+			fmt.Println("VULNERABLE CONFIG:")
+			fmt.Println(result.VulnerableConfig)
+		}
 		if result.RawConfig != "" {
 			fmt.Println("RAW CONFIG:")
 			fmt.Println(result.RawConfig)

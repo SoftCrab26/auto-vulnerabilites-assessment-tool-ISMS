@@ -1,28 +1,52 @@
 package main
 
 import (
-	"strconv"
 	"strings"
 )
 
+type U02Input struct {
+	SystemAuth string
+	Pwquality  string
+	LoginDefs  string
+}
+
 func checkU02() CheckResult {
+	const code = "U-02"
+	const description = "Password complexity must be enforced through PAM and password quality settings."
+
+	input, errs := loadU02Input()
+	if len(errs) > 0 {
+		return errorResult(code, errs)
+	}
+
+	result := evalU02(input)
+	result.Code = code
+	result.Description = description
+	return result
+}
+
+func loadU02Input() (U02Input, []string) {
 	files, errs := collectFiles(
 		"/etc/pam.d/system-auth",
 		"/etc/security/pwquality.conf",
 		"/etc/login.defs",
 	)
 
-	if len(errs) > 0 {
-		return CheckResult{
-			Code:   "U-02",
-			Status: StatusError,
-			ErrMsg: strings.Join(errs, "; "),
-		}
+	if len(files) < 3 {
+		return U02Input{}, errs
 	}
 
-	systemAuth := files[0].Content
-	pwquality := files[1].Content
-	loginDefs := files[2].Content
+	return U02Input{
+		SystemAuth: files[0].Content,
+		Pwquality:  files[1].Content,
+		LoginDefs:  files[2].Content,
+	}, errs
+}
+
+func evalU02(input U02Input) CheckResult {
+	systemAuth := input.SystemAuth
+	pwquality := input.Pwquality
+	loginDefs := input.LoginDefs
 
 	passwordModule := "NOT_FOUND"
 	if strings.Contains(systemAuth, "pam_pwquality.so") {
@@ -39,32 +63,49 @@ func checkU02() CheckResult {
 	passMinLen := findConfigValue(loginDefs, "PASS_MIN_LEN")
 
 	result := StatusVulnerable
-
-	if passwordModule != "NOT_FOUND" {
-		minlenValue, _ := strconv.Atoi(minlen)
-		uValue, _ := strconv.Atoi(ucredit)
-		lValue, _ := strconv.Atoi(lcredit)
-		dValue, _ := strconv.Atoi(dcredit)
-		oValue, _ := strconv.Atoi(ocredit)
-		passMinLenValue, _ := strconv.Atoi(passMinLen)
-
-		if minlenValue >= 8 && uValue <= -1 && lValue <= -1 && dValue <= -1 && oValue <= -1 && passMinLenValue >= 8 {
-			result = StatusGood
+	vulnerableConfig := ""
+	if passwordModule != "NOT_FOUND" && safeAtoi(minlen) >= 8 && safeAtoi(ucredit) <= -1 && safeAtoi(lcredit) <= -1 && safeAtoi(dcredit) <= -1 && safeAtoi(ocredit) <= -1 && safeAtoi(passMinLen) >= 8 {
+		result = StatusGood
+	} else {
+		reasons := []string{}
+		if passwordModule == "NOT_FOUND" {
+			reasons = append(reasons, "문제점1. PAM 패스워드 품질 모듈이 설정되어 있지 않습니다.")
+		} else {
+			if safeAtoi(minlen) < 8 {
+				reasons = append(reasons, "문제점1. minlen 값이 8보다 작습니다.")
+			}
+			if safeAtoi(ucredit) > -1 {
+				reasons = append(reasons, "문제점2. ucredit가 -1 이하가 아닙니다.")
+			}
+			if safeAtoi(lcredit) > -1 {
+				reasons = append(reasons, "문제점3. lcredit가 -1 이하가 아닙니다.")
+			}
+			if safeAtoi(dcredit) > -1 {
+				reasons = append(reasons, "문제점4. dcredit가 -1 이하가 아닙니다.")
+			}
+			if safeAtoi(ocredit) > -1 {
+				reasons = append(reasons, "문제점5. ocredit가 -1 이하가 아닙니다.")
+			}
+			if safeAtoi(passMinLen) < 8 {
+				reasons = append(reasons, "문제점6. PASS_MIN_LEN이 8보다 작습니다.")
+			}
 		}
+		vulnerableConfig = buildVulnerableConfig(
+			"module="+passwordModule,
+			"minlen="+minlen,
+			"ucredit="+ucredit,
+			"lcredit="+lcredit,
+			"dcredit="+dcredit,
+			"ocredit="+ocredit,
+			"PASS_MIN_LEN="+passMinLen,
+			strings.Join(reasons, "\n"),
+		)
 	}
 
 	return CheckResult{
-		Code:        "U-02",
-		Status:      result,
-		Description: "Password complexity must be enforced through PAM and password quality settings.",
-		RawConfig:   pwquality,
-		ProcessedConfig: "module=" + passwordModule +
-			" minlen=" + minlen +
-			" ucredit=" + ucredit +
-			" lcredit=" + lcredit +
-			" dcredit=" + dcredit +
-			" ocredit=" + ocredit +
-			" PASS_MIN_LEN=" + passMinLen,
-		ErrMsg: strings.Join(errs, "; "),
+		Status:           result,
+		RawConfig:        pwquality + "\n" + loginDefs + "\n" + systemAuth,
+		ProcessedConfig:  buildProcessedConfig("module="+passwordModule, "minlen="+minlen, "ucredit="+ucredit, "lcredit="+lcredit, "dcredit="+dcredit, "ocredit="+ocredit, "PASS_MIN_LEN="+passMinLen),
+		VulnerableConfig: vulnerableConfig,
 	}
 }

@@ -4,19 +4,32 @@ import (
 	"strings"
 )
 
-func checkU01(services map[string]Service) CheckResult {
+type U01Input struct {
+	RawSSHConfig string
+	SSHService   Service
+}
 
-	sshService, sshExists := services["ssh"]
+func checkU01(services map[string]Service) CheckResult {
+	const code = "U-01"
+	const description = "SSH root login should be disabled to prevent unauthorized access."
+
+	input, errs := loadU01Input(services)
+	if len(errs) > 0 {
+		return errorResult(code, errs)
+	}
+
+	result := evalU01(input)
+	result.Code = code
+	result.Description = description
+	return result
+}
+
+func loadU01Input(services map[string]Service) (U01Input, []string) {
+	sshService, _ := services["ssh"]
 	telnetService, telnetExists := services["telnet"]
 
-	// ssh는 무조건 검사
-	files, errs := collectFiles(
-		"/etc/ssh/sshd_config",
-	)
-
-	// telnet 서비스가 실제 실행중일 때만 추가 검사
+	files, errs := collectFiles("/etc/ssh/sshd_config")
 	if telnetExists && telnetService.Running {
-
 		telnetFiles, telnetErrs := collectFiles(
 			"/etc/pam.d/login",
 			"/etc/securetty",
@@ -26,36 +39,37 @@ func checkU01(services map[string]Service) CheckResult {
 		errs = append(errs, telnetErrs...)
 	}
 
-	if len(errs) > 0 {
-		return CheckResult{
-			Code:   "U-01",
-			Status: StatusError,
-			ErrMsg: strings.Join(errs, "; "),
-		}
+	if len(files) == 0 {
+		return U01Input{}, errs
 	}
 
-	// sshd_config
-	raw := files[0].Content
+	return U01Input{
+		RawSSHConfig: files[0].Content,
+		SSHService:   sshService,
+	}, errs
+}
 
-	permitRootLogin := findConfigValue(raw, "PermitRootLogin")
+func evalU01(input U01Input) CheckResult {
+	permitRootLogin := findConfigValue(input.RawSSHConfig, "PermitRootLogin")
 
 	result := StatusVulnerable
+	vulnerableConfig := ""
 
-	// SSH root login 제한 확인
-	if sshExists &&
-		sshService.Running &&
-		strings.ToLower(permitRootLogin) == "no" {
-
+	// 판단 기준: 설정 파일에 PermitRootLogin이 "no" 로 명시되어 있으면 안전으로 간주합니다.
+	// 서비스 감지 여부에 의존하지 않고 config 값 자체를 우선으로 평가합니다.
+	if strings.ToLower(permitRootLogin) == "no" {
 		result = StatusGood
+	} else {
+		vulnerableConfig = buildVulnerableConfig(
+			"PermitRootLogin:"+permitRootLogin,
+			"문제점1. 원격에서 root 계정으로 직접 로그인할 수 있습니다.",
+		)
 	}
 
 	return CheckResult{
-		Code:            "U-01",
-		Status:          result,
-		RawConfig:       raw,
-		Description:     "SSH root login should be disabled to prevent unauthorized access.",
-		ProcessedConfig: "PermitRootLogin: " + permitRootLogin,
-
-		ErrMsg: strings.Join(errs, "; "),
+		Status:           result,
+		RawConfig:        input.RawSSHConfig,
+		ProcessedConfig:  buildProcessedConfig("PermitRootLogin:" + permitRootLogin),
+		VulnerableConfig: vulnerableConfig,
 	}
 }

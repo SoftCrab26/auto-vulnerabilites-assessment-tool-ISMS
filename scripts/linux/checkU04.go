@@ -6,12 +6,37 @@ import (
 	"strings"
 )
 
+type U04Input struct {
+	Paths []string
+}
+
 func checkU04() CheckResult {
+	const code = "U-04"
+	const description = "Password file permissions must prevent unauthorized access."
+
+	input, errs := loadU04Input()
+	if len(errs) > 0 {
+		return errorResult(code, errs)
+	}
+
+	result := evalU04(input)
+	result.Code = code
+	result.Description = description
+	return result
+}
+
+func loadU04Input() (U04Input, []string) {
 	paths := []string{"/etc/passwd", "/etc/shadow"}
+	var errs []string
+	// no file reading here beyond stat checks done in eval to keep load minimal
+	return U04Input{Paths: paths}, errs
+}
+
+func evalU04(input U04Input) CheckResult {
 	var errs []string
 	var processed []string
 
-	for _, path := range paths {
+	for _, path := range input.Paths {
 		info, err := os.Stat(path)
 		if err != nil {
 			errs = append(errs, err.Error())
@@ -45,11 +70,27 @@ func checkU04() CheckResult {
 		}
 	}
 
+	vulnerableConfig := ""
+	if status == StatusVulnerable {
+		reasons := []string{}
+		if err1 == nil {
+			if passwd.Mode().Perm()&022 != 0 {
+				reasons = append(reasons, "문제점1. /etc/passwd가 그룹이나 다른 사용자 쓰기 가능 권한을 가집니다.")
+			}
+		}
+		if err2 == nil {
+			if shadow.Mode().Perm()&0007 != 0 {
+				reasons = append(reasons, "문제점2. /etc/shadow가 다른 사용자에게 읽기/쓰기/실행 권한을 허용합니다.")
+			}
+		}
+		vulnerableConfig = buildVulnerableConfig(strings.Join(processed, " | "), strings.Join(reasons, "\n"))
+	}
+
 	return CheckResult{
-		Code:            "U-04",
-		Status:          status,
-		Description:     "Password file permissions must prevent unauthorized access.",
-		ProcessedConfig: strings.Join(processed, " | "),
-		ErrMsg:          strings.Join(errs, "; "),
+		Status:           status,
+		RawConfig:        "",
+		ProcessedConfig:  buildProcessedConfig(strings.Join(processed, " | ")),
+		VulnerableConfig: vulnerableConfig,
+		ErrMsg:           joinErrors(errs),
 	}
 }
