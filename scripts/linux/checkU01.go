@@ -50,10 +50,10 @@ func checkU01(services map[string]Service) CheckResult {
 	}
 
 	return CheckResult{
-		Code:      "U-01",
-		Status:    result,
-		RawConfig: raw,
-
+		Code:            "U-01",
+		Status:          result,
+		RawConfig:       raw,
+		Description:     "SSH root login should be disabled to prevent unauthorized access.",
 		ProcessedConfig: "PermitRootLogin: " + permitRootLogin,
 
 		ErrMsg: strings.Join(errs, "; "),
