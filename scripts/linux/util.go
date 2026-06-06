@@ -45,6 +45,24 @@ func findConfigValue(raw string, target string) string {
 			continue
 		}
 
+		if idx := strings.Index(line, "#"); idx >= 0 {
+			line = strings.TrimSpace(line[:idx])
+		}
+
+		if strings.Contains(line, "=") {
+			parts := strings.SplitN(line, "=", 2)
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+
+			if key == target {
+				if value == "" {
+					return "NOT_FOUND"
+				}
+
+				return strings.Fields(value)[0]
+			}
+		}
+
 		fields := strings.Fields(line)
 
 		if len(fields) < 2 {
