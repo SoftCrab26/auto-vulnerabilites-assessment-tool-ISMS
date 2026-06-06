@@ -20,19 +20,15 @@ type VersionCheck struct {
 }
 
 type Service struct {
-	Name         string
-	Keywords     []string
-	DefaultPorts []string
-
-	VersionChecks []VersionCheck
-
-	Running   bool
-	Listening bool
-
+	Name           string
+	Keywords       []string
+	DefaultPorts   []string
+	VersionChecks  []VersionCheck
+	Running        bool
+	Listening      bool
 	ProcessMatches []string
 	ListeningPorts []string
-
-	Version string
+	Version        string
 }
 
 func run(command string) string {
@@ -62,10 +58,6 @@ func run(command string) string {
 }
 
 func collectRuntimeData() RuntimeData {
-
-	fmt.Println("================================")
-	fmt.Println("[*] Collecting runtime data...")
-	fmt.Println("================================")
 
 	processList := run("ps -ef")
 	portList := run("ss -lntup")

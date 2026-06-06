@@ -41,7 +41,7 @@ func main() {
 	for _, result := range results {
 		fmt.Println("--------------------------------")
 		fmt.Println("CODE:", result.Code)
-		fmt.Println("STATUS:", result.Status)
+		fmt.Println("STATUS:", result.Status.toString())
 		fmt.Println("DESCRIPTION:", result.Description)
 		fmt.Println("PROCESSED:", result.ProcessedConfig)
 		if result.VulnerableConfig != "" {
