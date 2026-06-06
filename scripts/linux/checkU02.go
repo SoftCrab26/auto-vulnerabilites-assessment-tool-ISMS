@@ -12,6 +12,11 @@ type U02Input struct {
 
 func checkU02() CheckResult {
 	const code = "U-02"
+	mitreAttack := MitreAttack{
+		tactic:      "Credential Access",
+		techniques:  []string{"T1110"}, //  Brute Force
+		mitigations: []string{"M1027"}, // Password Policies
+	}
 	const description = "Password complexity must be enforced through PAM and password quality settings."
 
 	input, errs := loadU02Input()
@@ -22,6 +27,7 @@ func checkU02() CheckResult {
 	result := evalU02(input)
 	result.Code = code
 	result.Description = description
+	result.MitreAttack = mitreAttack
 	return result
 }
 

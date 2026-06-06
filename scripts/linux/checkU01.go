@@ -11,6 +11,11 @@ type U01Input struct {
 
 func checkU01(services map[string]Service) CheckResult {
 	const code = "U-01"
+	mitreAttack := MitreAttack{
+		tactic:      "Initial Access",
+		techniques:  []string{"T1078.002", "T1133"}, // Valid Accounts, External Remote Services
+		mitigations: []string{"M1042"},              // Disable or Remove Accounts
+	}
 	const description = "SSH root login should be disabled to prevent unauthorized access."
 
 	input, errs := loadU01Input(services)
@@ -21,6 +26,7 @@ func checkU01(services map[string]Service) CheckResult {
 	result := evalU01(input)
 	result.Code = code
 	result.Description = description
+	result.MitreAttack = mitreAttack
 	return result
 }
 

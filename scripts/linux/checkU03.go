@@ -11,6 +11,11 @@ type U03Input struct {
 func checkU03() CheckResult {
 	const code = "U-03"
 	const description = "Account lockout thresholds should be configured to limit brute-force sign-in attempts."
+	mitreAttack := MitreAttack{
+		tactic:      "Credential Access",
+		techniques:  []string{"T1110"}, // Brute Force
+		mitigations: []string{"M1036"}, // Account Use Policies
+	}
 
 	input, errs := loadU03Input()
 	if len(errs) > 0 {
@@ -20,6 +25,7 @@ func checkU03() CheckResult {
 	result := evalU03(input)
 	result.Code = code
 	result.Description = description
+	result.MitreAttack = mitreAttack
 	return result
 }
 

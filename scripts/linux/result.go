@@ -1,5 +1,10 @@
 package main
 
+type MitreAttack struct {
+	tactic      string
+	techniques  []string
+	mitigations []string
+}
 type CheckResult struct {
 	Code             string
 	Description      string
@@ -8,6 +13,7 @@ type CheckResult struct {
 	VulnerableConfig string
 	ProcessedConfig  string
 	ErrMsg           string
+	MitreAttack      MitreAttack
 }
 type Status int
 

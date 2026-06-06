@@ -12,8 +12,12 @@ type U04Input struct {
 
 func checkU04() CheckResult {
 	const code = "U-04"
-	const description = "Password file permissions must prevent unauthorized access."
-
+	const description = "The permissions of /etc/passwd and /etc/shadow should be set to prevent unauthorized access to password information."
+	mitreAttack := MitreAttack{
+		tactic:      "Credential Access",
+		techniques:  []string{"T1003.008"}, // OS Credential Dumping: /etc/passwd and /etc/shadow
+		mitigations: []string{"M1026"},     // Privileged Account Management
+	}
 	input, errs := loadU04Input()
 	if len(errs) > 0 {
 		return errorResult(code, errs)
@@ -22,6 +26,7 @@ func checkU04() CheckResult {
 	result := evalU04(input)
 	result.Code = code
 	result.Description = description
+	result.MitreAttack = mitreAttack
 	return result
 }
 

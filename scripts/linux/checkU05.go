@@ -12,12 +12,18 @@ type U05Input struct {
 
 func checkU05() CheckResult {
 	const code = "U-05"
-	const description = "PATH should not contain insecure or relative entries."
 
+	const description = "PATH should not contain insecure or relative entries."
+	mitreAttack := MitreAttack{
+		tactic:      "Stealth; Execution",
+		techniques:  []string{"T1574.007"}, // Hijack Execution Flow: PATH interception by PATH Environment Variable
+		mitigations: []string{"M1047"},     // Audit
+	}
 	input := loadU05Input()
 	result := evalU05(input)
 	result.Code = code
 	result.Description = description
+	result.MitreAttack = mitreAttack
 	return result
 }
 
