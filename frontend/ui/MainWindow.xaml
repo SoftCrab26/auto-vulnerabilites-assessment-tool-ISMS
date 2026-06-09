@@ -58,7 +58,7 @@
                 <!-- Navigation Buttons -->
                 <StackPanel Grid.Row="1" Margin="8,10,8,10">
                     <!-- Dashboard Nav Button -->
-                    <Button Command="{Binding SelectViewCommand}" CommandParameter="Dashboard" Content="대시보드 Dashboard" Margin="0,2">
+                    <Button Command="{Binding SelectViewCommand}" CommandParameter="Dashboard" Content="대시보드" Margin="0,2">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Style.Triggers>
@@ -74,7 +74,7 @@
                     </Button>
 
                     <!-- Detailed Results Nav Button -->
-                    <Button Command="{Binding SelectViewCommand}" CommandParameter="DetailedResults" Content="진단결과 상세분석 Detailed" Margin="0,2">
+                    <Button Command="{Binding SelectViewCommand}" CommandParameter="DetailedResults" Content="진단결과 상세분석" Margin="0,2">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Style.Triggers>
@@ -90,7 +90,7 @@
                     </Button>
 
                     <!-- Report Generator Nav Button -->
-                    <Button Command="{Binding SelectViewCommand}" CommandParameter="ReportGenerator" Content="보고서 내보내기 Export" Margin="0,2">
+                    <Button Command="{Binding SelectViewCommand}" CommandParameter="ReportGenerator" Content="보고서 내보내기" Margin="0,2">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Style.Triggers>
@@ -338,10 +338,22 @@
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0" Text="호스트 선택: " VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,8,0"/>
-                    <ComboBox Grid.Column="1" ItemsSource="{Binding Reports}" SelectedItem="{Binding SelectedReport}" DisplayMemberPath="SystemInfo.Hostname" Height="32" VerticalContentAlignment="Center" Background="#252526" BorderBrush="{StaticResource BorderBrush}"/>
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding Reports}" SelectedItem="{Binding SelectedReport}" Height="32" VerticalContentAlignment="Center" Background="#F5F5F5" Foreground="Black" BorderBrush="{StaticResource BorderBrush}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding SystemInfo.Hostname}" Foreground="Black"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
                     <TextBlock Grid.Column="2" Text="상태 필터: " VerticalAlignment="Center" FontWeight="SemiBold" Margin="20,0,8,0"/>
-                    <ComboBox Grid.Column="3" ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding SelectedStatusFilter}" Height="32" VerticalContentAlignment="Center" Background="#252526" BorderBrush="{StaticResource BorderBrush}"/>
+                    <ComboBox Grid.Column="3" ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding SelectedStatusFilter}" Height="32" VerticalContentAlignment="Center" Background="#F5F5F5" Foreground="Black" BorderBrush="{StaticResource BorderBrush}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Foreground="Black"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
                     <!-- Search Input -->
                     <Grid Grid.Column="4" Margin="20,0,0,0" HorizontalAlignment="Right" Width="250">

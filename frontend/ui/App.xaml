@@ -207,6 +207,26 @@
             </Setter>
         </Style>
 
+        <!-- ComboBoxItem Style -->
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Style.Resources>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="Black"/>
+                </Style>
+            </Style.Resources>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E5E5E5"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#CCE8FF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <!-- DataGrid Dark Style -->
         <Style TargetType="DataGrid">
             <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
