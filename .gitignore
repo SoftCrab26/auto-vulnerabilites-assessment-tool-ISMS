@@ -9,6 +9,7 @@ publish/
 # ==============================
 # User-specific files (VS / VS Code)
 # ==============================
+.vs/
 .vscode/
 *.suo
 *.user
