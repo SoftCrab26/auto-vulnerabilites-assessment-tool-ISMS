@@ -15,7 +15,6 @@ publish/
 *.user
 *.userosscache
 *.sln.docstates
-*.csproj
 # ==============================
 # .NET Core / ASP.NET settings
 # ==============================
@@ -75,3 +74,8 @@ coverage/
 # Docker (optional)
 # ==============================
 docker-compose.override.yml
+
+# ==============================
+# Scratch / Temporary workspace
+# ==============================
+scratch/
