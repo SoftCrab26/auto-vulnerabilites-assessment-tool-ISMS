@@ -1,0 +1,1370 @@
+﻿[
+    {
+        "Code":  "U-01",
+        "Description":  "root 원격접속 제한",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for root 원격접속 제한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-02",
+        "Description":  "패스워드 복잡성",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for 패스워드 복잡성",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-03",
+        "Description":  "계정 잠금 임계값",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for 계정 잠금 임계값",
+        "VulnerableConfig":  "문제점: 계정 잠금 임계값 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-04",
+        "Description":  "패스워드 파일 보호",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for 패스워드 파일 보호",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-05",
+        "Description":  "PATH 환경변수 점검",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for PATH 환경변수 점검",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-06",
+        "Description":  "소유자 없는 파일",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for 소유자 없는 파일",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-07",
+        "Description":  "passwd 권한",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for passwd 권한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-08",
+        "Description":  "shadow 권한",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for shadow 권한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-09",
+        "Description":  "hosts 권한",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for hosts 권한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-10",
+        "Description":  "inetd/xinetd 권한",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for inetd/xinetd 권한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-11",
+        "Description":  "syslog 권한",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for syslog 권한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-12",
+        "Description":  "services 권한",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for services 권한",
+        "VulnerableConfig":  "문제점: services 권한 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-13",
+        "Description":  "SUID/SGID 파일",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for SUID/SGID 파일",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-14",
+        "Description":  "시작파일 권한",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for 시작파일 권한",
+        "VulnerableConfig":  "문제점: 시작파일 권한 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-15",
+        "Description":  "world writable 파일",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for world writable 파일",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-16",
+        "Description":  "device 파일 점검",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for device 파일 점검",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-17",
+        "Description":  "rhosts 사용금지",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for rhosts 사용금지",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-18",
+        "Description":  "접속 IP 제한",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for 접속 IP 제한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-19",
+        "Description":  "finger 서비스",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for finger 서비스",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-20",
+        "Description":  "anonymous ftp",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for anonymous ftp",
+        "VulnerableConfig":  "문제점: anonymous ftp 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-21",
+        "Description":  "r 계열 서비스",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for r 계열 서비스",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-22",
+        "Description":  "cron 권한",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for cron 권한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-23",
+        "Description":  "DoS 취약 서비스",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for DoS 취약 서비스",
+        "VulnerableConfig":  "문제점: DoS 취약 서비스 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-24",
+        "Description":  "NFS 비활성화",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for NFS 비활성화",
+        "VulnerableConfig":  "문제점: NFS 비활성화 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-25",
+        "Description":  "NFS 접근통제",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for NFS 접근통제",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-26",
+        "Description":  "automountd 제거",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for automountd 제거",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-27",
+        "Description":  "RPC 서비스",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for RPC 서비스",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-28",
+        "Description":  "NIS/NIS+",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for NIS/NIS+",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-29",
+        "Description":  "tftp/talk",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for tftp/talk",
+        "VulnerableConfig":  "문제점: tftp/talk 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-30",
+        "Description":  "sendmail 버전",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for sendmail 버전",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-31",
+        "Description":  "스팸 릴레이",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for 스팸 릴레이",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-32",
+        "Description":  "일반사용자 sendmail 실행",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for 일반사용자 sendmail 실행",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-33",
+        "Description":  "DNS 패치",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for DNS 패치",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-34",
+        "Description":  "DNS zone transfer",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for DNS zone transfer",
+        "VulnerableConfig":  "문제점: DNS zone transfer 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-35",
+        "Description":  "디렉터리 리스팅",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for 디렉터리 리스팅",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-36",
+        "Description":  "웹 프로세스 권한",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for 웹 프로세스 권한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-37",
+        "Description":  "상위 디렉터리 접근",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for 상위 디렉터리 접근",
+        "VulnerableConfig":  "문제점: 상위 디렉터리 접근 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-38",
+        "Description":  "불필요 파일 제거",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for 불필요 파일 제거",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-39",
+        "Description":  "심볼릭 링크 사용",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for 심볼릭 링크 사용",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-40",
+        "Description":  "파일 업로드/다운로드 제한",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for 파일 업로드/다운로드 제한",
+        "VulnerableConfig":  "문제점: 파일 업로드/다운로드 제한 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-41",
+        "Description":  "웹서비스 영역 분리",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for 웹서비스 영역 분리",
+        "VulnerableConfig":  "문제점: 웹서비스 영역 분리 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-42",
+        "Description":  "최신 패치",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for 최신 패치",
+        "VulnerableConfig":  "문제점: 최신 패치 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-43",
+        "Description":  "로그 검토",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for 로그 검토",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-44",
+        "Description":  "UID 0 계정",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for UID 0 계정",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-45",
+        "Description":  "su 제한",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for su 제한",
+        "VulnerableConfig":  "문제점: su 제한 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-46",
+        "Description":  "패스워드 최소길이",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for 패스워드 최소길이",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-47",
+        "Description":  "패스워드 최대 사용기간",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for 패스워드 최대 사용기간",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-48",
+        "Description":  "패스워드 최소 사용기간",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for 패스워드 최소 사용기간",
+        "VulnerableConfig":  "문제점: 패스워드 최소 사용기간 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-49",
+        "Description":  "불필요 계정",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for 불필요 계정",
+        "VulnerableConfig":  "문제점: 불필요 계정 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-50",
+        "Description":  "관리자 그룹 최소화",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for 관리자 그룹 최소화",
+        "VulnerableConfig":  "문제점: 관리자 그룹 최소화 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-51",
+        "Description":  "존재하지 않는 GID",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for 존재하지 않는 GID",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-52",
+        "Description":  "동일 UID",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for 동일 UID",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-53",
+        "Description":  "shell 점검",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for shell 점검",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-54",
+        "Description":  "session timeout",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for session timeout",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-55",
+        "Description":  "hosts.lpd",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for hosts.lpd",
+        "VulnerableConfig":  "문제점: hosts.lpd 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-56",
+        "Description":  "umask",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for umask",
+        "VulnerableConfig":  "문제점: umask 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-57",
+        "Description":  "홈디렉토리 권한",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for 홈디렉토리 권한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-58",
+        "Description":  "홈디렉토리 존재",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for 홈디렉토리 존재",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-59",
+        "Description":  "숨김파일",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for 숨김파일",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-60",
+        "Description":  "ssh 사용",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for ssh 사용",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-61",
+        "Description":  "ftp 서비스",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for ftp 서비스",
+        "VulnerableConfig":  "문제점: ftp 서비스 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-62",
+        "Description":  "ftp shell 제한",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for ftp shell 제한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-63",
+        "Description":  "ftpusers 권한",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for ftpusers 권한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-64",
+        "Description":  "ftpusers 설정",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for ftpusers 설정",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-65",
+        "Description":  "at 파일 권한",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for at 파일 권한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-66",
+        "Description":  "snmp 서비스",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for snmp 서비스",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-67",
+        "Description":  "snmp community",
+        "Status":  1,
+        "RawConfig":  "Check output: cat /etc/example_config for snmp community",
+        "VulnerableConfig":  "문제점: snmp community 관련 취약한 설정이 감지되었습니다.\n상세 내용: 권한 설정 오류 또는 불필요한 기능이 활성화 상태입니다.",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-68",
+        "Description":  "로그인 경고문",
+        "Status":  0,
+        "RawConfig":  "Check output: cat /etc/example_config for 로그인 경고문",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-69",
+        "Description":  "NFS 설정 접근제한",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for NFS 설정 접근제한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-70",
+        "Description":  "expn vrfy 제한",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for expn vrfy 제한",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-71",
+        "Description":  "apache 정보숨김",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for apache 정보숨김",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    },
+    {
+        "Code":  "U-72",
+        "Description":  "로깅 설정",
+        "Status":  4,
+        "RawConfig":  "Check output: cat /etc/example_config for 로깅 설정",
+        "VulnerableConfig":  "",
+        "ProcessedConfig":  "Config status: processed",
+        "ErrMsg":  "",
+        "MitreAttack":  {
+                            "tactic":  "Initial Access",
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "mitigations":  [
+                                                "M1042"
+                                            ]
+                        }
+    }
+]
