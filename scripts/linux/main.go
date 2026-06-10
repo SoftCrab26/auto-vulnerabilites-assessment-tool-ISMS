@@ -1,10 +1,35 @@
 package main
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"net"
+	"os"
+	"strings"
+)
+
+func getLocalIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "unknown"
+	}
+
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return "unknown"
+}
+
+func sanitize(s string) string {
+	return strings.ReplaceAll(s, " ", "_")
+}
 
 func main() {
 	runtime := collectRuntimeData()
-
 	services := detectServices(runtime)
 
 	fmt.Println()
@@ -44,6 +69,7 @@ func main() {
 		fmt.Println("STATUS:", result.Status.toString())
 		fmt.Println("DESCRIPTION:", result.Description)
 		fmt.Println("PROCESSED:", result.ProcessedConfig)
+
 		if result.VulnerableConfig != "" {
 			fmt.Println("VULNERABLE CONFIG:")
 			fmt.Println(result.VulnerableConfig)
@@ -56,4 +82,30 @@ func main() {
 			fmt.Println("ERROR:", result.ErrMsg)
 		}
 	}
+
+	// =========================
+	// JSON FILE OUTPUT
+	// =========================
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "unknown_host"
+	}
+
+	ip := getLocalIP()
+
+	fileName := fmt.Sprintf("%s_%s.json", sanitize(hostname), sanitize(ip))
+
+	jsonData, err := json.MarshalIndent(results, "", "  ")
+	if err != nil {
+		fmt.Println("JSON marshal error:", err)
+		return
+	}
+
+	err = os.WriteFile(fileName, jsonData, 0644)
+	if err != nil {
+		fmt.Println("file write error:", err)
+		return
+	}
+
+	fmt.Println("JSON saved to:", fileName)
 }
