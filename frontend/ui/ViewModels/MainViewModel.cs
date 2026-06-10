@@ -580,8 +580,9 @@ namespace ui.ViewModels
 
                         // 결과 파일 이름 결정
                         string cleanOsType = osType.Replace(" ", "_");
-                        string outputFileName = $"{cleanOsType}_서버_취약점진단_상세결과보고서_{DateTime.Now:yyyyMMdd}.xlsx";
-                        string outputPath = Path.Combine(ExportPath, outputFileName);
+                        string baseFileName = $"{cleanOsType}_서버_취약점진단_상세결과보고서_{DateTime.Now:yyyyMMdd}";
+                        string outputPath = GetUniqueFilePath(ExportPath, baseFileName, ".xlsx");
+                        string outputFileName = Path.GetFileName(outputPath);
 
                         // 엑셀 생성을 백그라운드 스레드에서 수행
                         await System.Threading.Tasks.Task.Run(() =>
@@ -952,6 +953,26 @@ namespace ui.ViewModels
             }
 
             return columnName;
+        }
+
+        private string GetUniqueFilePath(string directory, string baseFileNameWithoutExtension, string extension)
+        {
+            string filePath = Path.Combine(directory, baseFileNameWithoutExtension + extension);
+            if (!File.Exists(filePath))
+            {
+                return filePath;
+            }
+
+            int counter = 1;
+            while (true)
+            {
+                filePath = Path.Combine(directory, $"{baseFileNameWithoutExtension} ({counter}){extension}");
+                if (!File.Exists(filePath))
+                {
+                    return filePath;
+                }
+                counter++;
+            }
         }
 
         private void TryLoadSampleData()

@@ -140,8 +140,8 @@ namespace Generator
                 foreach (var group in osGroups)
                 {
                     string osType = group.Key;
-                    string outputFileName = $"{osType}_서버_취약점진단_상세결과보고서_TEST.xlsx";
-                    string outputPath = Path.Combine(outputDir, outputFileName);
+                    string baseFileName = $"{osType}_서버_취약점진단_상세결과보고서_TEST";
+                    string outputPath = GetUniqueFilePath(outputDir, baseFileName, ".xlsx");
 
                     Console.WriteLine($"Generating report for {osType} -> {outputPath}...");
                     GenerateExcelDetailedReport(templatePath, outputPath, group.ToList(), osType);
@@ -581,6 +581,26 @@ namespace Generator
             }
 
             return columnName;
+        }
+
+        static string GetUniqueFilePath(string directory, string baseFileNameWithoutExtension, string extension)
+        {
+            string filePath = Path.Combine(directory, baseFileNameWithoutExtension + extension);
+            if (!File.Exists(filePath))
+            {
+                return filePath;
+            }
+
+            int counter = 1;
+            while (true)
+            {
+                filePath = Path.Combine(directory, $"{baseFileNameWithoutExtension} ({counter}){extension}");
+                if (!File.Exists(filePath))
+                {
+                    return filePath;
+                }
+                counter++;
+            }
         }
     }
 }
