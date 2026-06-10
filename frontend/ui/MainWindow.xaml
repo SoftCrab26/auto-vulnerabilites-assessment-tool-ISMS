@@ -16,6 +16,10 @@
         <viewmodels:MainViewModel />
     </Window.DataContext>
 
+    <Window.InputBindings>
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveGuidelinesCommand}"/>
+    </Window.InputBindings>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <!-- Sidebar Navigation -->
@@ -95,6 +99,22 @@
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SelectedView}" Value="ReportGenerator">
+                                        <Setter Property="Background" Value="#252526"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                        <Setter Property="BorderThickness" Value="4,0,0,0"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Guideline Manager Nav Button -->
+                    <Button Command="{Binding SelectViewCommand}" CommandParameter="GuidelineManager" Content="조치 가이드 관리" Margin="0,2">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedView}" Value="GuidelineManager">
                                         <Setter Property="Background" Value="#252526"/>
                                         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
                                         <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
@@ -720,6 +740,173 @@
                                     </Style>
                                 </Button.Style>
                             </Button>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- 4. GUIDELINE MANAGER VIEW -->
+            <Grid x:Name="GuidelineManagerPanel">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedView}" Value="GuidelineManager">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <Grid.RowDefinitions>
+                    <!-- Header -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Filter and Search -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- List and Details Split -->
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header Title -->
+                <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                    <TextBlock Text="조치 가이드 및 상황별 멘트 관리" FontSize="24" FontWeight="Bold"/>
+                    <TextBlock Text="주요정보통신기반시설 점검 가이드라인 및 결과 상태(양호, 취약)별 U열 증적에 들어갈 멘트를 커스텀 편집합니다. (Ctrl + S 저장)" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- OS Filter -->
+                <Grid Grid.Row="1" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="운영체제(OS) 종류: " VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,8,0"/>
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding GuidelineOsTypes}" SelectedItem="{Binding SelectedGuidelineOs}" Height="32" VerticalContentAlignment="Center" Background="#F5F5F5" Foreground="Black" BorderBrush="{StaticResource BorderBrush}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Foreground="Black"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+
+                <!-- List & Editor Pane (Columns Split) -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <!-- List -->
+                        <ColumnDefinition Width="2*"/>
+                        <!-- Grid Splitter -->
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- Editor -->
+                        <ColumnDefinition Width="3*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Guidelines List -->
+                    <Border Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,12,0" Padding="0">
+                        <DataGrid ItemsSource="{Binding FilteredGuidelines}" SelectedItem="{Binding SelectedGuidelineItem}" BorderThickness="0" Background="Transparent" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="코드" Binding="{Binding Code}" Width="70" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="점검 항목명" Binding="{Binding Title}" Width="*" IsReadOnly="True"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+
+                    <!-- Splitter -->
+                    <GridSplitter Grid.Column="1" Width="4" Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+
+                    <!-- Right: Editor Pane -->
+                    <Border Grid.Column="2" Style="{StaticResource CardStyle}" Margin="12,0,0,0">
+                        <Grid>
+                            <!-- Details Form -->
+                            <Grid DataContext="{Binding SelectedGuidelineItem}">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Style.Triggers>
+                                            <Trigger Property="DataContext" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
+
+                                <Grid.RowDefinitions>
+                                    <!-- Header Info -->
+                                    <RowDefinition Height="Auto"/>
+                                    <!-- Remediation Guide -->
+                                    <RowDefinition Height="1.5*"/>
+                                    <!-- Pass Comment -->
+                                    <RowDefinition Height="1*"/>
+                                    <!-- Fail Comment -->
+                                    <RowDefinition Height="1*"/>
+                                    <!-- Save Button -->
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Header Info -->
+                                <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                                    <TextBlock FontSize="18" FontWeight="Bold" Foreground="{StaticResource AccentBrush}">
+                                        <Run Text="["/><Run Text="{Binding Code}"/><Run Text="] "/><Run Text="{Binding Title}"/>
+                                    </TextBlock>
+                                    <TextBlock Text="* 이 가이드라인과 멘트는 보고서 생성 시 실시간 주입되어 엑셀 결과로 추출됩니다." FontSize="10" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0"/>
+                                </StackPanel>
+
+                                <!-- Remediation TextBox -->
+                                <Grid Grid.Row="1" Margin="0,0,0,12">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="기술적 조치 및 가이드라인 (Remediation)" FontWeight="Bold" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                    <TextBox Grid.Row="1" Text="{Binding Remediation, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" 
+                                             Background="#161616" Foreground="#FFD580" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="8" FontFamily="Consolas, Malgun Gothic" FontSize="12"/>
+                                </Grid>
+
+                                <!-- PassComment TextBox -->
+                                <Grid Grid.Row="2" Margin="0,0,0,12">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="양호(Pass) 판정 시 점검현황 기입 멘트 (U열 주입)" FontWeight="Bold" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                    <TextBox Grid.Row="1" Text="{Binding PassComment, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" 
+                                             Background="#161616" Foreground="#85E885" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="8" FontFamily="Consolas, Malgun Gothic" FontSize="12"/>
+                                </Grid>
+
+                                <!-- FailComment TextBox -->
+                                <Grid Grid.Row="3" Margin="0,0,0,16">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="취약(Fail) 판정 시 점검현황 기입 멘트 (U열 주입)" FontWeight="Bold" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                    <TextBox Grid.Row="1" Text="{Binding FailComment, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" 
+                                             Background="#161616" Foreground="#FF8585" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="8" FontFamily="Consolas, Malgun Gothic" FontSize="12"/>
+                                </Grid>
+
+                                <!-- Save Button -->
+                                <Button Grid.Row="4" Command="{Binding DataContext.SaveGuidelinesCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        Content="가이드라인 및 멘트 저장 (Ctrl + S)" Style="{StaticResource FlatButtonStyle}" Height="38" FontSize="12" FontWeight="SemiBold"/>
+                            </Grid>
+
+                            <!-- Empty State -->
+                            <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedGuidelineItem}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Path Data="M 12 2 C 6.48 2 2 6.48 2 12 C 2 17.52 6.48 22 12 22 C 17.52 22 22 17.52 22 12 C 22 6.48 17.52 2 12 2 Z M 13 17 H 11 V 15 H 13 V 17 Z M 13 13 H 11 V 7 H 13 V 13 Z" 
+                                          Fill="{StaticResource TextMutedBrush}" Width="40" Height="40" Stretch="Uniform" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                    <TextBlock Text="편집할 진단 항목을 목록에서 선택하세요." Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
                         </Grid>
                     </Border>
                 </Grid>

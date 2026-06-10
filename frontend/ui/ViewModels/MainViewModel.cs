@@ -20,6 +20,11 @@ namespace ui.ViewModels
         private string _selectedStatusFilter = "전체";
         private DiagnosticItem? _selectedDiagnosticItem;
 
+        // 가이드라인 관리용 필드
+        private ObservableCollection<GuidelineItem> _guidelines = new();
+        private GuidelineItem? _selectedGuidelineItem;
+        private string _selectedGuidelineOs = "Linux";
+
         // 통계용 필드
         private int _totalHosts;
         private int _totalItems;
@@ -216,12 +221,55 @@ namespace ui.ViewModels
             set => SetProperty(ref _exportProgress, value);
         }
 
+        // 가이드라인 관리용 프로퍼티
+        public ObservableCollection<GuidelineItem> Guidelines
+        {
+            get => _guidelines;
+            set
+            {
+                if (SetProperty(ref _guidelines, value))
+                {
+                    OnPropertyChanged(nameof(FilteredGuidelines));
+                }
+            }
+        }
+
+        public GuidelineItem? SelectedGuidelineItem
+        {
+            get => _selectedGuidelineItem;
+            set => SetProperty(ref _selectedGuidelineItem, value);
+        }
+
+        public string SelectedGuidelineOs
+        {
+            get => _selectedGuidelineOs;
+            set
+            {
+                if (SetProperty(ref _selectedGuidelineOs, value))
+                {
+                    OnPropertyChanged(nameof(FilteredGuidelines));
+                    SelectedGuidelineItem = FilteredGuidelines.FirstOrDefault();
+                }
+            }
+        }
+
+        public List<string> GuidelineOsTypes { get; } = new() { "Linux", "Windows" };
+
+        public IEnumerable<GuidelineItem> FilteredGuidelines
+        {
+            get
+            {
+                return Guidelines.Where(g => g.OsType.Equals(SelectedGuidelineOs, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+        }
+
         // 커맨드 목록
         public ICommand LoadFilesCommand { get; }
         public ICommand RemoveReportCommand { get; }
         public ICommand SelectViewCommand { get; }
         public ICommand ExportReportCommand { get; }
         public ICommand SelectExportPathCommand { get; }
+        public ICommand SaveGuidelinesCommand { get; }
 
         public MainViewModel()
         {
@@ -233,10 +281,12 @@ namespace ui.ViewModels
             SelectViewCommand = new RelayCommand(v => SelectedView = v?.ToString() ?? "Dashboard");
             ExportReportCommand = new RelayCommand(_ => ExportReports(), _ => Reports.Count > 0 && !IsExporting);
             SelectExportPathCommand = new RelayCommand(_ => SelectExportPath());
+            SaveGuidelinesCommand = new RelayCommand(_ => SaveGuidelines());
 
             // 기본 출력 디렉터리를 사용자 Downloads 폴더로 설정
             ExportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
 
+            LoadGuidelines();
             TryLoadSampleData();
         }
 
@@ -368,6 +418,13 @@ namespace ui.ViewModels
                     _ => "N/A"
                 };
 
+                // 가이드라인 매칭 시도
+                var guide = Guidelines.FirstOrDefault(g => g.OsType.Equals("Linux", StringComparison.OrdinalIgnoreCase) && g.Code.Equals(goRes.Code, StringComparison.OrdinalIgnoreCase));
+                
+                string passComm = guide != null ? guide.PassComment : "설정이 기준에 부합하여 안전합니다.";
+                string failComm = guide != null ? guide.FailComment : "설정이 기준에 미달하여 취약합니다.";
+                string baseRemediation = guide != null ? guide.Remediation : GetLinuxRemediationGuide(goRes.Code);
+
                 // 조치 가이드 및 상세 구성
                 string remediationText = string.Empty;
                 if (goRes.MitreAttack != null && !string.IsNullOrEmpty(goRes.MitreAttack.Tactic))
@@ -380,7 +437,32 @@ namespace ui.ViewModels
                     remediationText += $"[취약한 설정 분석 내용]\n{goRes.VulnerableConfig}\n\n";
                 }
 
-                remediationText += GetLinuxRemediationGuide(goRes.Code);
+                remediationText += baseRemediation;
+
+                // U열에 들어갈 점검 현황(증적자료) 조립
+                string statusSection = string.Empty;
+                if (statusStr.Equals("Pass", StringComparison.OrdinalIgnoreCase))
+                {
+                    statusSection = $"[점검 현황]\n{passComm}";
+                }
+                else if (statusStr.Equals("Fail", StringComparison.OrdinalIgnoreCase))
+                {
+                    statusSection = $"[점검 현황]\n{failComm}";
+                }
+                else
+                {
+                    if (goRes.Status == 2)
+                    {
+                        statusSection = "[점검 현황]\n인터뷰";
+                    }
+                    else
+                    {
+                        statusSection = "[점검 현황]\nN/A";
+                    }
+                }
+
+                string evidenceText = $"{statusSection}\n\n[검출된 설정값 (ProcessedConfig)]\n{goRes.ProcessedConfig}\n\n[진단 로그 / 설정 원본 (RawConfig)]\n{goRes.RawConfig}" + 
+                                       (!string.IsNullOrEmpty(goRes.ErrMsg) ? $"\n\n[오류 메시지]\n{goRes.ErrMsg}" : "");
 
                 string category = GetLinuxCategory(goRes.Code);
                 string severity = GetLinuxSeverity(goRes.Code);
@@ -393,8 +475,7 @@ namespace ui.ViewModels
                     Status = statusStr,
                     Severity = severity,
                     Description = goRes.Description,
-                    Evidence = $"[검출된 설정값 (ProcessedConfig)]\n{goRes.ProcessedConfig}\n\n[진단 로그 / 설정 원본 (RawConfig)]\n{goRes.RawConfig}" + 
-                               (!string.IsNullOrEmpty(goRes.ErrMsg) ? $"\n\n[오류 메시지]\n{goRes.ErrMsg}" : ""),
+                    Evidence = evidenceText,
                     Remediation = remediationText,
                     ProcessedConfig = goRes.ProcessedConfig,
                     ErrMsg = goRes.ErrMsg
@@ -1051,6 +1132,168 @@ namespace ui.ViewModels
             TotalNa = na;
 
             PassRate = TotalItems > 0 ? Math.Round((double)TotalPass / TotalItems * 100, 1) : 0.0;
+        }
+
+        private string GetGuidelinesFilePath()
+        {
+            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string appDir = Path.Combine(localAppData, "ISMS_Analyzer");
+            if (!Directory.Exists(appDir))
+            {
+                try
+                {
+                    Directory.CreateDirectory(appDir);
+                }
+                catch { }
+            }
+            string targetPath = Path.Combine(appDir, "guidelines.json");
+            
+            if (!File.Exists(targetPath))
+            {
+                string defaultPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportExample", "guidelines.json");
+                if (File.Exists(defaultPath))
+                {
+                    try
+                    {
+                        File.Copy(defaultPath, targetPath, true);
+                    }
+                    catch { }
+                }
+            }
+            
+            return File.Exists(targetPath) ? targetPath : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportExample", "guidelines.json");
+        }
+
+        private void LoadGuidelines()
+        {
+            try
+            {
+                string guidelinesPath = GetGuidelinesFilePath();
+                if (File.Exists(guidelinesPath))
+                {
+                    string jsonString = File.ReadAllText(guidelinesPath);
+                    var items = JsonSerializer.Deserialize<List<GuidelineItem>>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    if (items != null)
+                    {
+                        Guidelines = new ObservableCollection<GuidelineItem>(items);
+                    }
+                }
+
+                bool updated = false;
+                for (int num = 1; num <= 67; num++)
+                {
+                    string code = $"U-{num:D2}";
+                    var existing = Guidelines.FirstOrDefault(g => g.OsType.Equals("Linux", StringComparison.OrdinalIgnoreCase) && g.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
+                    if (existing == null)
+                    {
+                        string title = GetLinuxTitle(code);
+                        string remediation = GetLinuxRemediationGuide(code);
+                        string passComm = $"{title} 설정이 안전하게 관리되고 있어 양호합니다.";
+                        string failComm = $"{title} 설정이 취약하게 관리되고 있거나 비활성화되어 위험합니다.";
+
+                        Guidelines.Add(new GuidelineItem
+                        {
+                            OsType = "Linux",
+                            Code = code,
+                            Title = title,
+                            Remediation = remediation,
+                            PassComment = passComm,
+                            FailComment = failComm
+                        });
+                        updated = true;
+                    }
+                }
+
+                if (updated)
+                {
+                    var options = new JsonSerializerOptions 
+                    { 
+                        WriteIndented = true, 
+                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Create(System.Text.Unicode.UnicodeRanges.All) 
+                    };
+                    string jsonString = JsonSerializer.Serialize(Guidelines, options);
+                    File.WriteAllText(guidelinesPath, jsonString);
+                }
+
+                SelectedGuidelineItem = FilteredGuidelines.FirstOrDefault();
+            }
+            catch
+            {
+                // Silent fail
+            }
+        }
+
+        private void SaveGuidelines()
+        {
+            try
+            {
+                string guidelinesPath = GetGuidelinesFilePath();
+                var options = new JsonSerializerOptions 
+                { 
+                    WriteIndented = true, 
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Create(System.Text.Unicode.UnicodeRanges.All) 
+                };
+                string jsonString = JsonSerializer.Serialize(Guidelines, options);
+                File.WriteAllText(guidelinesPath, jsonString);
+                MessageBox.Show("조치 가이드라인 및 점검현황 멘트가 성공적으로 저장되었습니다.", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
+                
+                OnPropertyChanged(nameof(FilteredGuidelines));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"가이드라인 저장 중 오류가 발생했습니다: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private string GetLinuxTitle(string code)
+        {
+            return code switch
+            {
+                "U-01" => "root 계정 원격 접속 제한",
+                "U-02" => "패스워드 복잡성 설정",
+                "U-03" => "계정 잠금 임계값 설정",
+                "U-04" => "패스워드 파일 보호",
+                "U-05" => "패스 경로 설정",
+                "U-06" => "파일 및 디렉터리 소유자 설정",
+                "U-07" => "/etc/passwd 파일 소유자 및 권한 설정",
+                "U-08" => "/etc/shadow 파일 소유자 및 권한 설정",
+                "U-09" => "/etc/hosts 파일 소유자 및 권한 설정",
+                "U-10" => "/etc/xinetd.conf 파일 소유자 및 권한 설정",
+                "U-11" => "/etc/syslog.conf 파일 소유자 및 권한 설정",
+                "U-12" => "/etc/services 파일 소유자 및 권한 설정",
+                "U-13" => "SUID, SGID, 설정 파일 및 권한 설정",
+                "U-14" => "사용자, 시스템 시작파일 및 환경설정 파일 소유자 및 권한 설정",
+                "U-15" => "world writable 파일 점검",
+                "U-16" => "/dev에 존재하지 않는 device 파일 점검",
+                "U-17" => "$HOME/.rhosts, hosts.equiv 사용 금지",
+                "U-18" => "접속 IP 및 포트 제한",
+                "U-19" => "Finger 서비스 비활성화",
+                "U-20" => "Anonymous FTP 비활성화",
+                "U-21" => "r 계열 서비스 비활성화",
+                "U-22" => "cron 파일 소유자 및 권한 설정",
+                "U-23" => "DoS 유발 서비스 비활성화",
+                "U-24" => "NFS 서비스 비활성화",
+                "U-25" => "NFS 접근 통제",
+                "U-26" => "automountd 비활성화",
+                "U-27" => "RPC 서비스 비활성화",
+                "U-28" => "NIS, NIS+ 서비스 비활성화",
+                "U-29" => "tftp, talk 서비스 비활성화",
+                "U-30" => "Sendmail 버전 점검",
+                "U-31" => "Spam 메일 릴레이 제한",
+                "U-32" => "일반사용자의 Sendmail 실행 방지",
+                "U-33" => "DNS 보안 패치",
+                "U-34" => "DNS Zone Transfer 설정",
+                "U-35" => "웹서비스 디렉토리 리스팅 제거",
+                "U-36" => "웹서비스 프로세스 권한 제한",
+                "U-37" => "웹서비스 상위 디렉토리 접근 금지",
+                "U-38" => "웹서비스 불필요한 파일 제거",
+                "U-39" => "웹서비스 링크 파일 사용 금지",
+                "U-40" => "웹서비스 파일 업로드 및 다운로드 제한",
+                "U-41" => "웹서비스 영역의 분리",
+                "U-42" => "최신 패치 적용",
+                "U-43" => "로그의 정기적 검토 및 보고",
+                _ => "주요 서비스 보안 설정 점검"
+            };
         }
     }
 }

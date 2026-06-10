@@ -67,6 +67,27 @@ namespace Generator
         public List<DiagnosticItem> Diagnostics { get; set; } = new();
     }
 
+    public class GuidelineItem
+    {
+        [JsonPropertyName("os_type")]
+        public string OsType { get; set; } = "Linux";
+
+        [JsonPropertyName("code")]
+        public string Code { get; set; } = string.Empty;
+
+        [JsonPropertyName("title")]
+        public string Title { get; set; } = string.Empty;
+
+        [JsonPropertyName("remediation")]
+        public string Remediation { get; set; } = string.Empty;
+
+        [JsonPropertyName("pass_comment")]
+        public string PassComment { get; set; } = string.Empty;
+
+        [JsonPropertyName("fail_comment")]
+        public string FailComment { get; set; } = string.Empty;
+    }
+
     public class GoMitreAttack
     {
         [JsonPropertyName("tactic")]
@@ -108,6 +129,8 @@ namespace Generator
 
     class Program
     {
+        static List<GuidelineItem> Guidelines = new();
+
         static void Main(string[] args)
         {
             try
@@ -115,6 +138,21 @@ namespace Generator
                 string testDataDir = @"c:\Users\khkim\source\repos\SoftCrab26\auto-vulnerabilites-assessment-tool-ISMS\frontend\ui\test_data";
                 string templatePath = @"c:\Users\khkim\source\repos\SoftCrab26\auto-vulnerabilites-assessment-tool-ISMS\frontend\ui\ReportExample\1. UNIX_서버_취약점진단_상세결과보고서.xlsx";
                 string outputDir = @"c:\Users\khkim\source\repos\SoftCrab26\auto-vulnerabilites-assessment-tool-ISMS\scratch";
+
+                string guidelinesPath = Path.Combine(testDataDir, "..", "ReportExample", "guidelines.json");
+                if (File.Exists(guidelinesPath))
+                {
+                    try
+                    {
+                        string jsonString = File.ReadAllText(guidelinesPath);
+                        var items = JsonSerializer.Deserialize<List<GuidelineItem>>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (items != null)
+                        {
+                            Guidelines = items;
+                        }
+                    }
+                    catch { }
+                }
 
                 var reports = new List<DiagnosticReport>();
                 var files = Directory.GetFiles(testDataDir, "*.json");
@@ -259,6 +297,38 @@ namespace Generator
                     _ => "N/A"
                 };
 
+                // 가이드라인 매칭 시도
+                var guide = Guidelines.FirstOrDefault(g => g.OsType.Equals("Linux", StringComparison.OrdinalIgnoreCase) && g.Code.Equals(goRes.Code, StringComparison.OrdinalIgnoreCase));
+                
+                string passComm = guide != null ? guide.PassComment : "설정이 기준에 부합하여 안전합니다.";
+                string failComm = guide != null ? guide.FailComment : "설정이 기준에 미달하여 취약합니다.";
+                string baseRemediation = guide != null ? guide.Remediation : "";
+
+                // U열에 들어갈 점검 현황(증적자료) 조립
+                string statusSection = string.Empty;
+                if (statusStr.Equals("Pass", StringComparison.OrdinalIgnoreCase))
+                {
+                    statusSection = $"[점검 현황]\n{passComm}";
+                }
+                else if (statusStr.Equals("Fail", StringComparison.OrdinalIgnoreCase))
+                {
+                    statusSection = $"[점검 현황]\n{failComm}";
+                }
+                else
+                {
+                    if (goRes.Status == 2)
+                    {
+                        statusSection = "[점검 현황]\n인터뷰";
+                    }
+                    else
+                    {
+                        statusSection = "[점검 현황]\nN/A";
+                    }
+                }
+
+                string evidenceText = $"{statusSection}\n\n[검출된 설정값 (ProcessedConfig)]\n{goRes.ProcessedConfig}\n\n[진단 로그 / 설정 원본 (RawConfig)]\n{goRes.RawConfig}" + 
+                                       (!string.IsNullOrEmpty(goRes.ErrMsg) ? $"\n\n[오류 메시지]\n{goRes.ErrMsg}" : "");
+
                 report.Diagnostics.Add(new DiagnosticItem
                 {
                     Code = goRes.Code,
@@ -267,9 +337,8 @@ namespace Generator
                     Status = statusStr,
                     Severity = "Medium",
                     Description = goRes.Description,
-                    Evidence = $"[검출된 설정값 (ProcessedConfig)]\n{goRes.ProcessedConfig}\n\n[진단 로그 / 설정 원본 (RawConfig)]\n{goRes.RawConfig}" + 
-                               (!string.IsNullOrEmpty(goRes.ErrMsg) ? $"\n\n[오류 메시지]\n{goRes.ErrMsg}" : ""),
-                    Remediation = "",
+                    Evidence = evidenceText,
+                    Remediation = baseRemediation,
                     ProcessedConfig = goRes.ProcessedConfig,
                     ErrMsg = goRes.ErrMsg
                 });
