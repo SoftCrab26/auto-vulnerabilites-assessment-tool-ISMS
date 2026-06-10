@@ -443,21 +443,21 @@ namespace ui.ViewModels
                 string statusSection = string.Empty;
                 if (statusStr.Equals("Pass", StringComparison.OrdinalIgnoreCase))
                 {
-                    statusSection = $"[점검 현황]\n{passComm}";
+                    statusSection = passComm;
                 }
                 else if (statusStr.Equals("Fail", StringComparison.OrdinalIgnoreCase))
                 {
-                    statusSection = $"[점검 현황]\n{failComm}";
+                    statusSection = failComm;
                 }
                 else
                 {
                     if (goRes.Status == 2)
                     {
-                        statusSection = "[점검 현황]\n인터뷰";
+                        statusSection = "인터뷰";
                     }
                     else
                     {
-                        statusSection = "[점검 현황]\nN/A";
+                        statusSection = "N/A";
                     }
                 }
 

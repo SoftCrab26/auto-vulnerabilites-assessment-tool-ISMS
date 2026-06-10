@@ -77,6 +77,22 @@
                         </Button.Style>
                     </Button>
 
+					<!-- Guideline Manager Nav Button -->
+					<Button Command="{Binding SelectViewCommand}" CommandParameter="GuidelineManager" Content="조치 가이드 관리" Margin="0,2">
+						<Button.Style>
+							<Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+								<Style.Triggers>
+									<DataTrigger Binding="{Binding SelectedView}" Value="GuidelineManager">
+										<Setter Property="Background" Value="#252526"/>
+										<Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+										<Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+										<Setter Property="BorderThickness" Value="4,0,0,0"/>
+									</DataTrigger>
+								</Style.Triggers>
+							</Style>
+						</Button.Style>
+					</Button>
+
                     <!-- Detailed Results Nav Button -->
                     <Button Command="{Binding SelectViewCommand}" CommandParameter="DetailedResults" Content="진단결과 상세분석" Margin="0,2">
                         <Button.Style>
@@ -99,22 +115,6 @@
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SelectedView}" Value="ReportGenerator">
-                                        <Setter Property="Background" Value="#252526"/>
-                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-                                        <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
-                                        <Setter Property="BorderThickness" Value="4,0,0,0"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-
-                    <!-- Guideline Manager Nav Button -->
-                    <Button Command="{Binding SelectViewCommand}" CommandParameter="GuidelineManager" Content="조치 가이드 관리" Margin="0,2">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding SelectedView}" Value="GuidelineManager">
                                         <Setter Property="Background" Value="#252526"/>
                                         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
                                         <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
