@@ -136,7 +136,9 @@ namespace Generator
             try
             {
                 string testDataDir = @"c:\Users\khkim\source\repos\SoftCrab26\auto-vulnerabilites-assessment-tool-ISMS\frontend\ui\test_data";
-                string templatePath = @"c:\Users\khkim\source\repos\SoftCrab26\auto-vulnerabilites-assessment-tool-ISMS\frontend\ui\ReportExample\1. UNIX_서버_취약점진단_상세결과보고서.xlsx";
+                string templatePath = @"c:\Users\khkim\source\repos\SoftCrab26\auto-vulnerabilites-assessment-tool-ISMS\frontend\ui\ReportExample\UNIX_서버_취약점진단_상세결과보고서.xlsx";
+                string templateRiskPlanPath = @"c:\Users\khkim\source\repos\SoftCrab26\auto-vulnerabilites-assessment-tool-ISMS\frontend\ui\ReportExample\UNIX_서버_위험관리 계획서_양식.xlsm";
+                string templateRiskEvalPath = @"c:\Users\khkim\source\repos\SoftCrab26\auto-vulnerabilites-assessment-tool-ISMS\frontend\ui\ReportExample\UNIX_서버_위험_분석_평가표_양식.xlsm";
                 string outputDir = @"c:\Users\khkim\source\repos\SoftCrab26\auto-vulnerabilites-assessment-tool-ISMS\scratch";
 
                 string guidelinesPath = Path.Combine(testDataDir, "..", "ReportExample", "guidelines.json");
@@ -178,22 +180,57 @@ namespace Generator
                 foreach (var group in osGroups)
                 {
                     string osType = group.Key;
+                    
+                    // 1. 상세결과보고서
                     string baseFileName = $"{osType}_서버_취약점진단_상세결과보고서_TEST";
                     string outputPath = GetUniqueFilePath(outputDir, baseFileName, ".xlsx");
 
-                    Console.WriteLine($"Generating report for {osType} -> {outputPath}...");
+                    Console.WriteLine($"Generating detailed report for {osType} -> {outputPath}...");
                     GenerateExcelDetailedReport(templatePath, outputPath, group.ToList(), osType);
                     
-                    Console.WriteLine("Verifying generated report file...");
+                    Console.WriteLine("Verifying generated detailed report file...");
                     if (VerifyGeneratedExcel(outputPath))
                     {
-                        Console.WriteLine("VERIFICATION SUCCESS: Report opened cleanly and charts are intact.");
+                        Console.WriteLine("VERIFICATION SUCCESS: Detailed report opened cleanly.");
                     }
                     else
                     {
-                        Console.WriteLine("VERIFICATION FAILED: Report is corrupted or charts are missing!");
+                        Console.WriteLine("VERIFICATION FAILED: Detailed report is corrupted or charts are missing!");
                     }
-                    Console.WriteLine($"Generated successfully.");
+
+                    // 2. 위험관리 계획서
+                    string baseRiskPlanName = $"{osType}_서버_위험관리_계획서_TEST";
+                    string outputRiskPlanPath = GetUniqueFilePath(outputDir, baseRiskPlanName, ".xlsm");
+
+                    Console.WriteLine($"Generating risk plan for {osType} -> {outputRiskPlanPath}...");
+                    GenerateExcelRiskReport(templateRiskPlanPath, outputRiskPlanPath, group.ToList(), osType);
+
+                    Console.WriteLine("Verifying generated risk plan file...");
+                    if (VerifyGeneratedExcel(outputRiskPlanPath))
+                    {
+                        Console.WriteLine("VERIFICATION SUCCESS: Risk plan opened cleanly.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("VERIFICATION FAILED: Risk plan is corrupted or charts are missing!");
+                    }
+
+                    // 3. 위험 분석 평가표
+                    string baseRiskEvalName = $"{osType}_서버_위험_분석_평가표_TEST";
+                    string outputRiskEvalPath = GetUniqueFilePath(outputDir, baseRiskEvalName, ".xlsm");
+
+                    Console.WriteLine($"Generating risk evaluation for {osType} -> {outputRiskEvalPath}...");
+                    GenerateExcelRiskReport(templateRiskEvalPath, outputRiskEvalPath, group.ToList(), osType);
+
+                    Console.WriteLine("Verifying generated risk evaluation file...");
+                    if (VerifyGeneratedExcel(outputRiskEvalPath))
+                    {
+                        Console.WriteLine("VERIFICATION SUCCESS: Risk evaluation opened cleanly.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("VERIFICATION FAILED: Risk evaluation is corrupted or charts are missing!");
+                    }
                 }
 
                 Console.WriteLine("=== TARGETS SHEET FORMAT CHECK ===");
@@ -345,6 +382,288 @@ namespace Generator
             }
 
             return report;
+        }
+
+        static void GenerateExcelRiskReport(string templatePath, string outputPath, List<DiagnosticReport> osReports, string osType)
+        {
+            // 템플릿 파일을 결과 경로로 복사
+            File.Copy(templatePath, outputPath, true);
+
+            Type? excelType = Type.GetTypeFromProgID("Excel.Application");
+            if (excelType == null)
+            {
+                throw new Exception("Excel is not installed on this system.");
+            }
+
+            dynamic excel = Activator.CreateInstance(excelType)!;
+            dynamic? wb = null;
+
+            // 상세결과보고서 템플릿의 기준 DB 정보 로드
+            string detailTemplateFileName = "UNIX_서버_취약점진단_상세결과보고서.xlsx";
+            string detailTemplatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportExample", detailTemplateFileName);
+            if (!File.Exists(detailTemplatePath))
+            {
+                string searchDir = AppDomain.CurrentDomain.BaseDirectory;
+                for (int i = 0; i < 5; i++)
+                {
+                    string candidate = Path.Combine(searchDir, "ReportExample", detailTemplateFileName);
+                    if (File.Exists(candidate))
+                    {
+                        detailTemplatePath = candidate;
+                        break;
+                    }
+                    var parent = Directory.GetParent(searchDir);
+                    if (parent == null) break;
+                    searchDir = parent.FullName;
+                }
+            }
+
+            var dbDict = new Dictionary<string, (string pass, string fail, string na)>(StringComparer.OrdinalIgnoreCase);
+            
+            dynamic? wbDetail = null;
+            try
+            {
+                wbDetail = excel.Workbooks.Open(detailTemplatePath);
+                dynamic wsDetailDb = wbDetail.Worksheets["기준 DB"];
+                if (wsDetailDb != null)
+                {
+                    for (int r = 2; r <= 68; r++)
+                    {
+                        string code = wsDetailDb.Cells[r, 1].Text.ToString().Trim();
+                        if (string.IsNullOrEmpty(code)) continue;
+                        string passBase = wsDetailDb.Cells[r, 3].Text.ToString();
+                        string failBase = wsDetailDb.Cells[r, 4].Text.ToString();
+                        string naBase = wsDetailDb.Cells[r, 5].Text.ToString();
+                        dbDict[code] = (passBase, failBase, naBase);
+                    }
+                }
+            }
+            catch { }
+            finally
+            {
+                if (wbDetail != null)
+                {
+                    wbDetail.Close(SaveChanges: false);
+                    Marshal.ReleaseComObject(wbDetail);
+                }
+            }
+
+            try
+            {
+                excel.Visible = false;
+                excel.DisplayAlerts = false;                wb = excel.Workbooks.Open(outputPath);
+
+                // 1. 표지 시트 날짜 업데이트
+                dynamic? wsCover = null;
+                try
+                {
+                    wsCover = wb.Worksheets["표지"];
+                }
+                catch { }
+
+                if (wsCover != null)
+                {
+                    wsCover.Range("H19").Value = DateTime.Now.ToString("yyyy.MM.");
+                }
+
+                int hostCount = osReports.Count;
+
+                // 2. 점검대상 시트 처리
+                dynamic wsTargets = wb.Worksheets["점검대상"];
+                if (wsTargets != null)
+                {
+                    if (hostCount > 1)
+                    {
+                        dynamic row7 = wsTargets.Rows[7];
+                        row7.Copy();
+                        for (int i = 0; i < hostCount - 1; i++)
+                        {
+                            wsTargets.Rows[8].Insert();
+                        }
+                        excel.CutCopyMode = false;
+                    }
+
+                    for (int i = 0; i < hostCount; i++)
+                    {
+                        int r = 7 + i;
+                        var rep = osReports[i];
+
+                        wsTargets.Cells[r, 2].Value = i + 1; // B열: 일련번호
+                        wsTargets.Cells[r, 3].Value = rep.SystemInfo.Hostname; // C열: 호스트명
+                        wsTargets.Cells[r, 4].Value = rep.SystemInfo.TargetOs; // D열: 운영체제
+                        wsTargets.Cells[r, 5].Value = rep.SystemInfo.IpAddress; // E열: IP 주소
+                        wsTargets.Cells[r, 6].Value = ""; // F열: 용도
+                        wsTargets.Cells[r, 7].Value = 3; // G열: 중요도 C
+                        wsTargets.Cells[r, 8].Value = 3; // H열: 중요도 I
+                        wsTargets.Cells[r, 9].Value = 3; // I열: 중요도 A
+                        wsTargets.Cells[r, 10].Formula = $"=IF(AND(SUM(G{r}:I{r})>=8, SUM(G{r}:I{r})<=9), \"1등급\", IF(AND(SUM(G{r}:I{r})>=6, SUM(G{r}:I{r})<=7), \"2등급\", IF(AND(SUM(G{r}:I{r})>=3, SUM(G{r}:I{r})<=5), \"3등급\", \"\")))"; // J열: 등급 수식
+                    }
+                }
+
+                // 3. 잠재위험 및 대응책 DB 시트 처리
+                dynamic wsDb = wb.Worksheets["잠재위험 및 대응책 DB"];
+                if (wsDb != null)
+                {
+                    if (hostCount > 1)
+                    {
+                        dynamic colL = wsDb.Columns[12]; // L열
+                        for (int i = 0; i < hostCount - 1; i++)
+                        {
+                            colL.Copy();
+                            dynamic nextCol = wsDb.Columns[13 + i];
+                            nextCol.Insert(Shift: -4161); // xlShiftToRight = -4161
+                        }
+                        excel.CutCopyMode = false;
+                    }
+                }
+
+                // 4. 보안수준 통계 시트 처리
+                dynamic wsSecurity = wb.Worksheets["보안수준 통계"];
+                if (wsSecurity != null)
+                {
+                    if (hostCount > 1)
+                    {
+                        dynamic row31 = wsSecurity.Rows[31];
+                        row31.Copy();
+                        for (int i = 0; i < hostCount - 1; i++)
+                        {
+                            wsSecurity.Rows[32].Insert();
+                        }
+                        excel.CutCopyMode = false;
+                    }
+
+                    for (int i = 0; i < hostCount; i++)
+                    {
+                        int r = 31 + i;
+                        var rep = osReports[i];
+
+                        wsSecurity.Cells[r, 1].Value = osType.ToUpper(); // A열: 장비구분
+                        wsSecurity.Cells[r, 2].Formula = $"=점검대상!C{7+i}"; // B열: 호스트명 참조
+                    }
+
+                    int totalRow = 31 + hostCount;
+                    // 계 (SUM) 행 수식 갱신
+                    for (int c = 4; c <= 10; c++)
+                    {
+                        string colLetter = GetColumnLetter(c);
+                        wsSecurity.Cells[totalRow, c].Formula = $"=SUM({colLetter}31:{colLetter}{totalRow-1})";
+                    }
+                    wsSecurity.Cells[totalRow, 11].Formula = $"=SUM(K31:K{totalRow-1})/(COUNTA(K31:K{totalRow-1})-COUNTIF(K31:K{totalRow-1},\"N/A\"))";
+
+                    // 비율 행 수식 갱신 (비율 행은 totalRow + 1)
+                    int avgRow = totalRow + 1;
+                    for (int c = 4; c <= 10; c++)
+                    {
+                        string colLetter = GetColumnLetter(c);
+                        wsSecurity.Cells[avgRow, c].Formula = $"=IFERROR({colLetter}{totalRow}/$K${totalRow},\"-\")";
+                    }
+                    wsSecurity.Cells[avgRow, 11].Formula = $"=IFERROR(SUM(D{avgRow}:J{avgRow}),\"-\")";
+                }
+
+                // 5. 호스트별 상세 시트 복제 및 데이터 주입
+                dynamic wsSample = wb.Worksheets["sample"];
+                if (wsSample != null)
+                {
+                    for (int i = 0; i < osReports.Count; i++)
+                    {
+                        var rep = osReports[i];
+                        string hostname = rep.SystemInfo.Hostname;
+
+                        // 기존 동일 시트 존재 시 삭제
+                        try
+                        {
+                            dynamic existing = wb.Worksheets[hostname];
+                            if (existing != null)
+                            {
+                                existing.Delete();
+                            }
+                        }
+                        catch { }
+
+                        // Duplicate sheet using Excel COM native Copy
+                        wsSample.Copy(Before: wsDb); // wsDb (기준 DB) 바로 앞에 삽입
+                        dynamic wsNew = excel.ActiveSheet;
+                        wsNew.Name = hostname;
+
+                        // Zoom 75% 및 A1 선택
+                        wsNew.Select();
+                        excel.ActiveWindow.Zoom = 75;
+                        wsNew.Range("A1").Select();
+
+                        wsNew.Range("D4").Value = rep.SystemInfo.Hostname;
+                        wsNew.Range("D5").Value = rep.SystemInfo.IpAddress;
+                        wsNew.Range("H4").Value = rep.SystemInfo.TargetOs;
+
+                        // 21행(U-01)부터 87행(U-67)까지 데이터 주입
+                        for (int r = 21; r <= 87; r++)
+                        {
+                            string code = wsNew.Cells[r, 4].Text.ToString().Trim(); // D열(4)이 항목 코드
+                            if (string.IsNullOrEmpty(code)) continue;
+
+                            var diag = rep.Diagnostics.FirstOrDefault(d => d.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
+                            if (diag != null)
+                            {
+                                string resultKo = diag.Status.ToUpper() switch
+                                {
+                                    "PASS" => "Y",
+                                    "FAIL" => "N",
+                                    "N/A" => "N/A",
+                                    _ => diag.Status
+                                };
+                                wsNew.Cells[r, 13].Value = resultKo; // M열(13열) 결과: Y / N / N/A
+
+                                // 상세결과보고서의 P열(점검현황) 값 조합하여 기입
+                                string statusVal = string.Empty;
+                                if (dbDict.TryGetValue(code, out var bases))
+                                {
+                                    if (diag.Status.Equals("Pass", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        statusVal = bases.pass + diag.Evidence;
+                                    }
+                                    else if (diag.Status.Equals("Fail", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        statusVal = bases.fail + diag.Evidence;
+                                    }
+                                    else // N/A
+                                    {
+                                        statusVal = bases.na + diag.Evidence;
+                                    }
+                                }
+                                else
+                                {
+                                    statusVal = diag.Evidence; // fallback
+                                }
+                                wsNew.Cells[r, 15].Value = statusVal;
+                            }
+                            else
+                            {
+                                wsNew.Cells[r, 13].Value = "N/A";
+                                wsNew.Cells[r, 15].Value = "";
+                            }
+                        }
+                    }
+
+                    try
+                    {
+                        wsSample.Delete();
+                    }
+                    catch { }
+                }
+
+                wb.Save();
+            }
+            finally
+            {
+                if (wb != null)
+                {
+                    wb.Close(SaveChanges: false);
+                    Marshal.ReleaseComObject(wb);
+                }
+                excel.Quit();
+                Marshal.ReleaseComObject(excel);
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
         }
 
         static void GenerateExcelDetailedReport(string templatePath, string outputPath, List<DiagnosticReport> osReports, string osType)
@@ -610,14 +929,33 @@ namespace Generator
                     return false;
                 }
 
-                int totalSheets = wb.Worksheets.Count;
-                for (int idx = 7; idx < totalSheets; idx++)
+                string ext = Path.GetExtension(filePath).ToLower();
+                if (ext == ".xlsm")
                 {
-                    dynamic ws = wb.Worksheets[idx];
-                    if (ws.Shapes.Count < 2)
+                    dynamic wsSec = wb.Worksheets["보안수준 통계"];
+                    if (wsSec == null)
                     {
                         wb.Close(SaveChanges: false);
                         return false;
+                    }
+                    dynamic shapes = wsSec.Shapes;
+                    if (shapes == null || shapes!.Count < 2)
+                    {
+                        wb.Close(SaveChanges: false);
+                        return false;
+                    }
+                }
+                else
+                {
+                    int totalSheets = wb.Worksheets.Count;
+                    for (int idx = 7; idx < totalSheets; idx++)
+                    {
+                        dynamic ws = wb.Worksheets[idx];
+                        if (ws.Shapes.Count < 2)
+                        {
+                            wb.Close(SaveChanges: false);
+                            return false;
+                        }
                     }
                 }
 

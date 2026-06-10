@@ -645,19 +645,19 @@
                                 <TextBlock Text="1. 내보낼 보고서 유형 선택" FontSize="14" FontWeight="Bold" Margin="0,0,0,16"/>
 
                                 <CheckBox IsChecked="{Binding ExportDetailReport}" Margin="0,6" VerticalContentAlignment="Center">
-                                    <TextBlock Text="ISMS-P 취약점 진단 상세 보고서 (.xlsx)" FontSize="12" Margin="5,0,0,0"/>
+                                    <TextBlock Text="상세 결과 보고서 (.xlsx)" FontSize="12" Margin="5,0,0,0"/>
                                 </CheckBox>
                                 <TextBlock Text="  - 개별 항목별 상세 진단 결과, 증적 코드 및 가이드 포함" FontSize="10" Foreground="{StaticResource TextMutedBrush}" Margin="20,0,0,8"/>
 
                                 <CheckBox IsChecked="{Binding ExportSummaryReport}" Margin="0,6" VerticalContentAlignment="Center">
-                                    <TextBlock Text="임원/관리자용 종합 요약 보고서 (.xlsx)" FontSize="12" Margin="5,0,0,0"/>
+                                    <TextBlock Text="위험관리 계획서 (.xlsm)" FontSize="12" Margin="5,0,0,0"/>
                                 </CheckBox>
-                                <TextBlock Text="  - 자산별 보안 취약점 통계, 등급 분포 및 도표 시각화 포함" FontSize="10" Foreground="{StaticResource TextMutedBrush}" Margin="20,0,0,8"/>
+                                <TextBlock Text="  - 자산별 위험 통제 계획 및 조치 상태 포함" FontSize="10" Foreground="{StaticResource TextMutedBrush}" Margin="20,0,0,8"/>
 
                                 <CheckBox IsChecked="{Binding ExportActionPlan}" Margin="0,6" VerticalContentAlignment="Center">
-                                    <TextBlock Text="보안 취약점 조치 계획서 및 관리대장 (.xlsx)" FontSize="12" Margin="5,0,0,0"/>
+                                    <TextBlock Text="위험 분석 평가표 (.xlsm)" FontSize="12" Margin="5,0,0,0"/>
                                 </CheckBox>
-                                <TextBlock Text="  - 조치 대상 항목 분류, 조치 가이드라인 및 담당자 지정 양식 포함" FontSize="10" Foreground="{StaticResource TextMutedBrush}" Margin="20,0,0,8"/>
+                                <TextBlock Text="  - 자산별 위험 분석 평가 및 중요도 산출 결과 포함" FontSize="10" Foreground="{StaticResource TextMutedBrush}" Margin="20,0,0,8"/>
                             </StackPanel>
                         </Border>
 

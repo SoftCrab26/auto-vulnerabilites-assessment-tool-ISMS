@@ -633,7 +633,7 @@ namespace ui.ViewModels
                         ExportLogs += $"[{DateTime.Now:HH:mm:ss}] {osType} 계열 자산 상세결과보고서 생성 중... (총 {group.Count()}개 호스트)\n";
 
                         // 템플릿 파일 경로 확인
-                        string templateFileName = "1. UNIX_서버_취약점진단_상세결과보고서.xlsx";
+                        string templateFileName = "UNIX_서버_취약점진단_상세결과보고서.xlsx";
                         string templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportExample", templateFileName);
 
                         // 만약 로컬 디버그 경로(PreserveNewest)가 아닐 경우 프로젝트 폴더에서 탐색 시도
@@ -688,30 +688,146 @@ namespace ui.ViewModels
                     }
                 }
 
-                // 2. 임원 보고용 요약 보고서 및 조치 계획서 생성 (기존 Mock 로직 유지/로깅)
+                // 2. 위험관리 계획서 생성
                 if (ExportSummaryReport)
                 {
-                    ExportLogs += $"[{DateTime.Now:HH:mm:ss}] 임원 보고용 요약 보고서 작성 중...\n";
-                    foreach (var report in Reports)
+                    var osGroups = Reports.GroupBy(r => string.IsNullOrEmpty(r.SystemInfo.TargetOs) ? "UNIX" : r.SystemInfo.TargetOs.Trim().ToUpper());
+                    int totalGroups = osGroups.Count();
+                    int currentGroup = 0;
+
+                    foreach (var group in osGroups)
                     {
-                        string summaryName = $"Executive_Summary_Report_{report.SystemInfo.Hostname}_{DateTime.Now:yyyyMMdd}.txt";
-                        string fullPath = Path.Combine(ExportPath, summaryName);
-                        await File.WriteAllTextAsync(fullPath, $"[요약서] {report.SystemInfo.Hostname}에 대한 보안 취약점 진단 점수가 요약되었습니다.\n");
+                        currentGroup++;
+                        string osType = group.Key;
+                        ExportLogs += $"[{DateTime.Now:HH:mm:ss}] {osType} 계열 자산 위험관리 계획서 생성 중... (총 {group.Count()}개 호스트)\n";
+
+                        // 템플릿 파일 경로 확인
+                        string templateFileName = $"{osType}_서버_위험관리 계획서_양식.xlsm";
+                        string templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportExample", templateFileName);
+
+                        if (!File.Exists(templatePath))
+                        {
+                            // Fallback to UNIX template
+                            templateFileName = "UNIX_서버_위험관리 계획서_양식.xlsm";
+                            templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportExample", templateFileName);
+                        }
+
+                        if (!File.Exists(templatePath))
+                        {
+                            string searchDir = AppDomain.CurrentDomain.BaseDirectory;
+                            for (int i = 0; i < 5; i++)
+                            {
+                                string candidate = Path.Combine(searchDir, "ReportExample", templateFileName);
+                                if (File.Exists(candidate))
+                                {
+                                    templatePath = candidate;
+                                    break;
+                                }
+                                var parent = Directory.GetParent(searchDir);
+                                if (parent == null) break;
+                                searchDir = parent.FullName;
+                            }
+                        }
+
+                        if (!File.Exists(templatePath))
+                        {
+                            throw new FileNotFoundException($"위험관리 계획서 템플릿 파일을 찾을 수 없습니다: {templateFileName}");
+                        }
+
+                        // 결과 파일 이름 결정
+                        string cleanOsType = osType.Replace(" ", "_");
+                        string baseFileName = $"{cleanOsType}_서버_위험관리_계획서_{DateTime.Now:yyyyMMdd}";
+                        string outputPath = GetUniqueFilePath(ExportPath, baseFileName, ".xlsm");
+                        string outputFileName = Path.GetFileName(outputPath);
+
+                        await System.Threading.Tasks.Task.Run(() =>
+                        {
+                            GenerateExcelRiskReport(templatePath, outputPath, group.ToList(), osType);
+                        });
+
+                        ExportLogs += $"[{DateTime.Now:HH:mm:ss}]   - 생성된 파일 검증 중...\n";
+                        bool isValid = await System.Threading.Tasks.Task.Run(() => VerifyGeneratedExcel(outputPath));
+                        if (isValid)
+                        {
+                            ExportLogs += $"[{DateTime.Now:HH:mm:ss}]   - [검증 완료] 위험관리 계획서 무결성 확인\n";
+                        }
+                        else
+                        {
+                            ExportLogs += $"[{DateTime.Now:HH:mm:ss}]   - [경고] 위험관리 계획서 파일 검증 실패!\n";
+                        }
+
+                        ExportLogs += $"[{DateTime.Now:HH:mm:ss}]   - {osType} 위험관리 계획서 생성 완료: {outputFileName}\n";
                     }
-                    ExportLogs += $"[{DateTime.Now:HH:mm:ss}]   - 임원 보고용 요약 보고서 생성 완료\n";
                 }
 
+                // 3. 위험 분석 평가표 생성
                 if (ExportActionPlan)
                 {
-                    ExportLogs += $"[{DateTime.Now:HH:mm:ss}] 조치 계획서 작성 중...\n";
-                    foreach (var report in Reports)
+                    var osGroups = Reports.GroupBy(r => string.IsNullOrEmpty(r.SystemInfo.TargetOs) ? "UNIX" : r.SystemInfo.TargetOs.Trim().ToUpper());
+                    int totalGroups = osGroups.Count();
+                    int currentGroup = 0;
+
+                    foreach (var group in osGroups)
                     {
-                        string planName = $"Remediation_Action_Plan_{report.SystemInfo.Hostname}_{DateTime.Now:yyyyMMdd}.txt";
-                        string fullPath = Path.Combine(ExportPath, planName);
-                        int failCount = report.Diagnostics.Count(d => d.Status.Equals("Fail", StringComparison.OrdinalIgnoreCase));
-                        await File.WriteAllTextAsync(fullPath, $"[조치계획서] 취약항목 {failCount}건에 대한 기술적 조치방안 조치자 할당 대기 중.\n");
+                        currentGroup++;
+                        string osType = group.Key;
+                        ExportLogs += $"[{DateTime.Now:HH:mm:ss}] {osType} 계열 자산 위험 분석 평가표 생성 중... (총 {group.Count()}개 호스트)\n";
+
+                        // 템플릿 파일 경로 확인
+                        string templateFileName = $"{osType}_서버_위험_분석_평가표_양식.xlsm";
+                        string templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportExample", templateFileName);
+
+                        if (!File.Exists(templatePath))
+                        {
+                            templateFileName = "UNIX_서버_위험_분석_평가표_양식.xlsm";
+                            templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportExample", templateFileName);
+                        }
+
+                        if (!File.Exists(templatePath))
+                        {
+                            string searchDir = AppDomain.CurrentDomain.BaseDirectory;
+                            for (int i = 0; i < 5; i++)
+                            {
+                                string candidate = Path.Combine(searchDir, "ReportExample", templateFileName);
+                                if (File.Exists(candidate))
+                                {
+                                    templatePath = candidate;
+                                    break;
+                                }
+                                var parent = Directory.GetParent(searchDir);
+                                if (parent == null) break;
+                                searchDir = parent.FullName;
+                            }
+                        }
+
+                        if (!File.Exists(templatePath))
+                        {
+                            throw new FileNotFoundException($"위험 분석 평가표 템플릿 파일을 찾을 수 없습니다: {templateFileName}");
+                        }
+
+                        string cleanOsType = osType.Replace(" ", "_");
+                        string baseFileName = $"{cleanOsType}_서버_위험_분석_평가표_{DateTime.Now:yyyyMMdd}";
+                        string outputPath = GetUniqueFilePath(ExportPath, baseFileName, ".xlsm");
+                        string outputFileName = Path.GetFileName(outputPath);
+
+                        await System.Threading.Tasks.Task.Run(() =>
+                        {
+                            GenerateExcelRiskReport(templatePath, outputPath, group.ToList(), osType);
+                        });
+
+                        ExportLogs += $"[{DateTime.Now:HH:mm:ss}]   - 생성된 파일 검증 중...\n";
+                        bool isValid = await System.Threading.Tasks.Task.Run(() => VerifyGeneratedExcel(outputPath));
+                        if (isValid)
+                        {
+                            ExportLogs += $"[{DateTime.Now:HH:mm:ss}]   - [검증 완료] 위험 분석 평가표 무결성 확인\n";
+                        }
+                        else
+                        {
+                            ExportLogs += $"[{DateTime.Now:HH:mm:ss}]   - [경고] 위험 분석 평가표 파일 검증 실패!\n";
+                        }
+
+                        ExportLogs += $"[{DateTime.Now:HH:mm:ss}]   - {osType} 위험 분석 평가표 생성 완료: {outputFileName}\n";
                     }
-                    ExportLogs += $"[{DateTime.Now:HH:mm:ss}]   - 조치 계획서 생성 완료\n";
                 }
 
                 ExportProgress = 100;
@@ -726,6 +842,288 @@ namespace ui.ViewModels
             finally
             {
                 IsExporting = false;
+            }
+        }
+
+        private void GenerateExcelRiskReport(string templatePath, string outputPath, List<DiagnosticReport> osReports, string osType)
+        {
+            // 템플릿 파일을 결과 경로로 복사
+            File.Copy(templatePath, outputPath, true);
+
+            Type? excelType = Type.GetTypeFromProgID("Excel.Application");
+            if (excelType == null)
+            {
+                throw new Exception("Excel이 설치되어 있지 않습니다.");
+            }
+
+            dynamic excel = Activator.CreateInstance(excelType)!;
+            dynamic? wb = null;
+
+            // 상세결과보고서 템플릿의 기준 DB 정보 로드
+            string detailTemplateFileName = "UNIX_서버_취약점진단_상세결과보고서.xlsx";
+            string detailTemplatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportExample", detailTemplateFileName);
+            if (!File.Exists(detailTemplatePath))
+            {
+                string searchDir = AppDomain.CurrentDomain.BaseDirectory;
+                for (int i = 0; i < 5; i++)
+                {
+                    string candidate = Path.Combine(searchDir, "ReportExample", detailTemplateFileName);
+                    if (File.Exists(candidate))
+                    {
+                        detailTemplatePath = candidate;
+                        break;
+                    }
+                    var parent = Directory.GetParent(searchDir);
+                    if (parent == null) break;
+                    searchDir = parent.FullName;
+                }
+            }
+
+            var dbDict = new Dictionary<string, (string pass, string fail, string na)>(StringComparer.OrdinalIgnoreCase);
+            
+            dynamic? wbDetail = null;
+            try
+            {
+                wbDetail = excel.Workbooks.Open(detailTemplatePath);
+                dynamic wsDetailDb = wbDetail.Worksheets["기준 DB"];
+                if (wsDetailDb != null)
+                {
+                    for (int r = 2; r <= 68; r++)
+                    {
+                        string code = wsDetailDb.Cells[r, 1].Text.ToString().Trim();
+                        if (string.IsNullOrEmpty(code)) continue;
+                        string passBase = wsDetailDb.Cells[r, 3].Text.ToString();
+                        string failBase = wsDetailDb.Cells[r, 4].Text.ToString();
+                        string naBase = wsDetailDb.Cells[r, 5].Text.ToString();
+                        dbDict[code] = (passBase, failBase, naBase);
+                    }
+                }
+            }
+            catch { }
+            finally
+            {
+                if (wbDetail != null)
+                {
+                    wbDetail.Close(SaveChanges: false);
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(wbDetail);
+                }
+            }
+
+            try
+            {
+                excel.Visible = false;
+                excel.DisplayAlerts = false;                wb = excel.Workbooks.Open(outputPath);
+
+                // 1. 표지 시트 날짜 업데이트
+                dynamic? wsCover = null;
+                try
+                {
+                    wsCover = wb.Worksheets["표지"];
+                }
+                catch { }
+
+                if (wsCover != null)
+                {
+                    wsCover.Range("H19").Value = DateTime.Now.ToString("yyyy.MM.");
+                }
+
+                int hostCount = osReports.Count;
+
+                // 2. 점검대상 시트 처리
+                dynamic wsTargets = wb.Worksheets["점검대상"];
+                if (wsTargets != null)
+                {
+                    if (hostCount > 1)
+                    {
+                        dynamic row7 = wsTargets.Rows[7];
+                        row7.Copy();
+                        for (int i = 0; i < hostCount - 1; i++)
+                        {
+                            wsTargets.Rows[8].Insert();
+                        }
+                        excel.CutCopyMode = false;
+                    }
+
+                    for (int i = 0; i < hostCount; i++)
+                    {
+                        int r = 7 + i;
+                        var rep = osReports[i];
+
+                        wsTargets.Cells[r, 2].Value = i + 1; // B열: 일련번호
+                        wsTargets.Cells[r, 3].Value = rep.SystemInfo.Hostname; // C열: 호스트명
+                        wsTargets.Cells[r, 4].Value = rep.SystemInfo.TargetOs; // D열: 운영체제
+                        wsTargets.Cells[r, 5].Value = rep.SystemInfo.IpAddress; // E열: IP 주소
+                        wsTargets.Cells[r, 6].Value = ""; // F열: 용도
+                        wsTargets.Cells[r, 7].Value = 3; // G열: 중요도 C
+                        wsTargets.Cells[r, 8].Value = 3; // H열: 중요도 I
+                        wsTargets.Cells[r, 9].Value = 3; // I열: 중요도 A
+                        wsTargets.Cells[r, 10].Formula = $"=IF(AND(SUM(G{r}:I{r})>=8, SUM(G{r}:I{r})<=9), \"1등급\", IF(AND(SUM(G{r}:I{r})>=6, SUM(G{r}:I{r})<=7), \"2등급\", IF(AND(SUM(G{r}:I{r})>=3, SUM(G{r}:I{r})<=5), \"3등급\", \"\")))"; // J열: 등급 수식
+                    }
+                }
+
+                // 3. 잠재위험 및 대응책 DB 시트 처리
+                dynamic wsDb = wb.Worksheets["잠재위험 및 대응책 DB"];
+                if (wsDb != null)
+                {
+                    if (hostCount > 1)
+                    {
+                        dynamic colL = wsDb.Columns[12]; // L열
+                        for (int i = 0; i < hostCount - 1; i++)
+                        {
+                            colL.Copy();
+                            dynamic nextCol = wsDb.Columns[13 + i];
+                            nextCol.Insert(Shift: -4161); // xlShiftToRight = -4161
+                        }
+                        excel.CutCopyMode = false;
+                    }
+                }
+
+                // 4. 보안수준 통계 시트 처리
+                dynamic wsSecurity = wb.Worksheets["보안수준 통계"];
+                if (wsSecurity != null)
+                {
+                    if (hostCount > 1)
+                    {
+                        dynamic row31 = wsSecurity.Rows[31];
+                        row31.Copy();
+                        for (int i = 0; i < hostCount - 1; i++)
+                        {
+                            wsSecurity.Rows[32].Insert();
+                        }
+                        excel.CutCopyMode = false;
+                    }
+
+                    for (int i = 0; i < hostCount; i++)
+                    {
+                        int r = 31 + i;
+                        var rep = osReports[i];
+
+                        wsSecurity.Cells[r, 1].Value = osType.ToUpper(); // A열: 장비구분
+                        wsSecurity.Cells[r, 2].Formula = $"=점검대상!C{7+i}"; // B열: 호스트명 참조
+                    }
+
+                    int totalRow = 31 + hostCount;
+                    // 계 (SUM) 행 수식 갱신
+                    for (int c = 4; c <= 10; c++)
+                    {
+                        string colLetter = GetColumnLetter(c);
+                        wsSecurity.Cells[totalRow, c].Formula = $"=SUM({colLetter}31:{colLetter}{totalRow-1})";
+                    }
+                    wsSecurity.Cells[totalRow, 11].Formula = $"=SUM(K31:K{totalRow-1})/(COUNTA(K31:K{totalRow-1})-COUNTIF(K31:K{totalRow-1},\"N/A\"))";
+
+                    // 비율 행 수식 갱신 (비율 행은 totalRow + 1)
+                    int avgRow = totalRow + 1;
+                    for (int c = 4; c <= 10; c++)
+                    {
+                        string colLetter = GetColumnLetter(c);
+                        wsSecurity.Cells[avgRow, c].Formula = $"=IFERROR({colLetter}{totalRow}/$K${totalRow},\"-\")";
+                    }
+                    wsSecurity.Cells[avgRow, 11].Formula = $"=IFERROR(SUM(D{avgRow}:J{avgRow}),\"-\")";
+                }
+
+                // 5. 호스트별 상세 시트 복제 및 데이터 주입
+                dynamic wsSample = wb.Worksheets["sample"];
+                if (wsSample != null)
+                {
+                    for (int i = 0; i < osReports.Count; i++)
+                    {
+                        var rep = osReports[i];
+                        string hostname = rep.SystemInfo.Hostname;
+
+                        // 기존 동일 시트 존재 시 삭제
+                        try
+                        {
+                            dynamic existing = wb.Worksheets[hostname];
+                            if (existing != null)
+                            {
+                                existing.Delete();
+                            }
+                        }
+                        catch { }
+
+                        // Duplicate sheet using Excel COM native Copy
+                        wsSample.Copy(Before: wsDb); // wsDb (기준 DB) 바로 앞에 삽입
+                        dynamic wsNew = excel.ActiveSheet;
+                        wsNew.Name = hostname;
+
+                        // Zoom 75% 및 A1 선택
+                        wsNew.Select();
+                        excel.ActiveWindow.Zoom = 75;
+                        wsNew.Range("A1").Select();
+
+                        wsNew.Range("D4").Value = rep.SystemInfo.Hostname;
+                        wsNew.Range("D5").Value = rep.SystemInfo.IpAddress;
+                        wsNew.Range("H4").Value = rep.SystemInfo.TargetOs;
+
+                        // 21행(U-01)부터 87행(U-67)까지 데이터 주입
+                        for (int r = 21; r <= 87; r++)
+                        {
+                            string code = wsNew.Cells[r, 4].Text.ToString().Trim(); // D열(4)이 항목 코드
+                            if (string.IsNullOrEmpty(code)) continue;
+
+                            var diag = rep.Diagnostics.FirstOrDefault(d => d.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
+                            if (diag != null)
+                            {
+                                string resultKo = diag.Status.ToUpper() switch
+                                {
+                                    "PASS" => "Y",
+                                    "FAIL" => "N",
+                                    "N/A" => "N/A",
+                                    _ => diag.Status
+                                };
+                                wsNew.Cells[r, 13].Value = resultKo; // M열(13열) 결과: Y / N / N/A
+
+                                // 상세결과보고서의 P열(점검현황) 값 조합하여 기입
+                                string statusVal = string.Empty;
+                                if (dbDict.TryGetValue(code, out var bases))
+                                {
+                                    if (diag.Status.Equals("Pass", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        statusVal = bases.pass + diag.Evidence;
+                                    }
+                                    else if (diag.Status.Equals("Fail", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        statusVal = bases.fail + diag.Evidence;
+                                    }
+                                    else // N/A
+                                    {
+                                        statusVal = bases.na + diag.Evidence;
+                                    }
+                                }
+                                else
+                                {
+                                    statusVal = diag.Evidence; // fallback
+                                }
+                                wsNew.Cells[r, 15].Value = statusVal;
+                            }
+                            else
+                            {
+                                wsNew.Cells[r, 13].Value = "N/A";
+                                wsNew.Cells[r, 15].Value = "";
+                            }
+                        }
+                    }
+
+                    try
+                    {
+                        wsSample.Delete();
+                    }
+                    catch { }
+                }
+
+                wb.Save();
+            }
+            finally
+            {
+                if (wb != null)
+                {
+                    wb.Close(SaveChanges: false);
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(wb);
+                }
+                excel.Quit();
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(excel);
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
             }
         }
 
@@ -993,15 +1391,34 @@ namespace ui.ViewModels
                     return false;
                 }
 
-                // 호스트별 상세 시트(7번째 시트부터 마지막 바로 직전 시트까지)의 차트(도형) 개수가 2개인지 확인
-                int totalSheets = wb.Worksheets.Count;
-                for (int idx = 7; idx < totalSheets; idx++)
+                string ext = Path.GetExtension(filePath).ToLower();
+                if (ext == ".xlsm")
                 {
-                    dynamic ws = wb.Worksheets[idx];
-                    if (ws.Shapes.Count < 2)
+                    dynamic wsSec = wb.Worksheets["보안수준 통계"];
+                    if (wsSec == null)
                     {
                         wb.Close(SaveChanges: false);
                         return false;
+                    }
+                    dynamic shapes = wsSec.Shapes;
+                    if (shapes == null || shapes!.Count < 2)
+                    {
+                        wb.Close(SaveChanges: false);
+                        return false;
+                    }
+                }
+                else
+                {
+                    // 호스트별 상세 시트(7번째 시트부터 마지막 바로 직전 시트까지)의 차트(도형) 개수가 2개인지 확인
+                    int totalSheets = wb.Worksheets.Count;
+                    for (int idx = 7; idx < totalSheets; idx++)
+                    {
+                        dynamic ws = wb.Worksheets[idx];
+                        if (ws.Shapes.Count < 2)
+                        {
+                            wb.Close(SaveChanges: false);
+                            return false;
+                        }
                     }
                 }
 
