@@ -498,6 +498,11 @@ namespace Generator
                             }
                         }
                     }
+                    try
+                    {
+                        wsSample.Delete();
+                    }
+                    catch { }
                 }
 
                 wb.Save();
@@ -537,7 +542,7 @@ namespace Generator
                 }
 
                 int totalSheets = wb.Worksheets.Count;
-                for (int idx = 8; idx < totalSheets; idx++)
+                for (int idx = 7; idx < totalSheets; idx++)
                 {
                     dynamic ws = wb.Worksheets[idx];
                     if (ws.Shapes.Count < 2)

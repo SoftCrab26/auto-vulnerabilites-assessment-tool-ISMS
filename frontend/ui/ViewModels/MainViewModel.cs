@@ -869,6 +869,11 @@ namespace ui.ViewModels
                             }
                         }
                     }
+                    try
+                    {
+                        wsSample.Delete();
+                    }
+                    catch { }
                 }
 
                 wb.Save();
@@ -907,9 +912,9 @@ namespace ui.ViewModels
                     return false;
                 }
 
-                // 호스트별 상세 시트(8번째 시트부터 마지막 바로 직전 시트까지)의 차트(도형) 개수가 2개인지 확인
+                // 호스트별 상세 시트(7번째 시트부터 마지막 바로 직전 시트까지)의 차트(도형) 개수가 2개인지 확인
                 int totalSheets = wb.Worksheets.Count;
-                for (int idx = 8; idx < totalSheets; idx++)
+                for (int idx = 7; idx < totalSheets; idx++)
                 {
                     dynamic ws = wb.Worksheets[idx];
                     if (ws.Shapes.Count < 2)
