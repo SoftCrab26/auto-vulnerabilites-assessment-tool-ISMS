@@ -1,0 +1,52 @@
+[
+  {
+    "Code": "U-01",
+    "Description": "",
+    "Status": 5,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "",
+    "ErrMsg": "open /etc/ssh/sshd_config: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-02",
+    "Description": "",
+    "Status": 5,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "",
+    "ErrMsg": "open /etc/pam.d/system-auth: no such file or directory\nopen /etc/security/pwquality.conf: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-03",
+    "Description": "",
+    "Status": 5,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "",
+    "ErrMsg": "open /etc/pam.d/system-auth: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-04",
+    "Description": "The permissions of /etc/passwd and /etc/shadow should be set to prevent unauthorized access to password information.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "/etc/passwd perm=644 | /etc/shadow perm=640",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-05",
+    "Description": "PATH should not contain insecure or relative entries.",
+    "Status": 1,
+    "RawConfig": "# /etc/profile\n# /etc/profile: system-wide .profile file for the Bourne shell (sh(1))\n# and Bourne compatible shells (bash(1), ksh(1), ash(1), ...).\n\nif [ \"${PS1-}\" ]; then\n  if [ \"${BASH-}\" ] \u0026\u0026 [ \"$BASH\" != \"/bin/sh\" ]; then\n    # The file bash.bashrc already sets the default PS1.\n    # PS1='\\h:\\w\\$ '\n    if [ -f /etc/bash.bashrc ]; then\n      . /etc/bash.bashrc\n    fi\n  else\n    if [ \"$(id -u)\" -eq 0 ]; then\n      PS1='# '\n    else\n      PS1='$ '\n    fi\n  fi\nfi\n\nif [ -d /etc/profile.d ]; then\n  for i in /etc/profile.d/*.sh; do\n    if [ -r $i ]; then\n      . $i\n    fi\n  done\n  unset i\nfi\n\n# /home/khkim/.profile\n# ~/.profile: executed by the command interpreter for login shells.\n# This file is not read by bash(1), if ~/.bash_profile or ~/.bash_login\n# exists.\n# see /usr/share/doc/bash/examples/startup-files for examples.\n# the files are located in the bash-doc package.\n\n# the default umask is set in /etc/profile; for setting the umask\n# for ssh logins, install and configure the libpam-umask package.\n#umask 022\n\n# if running bash\nif [ -n \"$BASH_VERSION\" ]; then\n    # include .bashrc if it exists\n    if [ -f \"$HOME/.bashrc\" ]; then\n\t. \"$HOME/.bashrc\"\n    fi\nfi\n\n# set PATH so it includes user's private bin if it exists\nif [ -d \"$HOME/bin\" ] ; then\n    PATH=\"$HOME/bin:$PATH\"\nfi\n\n# set PATH so it includes user's private bin if it exists\nif [ -d \"$HOME/.local/bin\" ] ; then\n    PATH=\"$HOME/.local/bin:$PATH\"\nfi\n",
+    "VulnerableConfig": "PATH=/home/khkim/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.4.linux-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/VC/Tools/MSVC/14.51.36231/bin/HostX86/x86:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/VC/VCPackages:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/CommonExtensions/Microsoft/TestWindow:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/CommonExtensions/Microsoft/TeamFoundation/Team Explorer:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/MSBuild/Current/bin/Roslyn:/mnt/c/Program Files (x86)/Microsoft SDKs/Windows/v10.0A/bin/NETFX 4.8 Tools/:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/CommonExtensions/Microsoft/FSharp/Tools:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Team Tools/DiagnosticsHub/Collector:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/Extensions/Microsoft/CodeCoverage.Console:/mnt/c/Program Files (x86)/Windows Kits/10/bin/10.0.26100.0/x86:/mnt/c/Program Files (x86)/Windows Kits/10/bin/x86:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/MSBuild/Current/Bin/amd64:/mnt/c/Windows/Microsoft.NET/Framework/v4.0.30319:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/Tools/:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Bandizip/:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files/Microsoft SQL Server/170/Tools/Binn/:/mnt/c/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/:/mnt/c/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/:/mnt/c/Program Files (x86)/Go/bin:/mnt/c/Users/khkim/AppData/Local/Microsoft/WindowsApps:/mnt/c/Users/khkim/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/khkim/AppData/Local/Python/bin:/mnt/c/Users/khkim/AppData/Local/Programs/Antigravity/bin:/mnt/c/Users/khkim/.dotnet/tools:/mnt/c/Users/khkim/AppData/Local/GitHubDesktop/bin:/mnt/c/Users/khkim/go/bin:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/PrivateAssemblies/runtimes/win-x64/native:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/VC/Linux/bin/ConnectionManagerExe:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/VC/vcpkg:/snap/bin\nissues=world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/Microsoft/WindowsApps, world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/Programs/Microsoft VS Code/bin, world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/Python/bin, world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/Programs/Antigravity/bin, world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/GitHubDesktop/bin\n문제점. world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/Microsoft/WindowsApps\n문제점. world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/Programs/Microsoft VS Code/bin\n문제점. world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/Python/bin\n문제점. world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/Programs/Antigravity/bin\n문제점. world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/GitHubDesktop/bin",
+    "ProcessedConfig": "PATH=/home/khkim/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.4.linux-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/VC/Tools/MSVC/14.51.36231/bin/HostX86/x86:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/VC/VCPackages:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/CommonExtensions/Microsoft/TestWindow:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/CommonExtensions/Microsoft/TeamFoundation/Team Explorer:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/MSBuild/Current/bin/Roslyn:/mnt/c/Program Files (x86)/Microsoft SDKs/Windows/v10.0A/bin/NETFX 4.8 Tools/:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/CommonExtensions/Microsoft/FSharp/Tools:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Team Tools/DiagnosticsHub/Collector:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/Extensions/Microsoft/CodeCoverage.Console:/mnt/c/Program Files (x86)/Windows Kits/10/bin/10.0.26100.0/x86:/mnt/c/Program Files (x86)/Windows Kits/10/bin/x86:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/MSBuild/Current/Bin/amd64:/mnt/c/Windows/Microsoft.NET/Framework/v4.0.30319:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/Tools/:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Bandizip/:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files/Microsoft SQL Server/170/Tools/Binn/:/mnt/c/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/:/mnt/c/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/:/mnt/c/Program Files (x86)/Go/bin:/mnt/c/Users/khkim/AppData/Local/Microsoft/WindowsApps:/mnt/c/Users/khkim/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/khkim/AppData/Local/Python/bin:/mnt/c/Users/khkim/AppData/Local/Programs/Antigravity/bin:/mnt/c/Users/khkim/.dotnet/tools:/mnt/c/Users/khkim/AppData/Local/GitHubDesktop/bin:/mnt/c/Users/khkim/go/bin:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/PrivateAssemblies/runtimes/win-x64/native:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/Common7/IDE/VC/Linux/bin/ConnectionManagerExe:/mnt/c/Program Files/Microsoft Visual Studio/18/Insiders/VC/vcpkg:/snap/bin\n issues=world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/Microsoft/WindowsApps, world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/Programs/Microsoft VS Code/bin, world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/Python/bin, world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/Programs/Antigravity/bin, world-writable PATH dir: /mnt/c/Users/khkim/AppData/Local/GitHubDesktop/bin",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  }
+]

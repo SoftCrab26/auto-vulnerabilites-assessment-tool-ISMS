@@ -254,6 +254,12 @@ namespace ui.ViewModels
                 {
                     try
                     {
+                        string fileBaseName = Path.GetFileNameWithoutExtension(filename);
+                        if (fileBaseName.IndexOf("unknown_host", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            continue;
+                        }
+
                         var jsonString = File.ReadAllText(filename);
                         var report = ParseJsonReport(jsonString, filename);
                         if (report != null)
@@ -324,16 +330,26 @@ namespace ui.ViewModels
 
             string fileBaseName = Path.GetFileNameWithoutExtension(filename);
             
-            // 파일명에서 호스트명 및 IP 추출/유추
-            string hostname = fileBaseName.Replace("linux_result_", "LINUX-SRV-0").ToUpper();
-            string lastOctet = fileBaseName.Replace("linux_result_", "");
-            if (!int.TryParse(lastOctet, out int ipLast)) ipLast = 10;
+            // 파일명에서 호스트명 및 IP 추출 (형식: hostname_IP)
+            string hostname = "UNKNOWN";
+            string ipAddress = "0.0.0.0";
+            
+            int underscoreIdx = fileBaseName.LastIndexOf('_');
+            if (underscoreIdx > 0)
+            {
+                hostname = fileBaseName.Substring(0, underscoreIdx);
+                ipAddress = fileBaseName.Substring(underscoreIdx + 1);
+            }
+            else
+            {
+                hostname = fileBaseName;
+            }
 
             report.SystemInfo = new SystemInfo
             {
                 TargetOs = "Linux",
                 Hostname = hostname,
-                IpAddress = $"192.168.10.{100 + ipLast}",
+                IpAddress = ipAddress,
                 InspectionDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
             };
 
@@ -379,7 +395,9 @@ namespace ui.ViewModels
                     Description = goRes.Description,
                     Evidence = $"[검출된 설정값 (ProcessedConfig)]\n{goRes.ProcessedConfig}\n\n[진단 로그 / 설정 원본 (RawConfig)]\n{goRes.RawConfig}" + 
                                (!string.IsNullOrEmpty(goRes.ErrMsg) ? $"\n\n[오류 메시지]\n{goRes.ErrMsg}" : ""),
-                    Remediation = remediationText
+                    Remediation = remediationText,
+                    ProcessedConfig = goRes.ProcessedConfig,
+                    ErrMsg = goRes.ErrMsg
                 });
             }
 
@@ -823,7 +841,26 @@ namespace ui.ViewModels
                                 };
                                 wsNew.Cells[r, 15].Value = resultKo;
                                 wsNew.Cells[r, 21].Value = diag.Evidence;
+
+                                // ProcessedConfig가 있으면 운영현황(Q열, 17열)에 입력하고, 
+                                // 비어있는 상태에서 ErrMsg가 있으면 ErrMsg를 대신 대입
+                                string opStatus = string.Empty;
+                                if (!string.IsNullOrEmpty(diag.ProcessedConfig))
+                                {
+                                    opStatus = diag.ProcessedConfig;
+                                }
+                                else if (!string.IsNullOrEmpty(diag.ErrMsg))
+                                {
+                                    opStatus = diag.ErrMsg;
+                                }
+                                wsNew.Cells[r, 17].Value = opStatus;
+                            }
+                            else
+                            {
+                                // 항목 누락 시 점검결과(O열, 15열)를 N/A로 하고 나머지는 비움
+                                wsNew.Cells[r, 15].Value = "N/A";
                                 wsNew.Cells[r, 17].Value = "";
+                                wsNew.Cells[r, 21].Value = "";
                             }
                         }
                     }
@@ -927,6 +964,12 @@ namespace ui.ViewModels
                         var files = Directory.GetFiles(testDataPath, "*.json");
                         foreach (var file in files)
                         {
+                            string fileBaseName = Path.GetFileNameWithoutExtension(file);
+                            if (fileBaseName.IndexOf("unknown_host", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                continue;
+                            }
+
                             var jsonString = File.ReadAllText(file);
                             var report = ParseJsonReport(jsonString, file);
                             if (report != null)

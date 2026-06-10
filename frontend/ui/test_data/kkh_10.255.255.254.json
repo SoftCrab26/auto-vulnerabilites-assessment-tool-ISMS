@@ -1,0 +1,97 @@
+﻿[
+    {
+        "RawConfig":  "Raw configuration dump for U-01",
+        "VulnerableConfig":  "Vulnerable setting detected for U-01",
+        "ErrMsg":  "",
+        "Description":  "Description of U-01",
+        "Status":  1,
+        "ProcessedConfig":  "Config value for U-01",
+        "MitreAttack":  {
+                            "mitigations":  [
+                                                "M1042"
+                                            ],
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "tactic":  "Defense Evasion"
+                        },
+        "Code":  "U-01"
+    },
+    {
+        "RawConfig":  "Raw configuration dump for U-02",
+        "VulnerableConfig":  "",
+        "ErrMsg":  "",
+        "Description":  "Description of U-02",
+        "Status":  0,
+        "ProcessedConfig":  "Config value for U-02",
+        "MitreAttack":  {
+                            "mitigations":  [
+                                                "M1042"
+                                            ],
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "tactic":  "Defense Evasion"
+                        },
+        "Code":  "U-02"
+    },
+    {
+        "RawConfig":  "Raw configuration dump for U-03",
+        "VulnerableConfig":  "",
+        "ErrMsg":  "",
+        "Description":  "Description of U-03",
+        "Status":  0,
+        "ProcessedConfig":  "Config value for U-03",
+        "MitreAttack":  {
+                            "mitigations":  [
+                                                "M1042"
+                                            ],
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "tactic":  "Defense Evasion"
+                        },
+        "Code":  "U-03"
+    },
+    {
+        "RawConfig":  "Raw configuration dump for U-04",
+        "VulnerableConfig":  "Vulnerable setting detected for U-04",
+        "ErrMsg":  "",
+        "Description":  "Description of U-04",
+        "Status":  1,
+        "ProcessedConfig":  "Config value for U-04",
+        "MitreAttack":  {
+                            "mitigations":  [
+                                                "M1042"
+                                            ],
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "tactic":  "Defense Evasion"
+                        },
+        "Code":  "U-04"
+    },
+    {
+        "RawConfig":  "Raw configuration dump for U-05",
+        "VulnerableConfig":  "",
+        "ErrMsg":  "",
+        "Description":  "Description of U-05",
+        "Status":  4,
+        "ProcessedConfig":  "Config value for U-05",
+        "MitreAttack":  {
+                            "mitigations":  [
+                                                "M1042"
+                                            ],
+                            "techniques":  [
+                                               "T1078",
+                                               "T1133"
+                                           ],
+                            "tactic":  "Defense Evasion"
+                        },
+        "Code":  "U-05"
+    }
+]

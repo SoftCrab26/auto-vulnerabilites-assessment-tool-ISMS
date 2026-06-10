@@ -43,6 +43,12 @@ namespace ui.Models
 
         [JsonPropertyName("remediation")]
         public string Remediation { get; set; } = string.Empty;
+
+        [JsonPropertyName("processed_config")]
+        public string ProcessedConfig { get; set; } = string.Empty;
+
+        [JsonPropertyName("err_msg")]
+        public string ErrMsg { get; set; } = string.Empty;
     }
 
     public class DiagnosticReport
