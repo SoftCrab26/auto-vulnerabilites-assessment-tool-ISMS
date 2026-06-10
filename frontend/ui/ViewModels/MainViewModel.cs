@@ -683,10 +683,12 @@ namespace ui.ViewModels
                     if (hostCount > 1)
                     {
                         dynamic row7 = wsTargets.Rows[7];
+                        row7.Copy();
                         for (int i = 0; i < hostCount - 1; i++)
                         {
-                            row7.Insert();
+                            wsTargets.Rows[8].Insert();
                         }
+                        excel.CutCopyMode = false;
                     }
 
                     for (int i = 0; i < hostCount; i++)
@@ -757,10 +759,12 @@ namespace ui.ViewModels
                     if (hostCount > 1)
                     {
                         dynamic row36 = wsSecurity.Rows[36];
+                        row36.Copy();
                         for (int i = 0; i < hostCount - 1; i++)
                         {
-                            row36.Insert();
+                            wsSecurity.Rows[37].Insert();
                         }
+                        excel.CutCopyMode = false;
                     }
 
                     for (int i = 0; i < hostCount; i++)

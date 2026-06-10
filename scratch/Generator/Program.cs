@@ -158,6 +158,31 @@ namespace Generator
                     Console.WriteLine($"Generated successfully.");
                 }
 
+                Console.WriteLine("=== TARGETS SHEET FORMAT CHECK ===");
+                string checkPath = Path.Combine(outputDir, "LINUX_서버_취약점진단_상세결과보고서_TEST.xlsx");
+                Type? checkExcelType = Type.GetTypeFromProgID("Excel.Application");
+                dynamic checkExcel = Activator.CreateInstance(checkExcelType!)!;
+                dynamic checkWb = checkExcel.Workbooks.Open(checkPath);
+                dynamic checkWs = checkWb.Worksheets["점검대상"];
+                for (int r = 6; r <= 16; r++)
+                {
+                    dynamic rng = checkWs.Cells[r, 2]; // B열
+                    Console.WriteLine($"Row {r} | Hostname: {rng.Value} | BgColor: {rng.Interior.Color} | FontSize: {rng.Font.Size} | FontName: {rng.Font.Name}");
+                }
+                Console.WriteLine("=== SECURITY SHEET FORMAT CHECK ===");
+                dynamic checkWsSec = checkWb.Worksheets["보안수준 통계"];
+                for (int r = 35; r <= 46; r++)
+                {
+                    dynamic rngVal = checkWsSec.Cells[r, 2]; // B열
+                    dynamic rngStyle = checkWsSec.Cells[r, 1]; // A열 (장비 타입 스타일)
+                    Console.WriteLine($"Row {r} | Hostname: {rngVal.Value} | A-BgColor: {rngStyle.Interior.Color} | A-FontSize: {rngStyle.Font.Size} | A-FontName: {rngStyle.Font.Name}");
+                }
+
+                checkWb.Close(SaveChanges: false);
+                checkExcel.Quit();
+                Marshal.ReleaseComObject(checkWb);
+                Marshal.ReleaseComObject(checkExcel);
+
                 Console.WriteLine("ALL REPORTS COMPLETED.");
             }
             catch (Exception ex)
@@ -288,10 +313,12 @@ namespace Generator
                     if (hostCount > 1)
                     {
                         dynamic row7 = wsTargets.Rows[7];
+                        row7.Copy();
                         for (int i = 0; i < hostCount - 1; i++)
                         {
-                            row7.Insert();
+                            wsTargets.Rows[8].Insert();
                         }
+                        excel.CutCopyMode = false;
                     }
 
                     for (int i = 0; i < hostCount; i++)
@@ -362,10 +389,12 @@ namespace Generator
                     if (hostCount > 1)
                     {
                         dynamic row36 = wsSecurity.Rows[36];
+                        row36.Copy();
                         for (int i = 0; i < hostCount - 1; i++)
                         {
-                            row36.Insert();
+                            wsSecurity.Rows[37].Insert();
                         }
+                        excel.CutCopyMode = false;
                     }
 
                     for (int i = 0; i < hostCount; i++)
