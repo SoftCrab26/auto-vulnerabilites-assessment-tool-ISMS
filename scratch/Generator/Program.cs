@@ -233,26 +233,26 @@ namespace Generator
                     }
                 }
 
-                Console.WriteLine("=== TARGETS SHEET FORMAT CHECK ===");
-                string checkPath = Path.Combine(outputDir, "LINUX_서버_취약점진단_상세결과보고서_TEST.xlsx");
+                Console.WriteLine("=== DUMPING SECURITY SHEET FORMULAS ===");
+                string checkPath = templateRiskPlanPath;
                 Type? checkExcelType = Type.GetTypeFromProgID("Excel.Application");
                 dynamic checkExcel = Activator.CreateInstance(checkExcelType!)!;
                 dynamic checkWb = checkExcel.Workbooks.Open(checkPath);
-                dynamic checkWs = checkWb.Worksheets["점검대상"];
-                for (int r = 6; r <= 16; r++)
-                {
-                    dynamic rng = checkWs.Cells[r, 2]; // B열
-                    Console.WriteLine($"Row {r} | Hostname: {rng.Value} | BgColor: {rng.Interior.Color} | FontSize: {rng.Font.Size} | FontName: {rng.Font.Name}");
-                }
-                Console.WriteLine("=== SECURITY SHEET FORMAT CHECK ===");
                 dynamic checkWsSec = checkWb.Worksheets["보안수준 통계"];
-                for (int r = 35; r <= 46; r++)
+                List<string> debugFormulas = new List<string>();
+                for (int r = 1; r <= 30; r++)
                 {
-                    dynamic rngVal = checkWsSec.Cells[r, 2]; // B열
-                    dynamic rngStyle = checkWsSec.Cells[r, 1]; // A열 (장비 타입 스타일)
-                    Console.WriteLine($"Row {r} | Hostname: {rngVal.Value} | A-BgColor: {rngStyle.Interior.Color} | A-FontSize: {rngStyle.Font.Size} | A-FontName: {rngStyle.Font.Name}");
+                    for (int c = 1; c <= 15; c++)
+                    {
+                        dynamic cell = checkWsSec.Cells[r, c];
+                        string valStr = cell.Formula.ToString();
+                        if (valStr.StartsWith("="))
+                        {
+                            debugFormulas.Add($"Row {r} Col {c} ({cell.Address}): {valStr}");
+                        }
+                    }
                 }
-
+                File.WriteAllLines(Path.Combine(outputDir, "sec_formulas.txt"), debugFormulas);
                 checkWb.Close(SaveChanges: false);
                 checkExcel.Quit();
                 Marshal.ReleaseComObject(checkWb);

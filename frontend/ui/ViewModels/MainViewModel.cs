@@ -924,7 +924,7 @@ namespace ui.ViewModels
 
                 if (wsCover != null)
                 {
-                    wsCover.Range("H19").Value = DateTime.Now.ToString("yyyy.MM.");
+                    wsCover.Range("I21").Value = DateTime.Now.ToString("yyyy.MM.");
                 }
 
                 int hostCount = osReports.Count;
@@ -961,7 +961,60 @@ namespace ui.ViewModels
                     }
                 }
 
-                // 3. 잠재위험 및 대응책 DB 시트 처리
+                // 3. 요약 통계 시트 처리
+                dynamic wsSummary = wb.Worksheets["요약 통계"];
+                if (wsSummary != null)
+                {
+                    if (hostCount > 1)
+                    {
+                        dynamic colL = wsSummary.Columns[12]; // L열
+                        for (int i = 0; i < hostCount - 1; i++)
+                        {
+                            colL.Copy();
+                            dynamic nextCol = wsSummary.Columns[13 + i];
+                            nextCol.Insert(Shift: -4161); // xlShiftToRight = -4161
+                        }
+                        excel.CutCopyMode = false;
+                    }
+
+                    for (int i = 0; i < hostCount; i++)
+                    {
+                        int colNum = 12 + i;
+                        string colLetter = GetColumnLetter(colNum);
+
+                        // 4행: 호스트명 참조 수식 주입
+                        wsSummary.Cells[4, colNum].Formula = $"=INDIRECT(\"'\"&INDIRECT(\"점검대상!C\"&COLUMN()-5)&\"'!D4\")";
+
+                        // 6~72행 (67개 항목): 상세 시트 M열 결과 참조 수식 주입
+                        for (int r = 6; r <= 72; r++)
+                        {
+                            wsSummary.Cells[r, colNum].Formula = $"=INDIRECT(\"'\"&INDIRECT(\"점검대상!C\"&COLUMN()-5)&\"'!M\"&ROW()+15)";
+                        }
+
+                        // 73행 (전체항목 합계 - 배열 수식): N/A 제외 가중치 합
+                        wsSummary.Cells[73, colNum].FormulaArray = $"=SUM(IF({colLetter}$6:{colLetter}$72<>\"N/A\",$F$6:$F$72))";
+
+                        // 74행 (위험항목 합계): 취약(N) 가중치 합
+                        wsSummary.Cells[74, colNum].Formula = $"=SUMIF({colLetter}$6:{colLetter}$72,\"=N\",$F$6:$F$72)";
+
+                        // 75~77행 (Y, N, N/A 개수)
+                        for (int r = 75; r <= 77; r++)
+                        {
+                            wsSummary.Cells[r, colNum].Formula = $"=COUNTIF({colLetter}$6:{colLetter}$72,$J{r})";
+                        }
+
+                        // 80행 (호스트명): =L$4
+                        wsSummary.Cells[80, colNum].Formula = $"={colLetter}$4";
+
+                        // 81~87행 (영역별 위험 등급 개수): 상세 시트의 M92~M98 참조
+                        for (int r = 81; r <= 87; r++)
+                        {
+                            wsSummary.Cells[r, colNum].Formula = $"=INDIRECT(\"'\"&INDIRECT(\"점검대상!C\"&COLUMN()-5)&\"'!M\"&ROW()+11)";
+                        }
+                    }
+                }
+
+                // 4. 잠재위험 및 대응책 DB 시트 처리
                 dynamic wsDb = wb.Worksheets["잠재위험 및 대응책 DB"];
                 if (wsDb != null)
                 {
@@ -978,7 +1031,7 @@ namespace ui.ViewModels
                     }
                 }
 
-                // 4. 보안수준 통계 시트 처리
+                // 5. 보안수준 통계 시트 처리
                 dynamic wsSecurity = wb.Worksheets["보안수준 통계"];
                 if (wsSecurity != null)
                 {
@@ -1000,18 +1053,25 @@ namespace ui.ViewModels
 
                         wsSecurity.Cells[r, 1].Value = osType.ToUpper(); // A열: 장비구분
                         wsSecurity.Cells[r, 2].Formula = $"=점검대상!C{7+i}"; // B열: 호스트명 참조
+
+                        // D~J열: HLOOKUP 공식 입력
+                        for (int c = 4; c <= 10; c++)
+                        {
+                            wsSecurity.Cells[r, c].Formula = $"=HLOOKUP($B{r}, '요약 통계'!$80:$87, {c-2}, 0)";
+                        }
+                        // K열: 합계 공식 입력
+                        wsSecurity.Cells[r, 11].Formula = $"=SUM(D{r}:J{r})";
                     }
 
                     int totalRow = 31 + hostCount;
-                    // 계 (SUM) 행 수식 갱신
-                    for (int c = 4; c <= 10; c++)
+                    // 계 (SUM) 행 수식 갱신 (D~K열 전체)
+                    for (int c = 4; c <= 11; c++)
                     {
                         string colLetter = GetColumnLetter(c);
                         wsSecurity.Cells[totalRow, c].Formula = $"=SUM({colLetter}31:{colLetter}{totalRow-1})";
                     }
-                    wsSecurity.Cells[totalRow, 11].Formula = $"=SUM(K31:K{totalRow-1})/(COUNTA(K31:K{totalRow-1})-COUNTIF(K31:K{totalRow-1},\"N/A\"))";
 
-                    // 비율 행 수식 갱신 (비율 행은 totalRow + 1)
+                    // 첫 번째 비율 행 수식 갱신 (비율 행은 totalRow + 1)
                     int avgRow = totalRow + 1;
                     for (int c = 4; c <= 10; c++)
                     {
@@ -1019,6 +1079,15 @@ namespace ui.ViewModels
                         wsSecurity.Cells[avgRow, c].Formula = $"=IFERROR({colLetter}{totalRow}/$K${totalRow},\"-\")";
                     }
                     wsSecurity.Cells[avgRow, 11].Formula = $"=IFERROR(SUM(D{avgRow}:J{avgRow}),\"-\")";
+
+                    // 두 번째 비율 행 수식 갱신 (비율 행은 totalRow + 2)
+                    int avgRow2 = totalRow + 2;
+                    for (int c = 4; c <= 10; c++)
+                    {
+                        string colLetter = GetColumnLetter(c);
+                        wsSecurity.Cells[avgRow2, c].Formula = $"=IFERROR({colLetter}{avgRow}/$K${avgRow},\"-\")";
+                    }
+                    wsSecurity.Cells[avgRow2, 11].Formula = $"=IFERROR(SUM(D{avgRow2}:J{avgRow2}),\"-\")";
                 }
 
                 // 5. 호스트별 상세 시트 복제 및 데이터 주입
