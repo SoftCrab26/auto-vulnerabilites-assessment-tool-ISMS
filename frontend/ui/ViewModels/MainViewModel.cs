@@ -43,10 +43,76 @@ namespace ui.ViewModels
         private bool _isExporting;
         private int _exportProgress;
 
+        private bool _exportUnix = true;
+        private bool _exportWinServer = true;
+        private bool _exportPc = true;
+
+        private string _selectedHostTypeFilter = "전체";
+
         public ObservableCollection<DiagnosticReport> Reports
         {
             get => _reports;
             set => SetProperty(ref _reports, value);
+        }
+
+        public string SelectedHostTypeFilter
+        {
+            get => _selectedHostTypeFilter;
+            set
+            {
+                if (SetProperty(ref _selectedHostTypeFilter, value))
+                {
+                    OnPropertyChanged(nameof(FilteredReports));
+                    if (SelectedReport != null && !FilteredReports.Contains(SelectedReport))
+                    {
+                        SelectedReport = FilteredReports.FirstOrDefault();
+                    }
+                }
+            }
+        }
+
+        public List<string> HostTypeFilters { get; } = new() { "전체", "UNIX/Linux", "Windows Server", "개인 PC" };
+
+        public IEnumerable<DiagnosticReport> FilteredReports
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(SelectedHostTypeFilter) || SelectedHostTypeFilter == "전체")
+                {
+                    return Reports;
+                }
+                return Reports.Where(r =>
+                {
+                    string os = (r.SystemInfo.TargetOs ?? "").Trim().ToUpper();
+                    bool isUnix = os.Contains("UNIX") || os.Contains("LINUX") || os.Contains("AIX") || os.Contains("SOLARIS") || os.Contains("HP");
+                    bool isWindows = os.Contains("WINDOWS");
+                    bool isWinServer = isWindows && (os.Contains("SERVER") || os.Contains("서버"));
+                    bool isPc = isWindows && !isWinServer;
+
+                    if (SelectedHostTypeFilter == "UNIX/Linux") return isUnix;
+                    if (SelectedHostTypeFilter == "Windows Server") return isWinServer;
+                    if (SelectedHostTypeFilter == "개인 PC") return isPc;
+                    return true;
+                }).ToList();
+            }
+        }
+
+        public bool ExportUnix
+        {
+            get => _exportUnix;
+            set => SetProperty(ref _exportUnix, value);
+        }
+
+        public bool ExportWinServer
+        {
+            get => _exportWinServer;
+            set => SetProperty(ref _exportWinServer, value);
+        }
+
+        public bool ExportPc
+        {
+            get => _exportPc;
+            set => SetProperty(ref _exportPc, value);
         }
 
         public DiagnosticReport? SelectedReport
@@ -283,6 +349,8 @@ namespace ui.ViewModels
             SelectExportPathCommand = new RelayCommand(_ => SelectExportPath());
             SaveGuidelinesCommand = new RelayCommand(_ => SaveGuidelines());
 
+            Reports.CollectionChanged += (s, e) => OnPropertyChanged(nameof(FilteredReports));
+
             // 기본 출력 디렉터리를 사용자 Downloads 폴더로 설정
             ExportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
 
@@ -380,24 +448,81 @@ namespace ui.ViewModels
 
             string fileBaseName = Path.GetFileNameWithoutExtension(filename);
             
-            // 파일명에서 호스트명 및 IP 추출 (형식: hostname_IP)
+            // 파일명에서 타입, 호스트명 및 IP 추출
+            // 형식: Type_Hostname_IP (예: Unix_localhost_127.0.0.1, WindowsServer_my_db_server_192.168.1.10)
+            // 하위 호환 및 호스트명 내 _ 예외처리 대응
             string hostname = "UNKNOWN";
             string ipAddress = "0.0.0.0";
-            
-            int underscoreIdx = fileBaseName.LastIndexOf('_');
-            if (underscoreIdx > 0)
+            string targetOs = "Linux"; // 기본값
+
+            string[] parts = fileBaseName.Split('_');
+
+            if (parts.Length >= 3)
             {
-                hostname = fileBaseName.Substring(0, underscoreIdx);
-                ipAddress = fileBaseName.Substring(underscoreIdx + 1);
+                string firstToken = parts[0].Trim();
+                bool hasKnownType = firstToken.Equals("WindowsServer", StringComparison.OrdinalIgnoreCase) ||
+                                    firstToken.Equals("Unix", StringComparison.OrdinalIgnoreCase) ||
+                                    firstToken.Equals("DBMS", StringComparison.OrdinalIgnoreCase) ||
+                                    firstToken.Equals("Linux", StringComparison.OrdinalIgnoreCase) ||
+                                    firstToken.Equals("Windows", StringComparison.OrdinalIgnoreCase) ||
+                                    firstToken.Equals("PC", StringComparison.OrdinalIgnoreCase);
+
+                if (hasKnownType)
+                {
+                    // 타입 매핑
+                    if (firstToken.Equals("WindowsServer", StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetOs = "Windows Server";
+                    }
+                    else if (firstToken.Equals("Unix", StringComparison.OrdinalIgnoreCase) || firstToken.Equals("Linux", StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetOs = "Linux";
+                    }
+                    else if (firstToken.Equals("DBMS", StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetOs = "DBMS";
+                    }
+                    else if (firstToken.Equals("PC", StringComparison.OrdinalIgnoreCase) || firstToken.Equals("Windows", StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetOs = "Windows";
+                    }
+                    else
+                    {
+                        targetOs = firstToken;
+                    }
+
+                    // IP 주소는 맨 뒤 토큰
+                    ipAddress = parts[parts.Length - 1];
+
+                    // 호스트명은 첫 토큰과 마지막 토큰 사이를 언더바로 조합
+                    hostname = string.Join("_", parts, 1, parts.Length - 2);
+                }
+                else
+                {
+                    // 알려진 타입이 아니면 기존 포맷(호스트명에 _가 포함된 경우)으로 간주
+                    ipAddress = parts[parts.Length - 1];
+                    hostname = string.Join("_", parts, 0, parts.Length - 1);
+                    targetOs = "Linux"; // 기본값
+                }
+            }
+            else if (parts.Length == 2)
+            {
+                // 기존 포맷: hostname_IP
+                hostname = parts[0];
+                ipAddress = parts[1];
+                targetOs = "Linux";
             }
             else
             {
+                // 구분자가 없는 경우
                 hostname = fileBaseName;
+                ipAddress = "0.0.0.0";
+                targetOs = "Linux";
             }
 
             report.SystemInfo = new SystemInfo
             {
-                TargetOs = "Linux",
+                TargetOs = targetOs,
                 Hostname = hostname,
                 IpAddress = ipAddress,
                 InspectionDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
@@ -419,7 +544,8 @@ namespace ui.ViewModels
                 };
 
                 // 가이드라인 매칭 시도
-                var guide = Guidelines.FirstOrDefault(g => g.OsType.Equals("Linux", StringComparison.OrdinalIgnoreCase) && g.Code.Equals(goRes.Code, StringComparison.OrdinalIgnoreCase));
+                string guideOsType = targetOs.Contains("Windows", StringComparison.OrdinalIgnoreCase) ? "Windows" : "Linux";
+                var guide = Guidelines.FirstOrDefault(g => g.OsType.Equals(guideOsType, StringComparison.OrdinalIgnoreCase) && g.Code.Equals(goRes.Code, StringComparison.OrdinalIgnoreCase));
                 
                 string passComm = guide != null ? guide.PassComment : "설정이 기준에 부합하여 안전합니다.";
                 string failComm = guide != null ? guide.FailComment : "설정이 기준에 미달하여 취약합니다.";
@@ -607,6 +733,12 @@ namespace ui.ViewModels
                 return;
             }
 
+            if (!ExportUnix && !ExportWinServer && !ExportPc)
+            {
+                MessageBox.Show("내보낼 자산 유형을 최소 하나 이상 선택해야 합니다.", "알림", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             IsExporting = true;
             ExportProgress = 0;
             ExportLogs = $"[{DateTime.Now:HH:mm:ss}] 보고서 생성 작업을 시작합니다...\n";
@@ -618,11 +750,32 @@ namespace ui.ViewModels
                     Directory.CreateDirectory(ExportPath);
                 }
 
+                // 선택된 자산 유형에 해당하는 호스트 필터링
+                var targetReports = Reports.Where(r => {
+                    string os = (r.SystemInfo.TargetOs ?? "").Trim().ToUpper();
+                    bool isUnix = os.Contains("UNIX") || os.Contains("LINUX") || os.Contains("AIX") || os.Contains("SOLARIS") || os.Contains("HP");
+                    bool isWindows = os.Contains("WINDOWS");
+                    bool isWinServer = isWindows && (os.Contains("SERVER") || os.Contains("서버"));
+                    bool isPc = isWindows && !isWinServer;
+
+                    if (isUnix) return ExportUnix;
+                    if (isWinServer) return ExportWinServer;
+                    if (isPc) return ExportPc;
+                    return true;
+                }).ToList();
+
+                if (targetReports.Count == 0)
+                {
+                    MessageBox.Show("선택한 자산 유형에 해당하는 진단 결과 호스트가 존재하지 않습니다.", "알림", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    IsExporting = false;
+                    return;
+                }
+
                 // 1. 상세결과보고서 생성 (엑셀 템플릿 데이터 주입)
                 if (ExportDetailReport)
                 {
-                    // Reports를 자산 타입(TargetOs) 별로 그룹화
-                    var osGroups = Reports.GroupBy(r => string.IsNullOrEmpty(r.SystemInfo.TargetOs) ? "UNIX" : r.SystemInfo.TargetOs.Trim().ToUpper());
+                    // targetReports를 자산 타입(TargetOs) 별로 그룹화
+                    var osGroups = targetReports.GroupBy(r => string.IsNullOrEmpty(r.SystemInfo.TargetOs) ? "UNIX" : r.SystemInfo.TargetOs.Trim().ToUpper());
                     int totalGroups = osGroups.Count();
                     int currentGroup = 0;
 
@@ -691,7 +844,7 @@ namespace ui.ViewModels
                 // 2. 위험관리 계획서 생성
                 if (ExportSummaryReport)
                 {
-                    var osGroups = Reports.GroupBy(r => string.IsNullOrEmpty(r.SystemInfo.TargetOs) ? "UNIX" : r.SystemInfo.TargetOs.Trim().ToUpper());
+                    var osGroups = targetReports.GroupBy(r => string.IsNullOrEmpty(r.SystemInfo.TargetOs) ? "UNIX" : r.SystemInfo.TargetOs.Trim().ToUpper());
                     int totalGroups = osGroups.Count();
                     int currentGroup = 0;
 
@@ -763,7 +916,7 @@ namespace ui.ViewModels
                 // 3. 위험 분석 평가표 생성
                 if (ExportActionPlan)
                 {
-                    var osGroups = Reports.GroupBy(r => string.IsNullOrEmpty(r.SystemInfo.TargetOs) ? "UNIX" : r.SystemInfo.TargetOs.Trim().ToUpper());
+                    var osGroups = targetReports.GroupBy(r => string.IsNullOrEmpty(r.SystemInfo.TargetOs) ? "UNIX" : r.SystemInfo.TargetOs.Trim().ToUpper());
                     int totalGroups = osGroups.Count();
                     int currentGroup = 0;
 

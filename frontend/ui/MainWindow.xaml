@@ -128,11 +128,39 @@
 
                 <Separator Grid.Row="2" Background="{StaticResource BorderBrush}" Margin="15,0"/>
 
-                <!-- Host List Header -->
-                <TextBlock Grid.Row="3" Text="진단 대상 호스트 목록" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}" Margin="20,15,20,5"/>
+                <!-- Host List Header & Filter -->
+                <StackPanel Grid.Row="3" Margin="20,15,20,5">
+                    <TextBlock Text="진단 대상 호스트 목록" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,8"/>
+                    <ComboBox ItemsSource="{Binding HostTypeFilters}" SelectedItem="{Binding SelectedHostTypeFilter}" 
+                              Height="28" VerticalContentAlignment="Center" Background="#F5F5F5" Foreground="Black" 
+                              BorderBrush="{StaticResource BorderBrush}">
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="Background" Value="White"/>
+                                <Setter Property="Foreground" Value="Black"/>
+                                <Setter Property="Padding" Value="8,6"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#CCE8FF"/>
+                                        <Setter Property="Foreground" Value="Black"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#E5E5E5"/>
+                                        <Setter Property="Foreground" Value="Black"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Foreground="Black"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
 
                 <!-- Target Host List -->
-                <ListBox Grid.Row="4" ItemsSource="{Binding Reports}" SelectedItem="{Binding SelectedReport}" Margin="8,5">
+                <ListBox Grid.Row="4" ItemsSource="{Binding FilteredReports}" SelectedItem="{Binding SelectedReport}" Margin="8,5" Background="Transparent" BorderThickness="0">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid Margin="0,2">
@@ -164,7 +192,7 @@
 
                                 <!-- Hostname and IP -->
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding SystemInfo.Hostname}" FontWeight="SemiBold" FontSize="12"/>
+                                    <TextBlock Text="{Binding SystemInfo.Hostname}" FontWeight="SemiBold" FontSize="12" Foreground="White"/>
                                     <TextBlock Text="{Binding SystemInfo.IpAddress}" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
                                 </StackPanel>
 
@@ -298,7 +326,7 @@
                         <TextBlock Grid.Row="0" Text="호스트별 진단 상태 요약" FontSize="14" FontWeight="Bold" Margin="0,0,0,12"/>
 
                         <!-- Host Statistics Grid -->
-                        <DataGrid Grid.Row="1" ItemsSource="{Binding Reports}" Background="Transparent" BorderThickness="0">
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding FilteredReports}" Background="Transparent" BorderThickness="0">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="OS" Binding="{Binding SystemInfo.TargetOs}" Width="100"/>
                                 <DataGridTextColumn Header="호스트명" Binding="{Binding SystemInfo.Hostname}" Width="*"/>
@@ -658,6 +686,25 @@
                                     <TextBlock Text="위험 분석 평가표 (.xlsm)" FontSize="12" Margin="5,0,0,0"/>
                                 </CheckBox>
                                 <TextBlock Text="  - 자산별 위험 분석 평가 및 중요도 산출 결과 포함" FontSize="10" Foreground="{StaticResource TextMutedBrush}" Margin="20,0,0,8"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Step 1-2: Target OS Types Choices -->
+                        <Border Style="{StaticResource CardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="1-2. 내보낼 자산 유형 선택" FontSize="14" FontWeight="Bold" Margin="0,0,0,16"/>
+
+                                <CheckBox IsChecked="{Binding ExportUnix}" Margin="0,6" VerticalContentAlignment="Center">
+                                    <TextBlock Text="UNIX / Linux 서버" FontSize="12" Margin="5,0,0,0"/>
+                                </CheckBox>
+
+                                <CheckBox IsChecked="{Binding ExportWinServer}" Margin="0,6" VerticalContentAlignment="Center">
+                                    <TextBlock Text="Windows 서버" FontSize="12" Margin="5,0,0,0"/>
+                                </CheckBox>
+
+                                <CheckBox IsChecked="{Binding ExportPc}" Margin="0,6" VerticalContentAlignment="Center">
+                                    <TextBlock Text="개인 PC (Client PC)" FontSize="12" Margin="5,0,0,0"/>
+                                </CheckBox>
                             </StackPanel>
                         </Border>
 
