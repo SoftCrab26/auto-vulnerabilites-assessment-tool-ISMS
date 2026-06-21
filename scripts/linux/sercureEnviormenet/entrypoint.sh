@@ -12,6 +12,4 @@ if [[ ! -x "$target" ]]; then
 	exit 127
 fi
 
-log_file="/out/stdout-$(hostname)-$(date +%Y%m%d-%H%M%S).log"
-"$@" | tee "$log_file"
-exit "${PIPESTATUS[0]}"
+exec "$@"
