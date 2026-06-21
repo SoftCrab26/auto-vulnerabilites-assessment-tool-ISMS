@@ -1,13 +1,9 @@
 FROM rockylinux:9
 
 RUN dnf -y install \
-		coreutils \
-		findutils \
 		iproute \
 		nmap-ncat \
-		passwd \
 		procps-ng \
-		shadow-utils \
 		sudo \
 		which \
 	&& dnf clean all
@@ -57,7 +53,6 @@ RUN mkdir -p /etc/ssh /etc/pam.d /etc/security /etc/samba /etc/vsftpd /out \
 	&& useradd -m -u 0 -o uidzero \
 	&& usermod -p '$1$legacy$Hq8zyu49Zpxb5p2WbBHMn0' root \
 	&& usermod -p '$1$legacy$Hq8zyu49Zpxb5p2WbBHMn0' legacyadmin \
-	&& chmod 666 /etc/hosts \
 	&& chmod 644 /etc/shadow \
 	&& chmod 777 /tmp \
 	&& chmod +x /usr/local/bin/linux-vulnerable-entrypoint.sh
