@@ -1,13 +1,9 @@
 FROM rockylinux:9
 
 RUN dnf -y install \
-		coreutils \
-		findutils \
 		iproute \
 		nmap-ncat \
-		passwd \
 		procps-ng \
-		shadow-utils \
 		sudo \
 		which \
 	&& dnf clean all
@@ -60,7 +56,6 @@ RUN mkdir -p /etc/ssh /etc/pam.d /etc/security /etc/samba /etc/vsftpd /out \
 	&& usermod -p '$6$secure$wS3z2W6L6D3HY4.3lxKqF1LkEf4bWpR7Qd43u1s2kPS6qgSKoT4GXfRrQqNlh9Mz.JqKxkHXKSR8cFdfLl7PR0' auditor \
 	&& chmod 644 /etc/passwd \
 	&& chmod 400 /etc/shadow \
-	&& chmod 644 /etc/hosts \
 	&& chmod +x /usr/local/bin/linux-secure-entrypoint.sh
 
 WORKDIR /out
