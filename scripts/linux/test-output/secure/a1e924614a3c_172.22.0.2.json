@@ -1,0 +1,672 @@
+[
+  {
+    "Code": "U-01",
+    "Description": "SSH root login should be disabled to prevent unauthorized access.",
+    "Status": 0,
+    "RawConfig": "PermitRootLogin no\nPasswordAuthentication yes\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "PermitRootLogin:no",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-02",
+    "Description": "Password complexity must be enforced through PAM and password quality settings.",
+    "Status": 0,
+    "RawConfig": "minlen = 8\nucredit = -1\nlcredit = -1\ndcredit = -1\nocredit = -1\n\n#\n# Please note that the parameters in this configuration file control the\n# behavior of the tools from the shadow-utils component. None of these\n# tools uses the PAM mechanism, and the utilities that use PAM (such as the\n# passwd command) should therefore be configured elsewhere. Refer to\n# /etc/pam.d/system-auth for more information.\n#\n\n#\n# Delay in seconds before being allowed another attempt after a login failure\n# Note: When PAM is used, some modules may enforce a minimum delay (e.g.\n#       pam_unix(8) enforces a 2s delay)\n#\n#FAIL_DELAY\t\t3\n\n# Currently FAILLOG_ENAB is not supported\n\n#\n# Enable display of unknown usernames when login(1) failures are recorded.\n#\n#LOG_UNKFAIL_ENAB\tno\n\n# Currently LOG_OK_LOGINS is not supported\n\n# Currently LASTLOG_ENAB is not supported\n\n#\n# Limit the highest user ID number for which the lastlog entries should\n# be updated.\n#\n# No LASTLOG_UID_MAX means that there is no user ID limit for writing\n# lastlog entries.\n#\n#LASTLOG_UID_MAX\n\n# Currently MAIL_CHECK_ENAB is not supported\n\n# Currently OBSCURE_CHECKS_ENAB is not supported\n\n# Currently PORTTIME_CHECKS_ENAB is not supported\n\n# Currently QUOTAS_ENAB is not supported\n\n# Currently SYSLOG_SU_ENAB is not supported\n\n#\n# Enable \"syslog\" logging of newgrp(1) and sg(1) activity.\n#\n#SYSLOG_SG_ENAB\t\tyes\n\n# Currently CONSOLE is not supported\n\n# Currently SULOG_FILE is not supported\n\n# Currently MOTD_FILE is not supported\n\n# Currently ISSUE_FILE is not supported\n\n# Currently TTYTYPE_FILE is not supported\n\n# Currently FTMP_FILE is not supported\n\n# Currently NOLOGINS_FILE is not supported\n\n# Currently SU_NAME is not supported\n\n# *REQUIRED*\n#   Directory where mailboxes reside, _or_ name of file, relative to the\n#   home directory.  If you _do_ define both, MAIL_DIR takes precedence.\n#\nMAIL_DIR\t/var/spool/mail\n#MAIL_FILE\t.mail\n\n#\n# If defined, file which inhibits all the usual chatter during the login\n# sequence.  If a full pathname, then hushed mode will be enabled if the\n# user's name or shell are found in the file.  If not a full pathname, then\n# hushed mode will be enabled if the file exists in the user's home directory.\n#\n#HUSHLOGIN_FILE\t.hushlogin\n#HUSHLOGIN_FILE\t/etc/hushlogins\n\n# Currently ENV_TZ is not supported\n\n# Currently ENV_HZ is not supported\n\n#\n# The default PATH settings, for superuser and normal users.\n#\n# (they are minimal, add the rest in the shell startup files)\n#ENV_SUPATH\tPATH=/sbin:/bin:/usr/sbin:/usr/bin\n#ENV_PATH\tPATH=/bin:/usr/bin\n\n#\n# Terminal permissions\n#\n#\tTTYGROUP\tLogin tty will be assigned this group ownership.\n#\tTTYPERM\t\tLogin tty will be set to this permission.\n#\n# If you have a write(1) program which is \"setgid\" to a special group\n# which owns the terminals, define TTYGROUP as the number of such group\n# and TTYPERM as 0620.  Otherwise leave TTYGROUP commented out and\n# set TTYPERM to either 622 or 600.\n#\n#TTYGROUP\ttty\n#TTYPERM\t\t0600\n\n# Currently ERASECHAR, KILLCHAR and ULIMIT are not supported\n\n# Default initial \"umask\" value used by login(1) on non-PAM enabled systems.\n# Default \"umask\" value for pam_umask(8) on PAM enabled systems.\n# UMASK is also used by useradd(8) and newusers(8) to set the mode for new\n# home directories if HOME_MODE is not set.\n# 022 is the default value, but 027, or even 077, could be considered\n# for increased privacy. There is no One True Answer here: each sysadmin\n# must make up their mind.\nUMASK\t\t022\n\n# HOME_MODE is used by useradd(8) and newusers(8) to set the mode for new\n# home directories.\n# If HOME_MODE is not set, the value of UMASK is used to create the mode.\nHOME_MODE\t0700\n\n# Password aging controls:\n#\n#\tPASS_MAX_DAYS\tMaximum number of days a password may be used.\n#\tPASS_MIN_DAYS\tMinimum number of days allowed between password changes.\n#\tPASS_MIN_LEN\tMinimum acceptable password length.\n#\tPASS_WARN_AGE\tNumber of days warning given before a password expires.\n#\nPASS_MAX_DAYS\t99999\nPASS_MIN_DAYS\t0\nPASS_WARN_AGE\t7\n\n# Currently PASS_MIN_LEN is not supported\n\n# Currently SU_WHEEL_ONLY is not supported\n\n# Currently CRACKLIB_DICTPATH is not supported\n\n#\n# Min/max values for automatic uid selection in useradd(8)\n#\nUID_MIN                  1000\nUID_MAX                 60000\n# System accounts\nSYS_UID_MIN               201\nSYS_UID_MAX               999\n# Extra per user uids\nSUB_UID_MIN\t\t   100000\nSUB_UID_MAX\t\t600100000\nSUB_UID_COUNT\t\t    65536\n\n#\n# Min/max values for automatic gid selection in groupadd(8)\n#\nGID_MIN                  1000\nGID_MAX                 60000\n# System accounts\nSYS_GID_MIN               201\nSYS_GID_MAX               999\n# Extra per user group ids\nSUB_GID_MIN\t\t   100000\nSUB_GID_MAX\t\t600100000\nSUB_GID_COUNT\t\t    65536\n\n#\n# Max number of login(1) retries if password is bad\n#\n#LOGIN_RETRIES\t\t3\n\n#\n# Max time in seconds for login(1)\n#\n#LOGIN_TIMEOUT\t\t60\n\n# Currently PASS_CHANGE_TRIES is not supported\n\n# Currently PASS_ALWAYS_WARN is not supported\n\n# Currently PASS_MAX_LEN is not supported\n\n# Currently CHFN_AUTH is not supported\n\n#\n# Which fields may be changed by regular users using chfn(1) - use\n# any combination of letters \"frwh\" (full name, room number, work\n# phone, home phone).  If not defined, no changes are allowed.\n# For backward compatibility, \"yes\" = \"rwh\" and \"no\" = \"frwh\".\n# \n#CHFN_RESTRICT\t\trwh\n\n# Currently LOGIN_STRING is not supported\n\n# Currently MD5_CRYPT_ENAB is not supported\n\n#\n# If set to MD5, MD5-based algorithm will be used for encrypting password\n# If set to SHA256, SHA256-based algorithm will be used for encrypting password\n# If set to SHA512, SHA512-based algorithm will be used for encrypting password\n# If set to BLOWFISH, BLOWFISH-based algorithm will be used for encrypting password\n# If set to DES, DES-based algorithm will be used for encrypting password (default)\n#\nENCRYPT_METHOD SHA512\n\n#\n# Only works if ENCRYPT_METHOD is set to SHA256 or SHA512.\n#\n# Define the number of SHA rounds.\n# With a lot of rounds, it is more difficult to brute-force the password.\n# However, more CPU resources will be needed to authenticate users if\n# this value is increased.\n#\n# If not specified, the libc will choose the default number of rounds (5000).\n# The values must be within the 1000-999999999 range.\n#\n#SHA_CRYPT_MAX_ROUNDS 5000\n\n# Currently SHA_CRYPT_MIN_ROUNDS is not supported\n\n# Currently BCRYPT_MIN_ROUNDS and BCRYPT_MAX_ROUNDS are not supported\n\n# Currently CONSOLE_GROUPS is not supported\n\n#\n# Should login be allowed if we can't cd to the home directory?\n# Default is yes.\n#\n#DEFAULT_HOME\tyes\n\n# Currently ENVIRON_FILE is not supported\n\n#\n# If defined, this command is run when removing a user.\n# It should remove any at/cron/print jobs etc. owned by\n# the user to be removed (passed as the first argument).\n#\n#USERDEL_CMD\t/usr/sbin/userdel_local\n\n#\n# Enables userdel(8) to remove user groups if no members exist.\n#\nUSERGROUPS_ENAB yes\n\n#\n# If set to a non-zero number, the shadow utilities will make sure that\n# groups never have more than this number of users on one line.\n# This permits to support split groups (groups split into multiple lines,\n# with the same group ID, to avoid limitation of the line length in the\n# group file).\n#\n# 0 is the default value and disables this feature.\n#\n#MAX_MEMBERS_PER_GROUP\t0\n\n#\n# If useradd(8) should create home directories for users by default (non\n# system users only).\n# This option is overridden with the -M or -m flags on the useradd(8)\n# command-line.\n#\nCREATE_HOME\tyes\n\n#\n# Force use shadow, even if shadow passwd \u0026 shadow group files are\n# missing.\n#\n#FORCE_SHADOW    yes\n\n#\n# Select the HMAC cryptography algorithm.\n# Used in pam_timestamp module to calculate the keyed-hash message\n# authentication code.\n#\n# Note: It is recommended to check hmac(3) to see the possible algorithms\n# that are available in your system.\n#\nHMAC_CRYPTO_ALGO SHA512\nPASS_MIN_LEN 8\nPASS_MAX_DAYS 90\nPASS_MIN_DAYS 1\nUMASK 022\nENCRYPT_METHOD SHA512\n\npassword requisite pam_pwquality.so try_first_pass local_users_only retry=3 authtok_type=\nauth required pam_faillock.so preauth silent deny=5 unlock_time=900\nauth [default=die] pam_faillock.so authfail deny=5 unlock_time=900\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "module=pam_pwquality.so minlen=8 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1 PASS_MIN_LEN=8",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-03",
+    "Description": "Account lockout thresholds should be configured to limit brute-force sign-in attempts.",
+    "Status": 0,
+    "RawConfig": "password requisite pam_pwquality.so try_first_pass local_users_only retry=3 authtok_type=\nauth required pam_faillock.so preauth silent deny=5 unlock_time=900\nauth [default=die] pam_faillock.so authfail deny=5 unlock_time=900\n\n\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "module=pam_faillock.so deny=5 unlock_time=900",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-04",
+    "Description": "The permissions of /etc/passwd and /etc/shadow should be set to prevent unauthorized access to password information.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "/etc/passwd perm=644 | /etc/shadow perm=400",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-05",
+    "Description": "No accounts other than root should have UID 0.",
+    "Status": 0,
+    "RawConfig": "root:x:0:0:root:/root:/bin/bash\nbin:x:1:1:bin:/bin:/sbin/nologin\ndaemon:x:2:2:daemon:/sbin:/sbin/nologin\nadm:x:3:4:adm:/var/adm:/sbin/nologin\nlp:x:4:7:lp:/var/spool/lpd:/sbin/nologin\nsync:x:5:0:sync:/sbin:/bin/sync\nshutdown:x:6:0:shutdown:/sbin:/sbin/shutdown\nhalt:x:7:0:halt:/sbin:/sbin/halt\nmail:x:8:12:mail:/var/spool/mail:/sbin/nologin\noperator:x:11:0:operator:/root:/sbin/nologin\ngames:x:12:100:games:/usr/games:/sbin/nologin\nftp:x:14:50:FTP User:/var/ftp:/sbin/nologin\nnobody:x:65534:65534:Kernel Overflow User:/:/sbin/nologin\ntss:x:59:59:Account used for TPM access:/:/usr/sbin/nologin\nauditor:x:2000:2000::/home/auditor:/bin/bash\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "uid0_check=completed bad_accounts=",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-06",
+    "Description": "su command should be restricted to specific group (e.g. wheel group).",
+    "Status": 1,
+    "RawConfig": "#%PAM-1.0\nauth\t\trequired\tpam_env.so\nauth\t\tsufficient\tpam_rootok.so\n# Uncomment the following line to implicitly trust users in the \"wheel\" group.\n#auth\t\tsufficient\tpam_wheel.so trust use_uid\n# Uncomment the following line to require a user to be in the \"wheel\" group.\n#auth\t\trequired\tpam_wheel.so use_uid\nauth\t\tsubstack\tsystem-auth\nauth\t\tinclude\t\tpostlogin\naccount\t\tsufficient\tpam_succeed_if.so uid = 0 use_uid quiet\naccount\t\tinclude\t\tsystem-auth\npassword\tinclude\t\tsystem-auth\nsession\t\tinclude\t\tsystem-auth\nsession\t\tinclude\t\tpostlogin\nsession\t\toptional\tpam_xauth.so\n",
+    "VulnerableConfig": "pam_wheel=NOT_FOUND\n문제점1. /etc/pam.d/su 에 pam_wheel.so 설정이 없습니다. su 명령어 사용 제한이 적용되지 않았습니다.",
+    "ProcessedConfig": "pam_wheel_configured=false",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-07",
+    "Description": "Unnecessary default accounts should be removed or have nologin shell.",
+    "Status": 1,
+    "RawConfig": "root:x:0:0:root:/root:/bin/bash\nbin:x:1:1:bin:/bin:/sbin/nologin\ndaemon:x:2:2:daemon:/sbin:/sbin/nologin\nadm:x:3:4:adm:/var/adm:/sbin/nologin\nlp:x:4:7:lp:/var/spool/lpd:/sbin/nologin\nsync:x:5:0:sync:/sbin:/bin/sync\nshutdown:x:6:0:shutdown:/sbin:/sbin/shutdown\nhalt:x:7:0:halt:/sbin:/sbin/halt\nmail:x:8:12:mail:/var/spool/mail:/sbin/nologin\noperator:x:11:0:operator:/root:/sbin/nologin\ngames:x:12:100:games:/usr/games:/sbin/nologin\nftp:x:14:50:FTP User:/var/ftp:/sbin/nologin\nnobody:x:65534:65534:Kernel Overflow User:/:/sbin/nologin\ntss:x:59:59:Account used for TPM access:/:/usr/sbin/nologin\nauditor:x:2000:2000::/home/auditor:/bin/bash\n",
+    "VulnerableConfig": "unnecessary_accounts=sync (shell: /bin/sync),shutdown (shell: /sbin/shutdown),halt (shell: /sbin/halt)\n문제점1. 불필요한 계정이 존재하고 로그인 가능한 쉘이 부여되어 있습니다: sync (shell: /bin/sync), shutdown (shell: /sbin/shutdown), halt (shell: /sbin/halt)",
+    "ProcessedConfig": "unnecessary_check=done bad_count=3",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-08",
+    "Description": "Administrator group (wheel/sudo) should contain only necessary accounts.",
+    "Status": 0,
+    "RawConfig": "root:x:0:\nbin:x:1:\ndaemon:x:2:\nsys:x:3:\nadm:x:4:\ntty:x:5:\ndisk:x:6:\nlp:x:7:\nmem:x:8:\nkmem:x:9:\nwheel:x:10:\ncdrom:x:11:\nmail:x:12:\nman:x:15:\ndialout:x:18:\nfloppy:x:19:\ngames:x:20:\ntape:x:33:\nvideo:x:39:\nftp:x:50:\nlock:x:54:\naudio:x:63:\nusers:x:100:\nnobody:x:65534:\nutmp:x:22:\nutempter:x:35:\ntss:x:59:\nauditor:x:2000:\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "admin_group_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-09",
+    "Description": "No unnecessary groups should exist that are not used by any account.",
+    "Status": 1,
+    "RawConfig": "root:x:0:\nbin:x:1:\ndaemon:x:2:\nsys:x:3:\nadm:x:4:\ntty:x:5:\ndisk:x:6:\nlp:x:7:\nmem:x:8:\nkmem:x:9:\nwheel:x:10:\ncdrom:x:11:\nmail:x:12:\nman:x:15:\ndialout:x:18:\nfloppy:x:19:\ngames:x:20:\ntape:x:33:\nvideo:x:39:\nftp:x:50:\nlock:x:54:\naudio:x:63:\nusers:x:100:\nnobody:x:65534:\nutmp:x:22:\nutempter:x:35:\ntss:x:59:\nauditor:x:2000:\n",
+    "VulnerableConfig": "unnecessary_groups=lp,games\n문제점1. 시스템 운용에 불필요한 그룹이 존재합니다: lp, games",
+    "ProcessedConfig": "group_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-10",
+    "Description": "No duplicate UIDs should exist in /etc/passwd.",
+    "Status": 0,
+    "RawConfig": "root:x:0:0:root:/root:/bin/bash\nbin:x:1:1:bin:/bin:/sbin/nologin\ndaemon:x:2:2:daemon:/sbin:/sbin/nologin\nadm:x:3:4:adm:/var/adm:/sbin/nologin\nlp:x:4:7:lp:/var/spool/lpd:/sbin/nologin\nsync:x:5:0:sync:/sbin:/bin/sync\nshutdown:x:6:0:shutdown:/sbin:/sbin/shutdown\nhalt:x:7:0:halt:/sbin:/sbin/halt\nmail:x:8:12:mail:/var/spool/mail:/sbin/nologin\noperator:x:11:0:operator:/root:/sbin/nologin\ngames:x:12:100:games:/usr/games:/sbin/nologin\nftp:x:14:50:FTP User:/var/ftp:/sbin/nologin\nnobody:x:65534:65534:Kernel Overflow User:/:/sbin/nologin\ntss:x:59:59:Account used for TPM access:/:/usr/sbin/nologin\nauditor:x:2000:2000::/home/auditor:/bin/bash\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "duplicate_uid_check=done duplicate_count=0",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-11",
+    "Description": "Accounts that do not require login should have /bin/false or /sbin/nologin shell.",
+    "Status": 1,
+    "RawConfig": "root:x:0:0:root:/root:/bin/bash\nbin:x:1:1:bin:/bin:/sbin/nologin\ndaemon:x:2:2:daemon:/sbin:/sbin/nologin\nadm:x:3:4:adm:/var/adm:/sbin/nologin\nlp:x:4:7:lp:/var/spool/lpd:/sbin/nologin\nsync:x:5:0:sync:/sbin:/bin/sync\nshutdown:x:6:0:shutdown:/sbin:/sbin/shutdown\nhalt:x:7:0:halt:/sbin:/sbin/halt\nmail:x:8:12:mail:/var/spool/mail:/sbin/nologin\noperator:x:11:0:operator:/root:/sbin/nologin\ngames:x:12:100:games:/usr/games:/sbin/nologin\nftp:x:14:50:FTP User:/var/ftp:/sbin/nologin\nnobody:x:65534:65534:Kernel Overflow User:/:/sbin/nologin\ntss:x:59:59:Account used for TPM access:/:/usr/sbin/nologin\nauditor:x:2000:2000::/home/auditor:/bin/bash\n",
+    "VulnerableConfig": "bad_shell_accounts=shutdown(UID:6, shell:/sbin/shutdown);halt(UID:7, shell:/sbin/halt)\n문제점1. 로그인 불필요 계정에 잘못된 쉘이 부여되어 있습니다: shutdown(UID:6, shell:/sbin/shutdown), halt(UID:7, shell:/sbin/halt)",
+    "ProcessedConfig": "shell_check=done bad_count=2",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-12",
+    "Description": "Session timeout should be set to 600 seconds (10 minutes) or less.",
+    "Status": 0,
+    "RawConfig": "# FILE: /etc/profile\nPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\nTMOUT=600\nexport TMOUT\nreadonly TMOUT\numask 022\n\n# FILE: /etc/csh.login\n# /etc/csh.login\n\n# System wide environment and startup programs, for login setup\n\nif ( ! ${?PATH} ) then\n        if ( $uid == 0 ) then\n\t\tsetenv PATH \"/usr/local/sbin:/usr/sbin:/usr/local/bin:/usr/bin\"\n        else\n\t\tsetenv PATH \"/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin\"\n        endif\nelse\n\t#add sbin directories to the path\n\tforeach p ( /usr/local/sbin /usr/sbin )\n\t\tswitch (\":${PATH}:\")\n\t\tcase \"*:${p}:*\":\n\t\t\tbreaksw\n\t\tdefault:\n\t\t\tif ( $uid == 0 ) then\n\t                        set path = ( ${p} ${path:q} )\n\t\t\telse\n\t                        set path = ( ${path:q} ${p} )\n\t\t\tendif\n\t\t\tbreaksw\n\t\tendsw\n\tend\n\tunset p\nendif\n\nsetenv HOSTNAME `/usr/bin/hostname`\nset history=1000\n\nif ( -d /etc/profile.d ) then\n        set nonomatch\n        foreach i ( /etc/profile.d/*.csh )\n                if ( -r \"$i\" ) then\n\t                        if ($?prompt) then\n\t                              source \"$i\"\n\t                        else\n\t                              source \"$i\" \u003e\u0026 /dev/null\n\t                        endif\n                endif\n        end\n        unset i nonomatch\nendif\n\n# FILE: /etc/csh.cshrc\nset autologout=10\n\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "TMOUT=600 timeout_ok=true",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-13",
+    "Description": "Safe password encryption algorithm (SHA-2 or stronger) should be used.",
+    "Status": 0,
+    "RawConfig": "root:!locked::0:99999:7:::\nbin:*:19469:0:99999:7:::\ndaemon:*:19469:0:99999:7:::\nadm:*:19469:0:99999:7:::\nlp:*:19469:0:99999:7:::\nsync:*:19469:0:99999:7:::\nshutdown:*:19469:0:99999:7:::\nhalt:*:19469:0:99999:7:::\nmail:*:19469:0:99999:7:::\noperator:*:19469:0:99999:7:::\ngames:*:19469:0:99999:7:::\nftp:*:19469:0:99999:7:::\nnobody:*:19469:0:99999:7:::\ntss:!!:19680::::::\nauditor:$6$secure$wS3z2W6L6D3HY4.3lxKqF1LkEf4bWpR7Qd43u1s2kPS6qgSKoT4GXfRrQqNlh9Mz.JqKxkHXKSR8cFdfLl7PR0:20625:1:90:7:::\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "source=/etc/shadow checked=auditor=SHA512",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-14",
+    "Description": "PATH environment variable should not contain '.' at the beginning or middle.",
+    "Status": 0,
+    "RawConfig": "# FILE: /etc/profile\nPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\nTMOUT=600\nexport TMOUT\nreadonly TMOUT\numask 022\n\n# FILE: /root/.cshrc\n# .cshrc\n\n# User specific aliases and functions\n\nalias rm 'rm -i'\nalias cp 'cp -i'\nalias mv 'mv -i'\n\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "path_dot_check=done insecure=false",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-15",
+    "Description": "No files or directories should exist without an owner (orphaned files).",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "orphan_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-16",
+    "Description": "/etc/passwd should be owned by root with permission 644 or less.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "/etc/passwd perm=644 owner_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-17",
+    "Description": "System startup scripts should be owned by root and not writable by general users.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "startup_script_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-18",
+    "Description": "/etc/shadow should be owned by root with permission 400 or less.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "/etc/shadow perm=400 owner_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-19",
+    "Description": "/etc/hosts should be owned by root with permission 644 or less.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "/etc/hosts perm=644 owner_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-20",
+    "Description": "/etc/(x)inetd.conf should be owned by root with permission 600 or less.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "inetd_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-21",
+    "Description": "syslog/rsyslog config should be owned by root/bin/sys with permission 640 or less.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "syslog_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-22",
+    "Description": "/etc/services should be owned by root/bin/sys with permission 644 or less.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "/etc/services perm=644 owner=root",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-23",
+    "Description": "Major executables should not have SUID or SGID bit set unnecessarily.",
+    "Status": 1,
+    "RawConfig": "/usr/bin/passwd\n/usr/bin/newgrp\n/usr/bin/chage\n/usr/bin/gpasswd\n/usr/bin/su\n/usr/bin/umount\n/usr/bin/mount\n/usr/bin/sudo\n/usr/sbin/pam_timestamp_check\n/usr/sbin/userhelper\n/usr/sbin/unix_chkpwd\n\n/usr/bin/write\n",
+    "VulnerableConfig": "SUID_files:\n/usr/bin/passwd\n/usr/bin/newgrp\n/usr/bin/chage\n/usr/bin/gpasswd\n/usr/bin/su\n/usr/bin/umount\n/usr/bin/mount\n/usr/bin/sudo\n/usr/sbin/pam_timestamp_check\n/usr/sbin/userhelper\n/usr/sbin/unix_chkpwd\n\nSGID_files:\n/usr/bin/write\n\n문제점1. 주요 실행 파일에 SUID 또는 SGID 비트가 설정되어 있습니다.",
+    "ProcessedConfig": "suid_sgid_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-24",
+    "Description": "User/system environment variable files (.bash_profile, .bashrc, .profile) should be owned by root or the user with no other write permission.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "env_file_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-25",
+    "Description": "World writable files should not exist or their reason should be known.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "world_writable_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-26",
+    "Description": "No non-device files should exist in /dev directory.",
+    "Status": 1,
+    "RawConfig": "/dev/console\n",
+    "VulnerableConfig": "non_device_files_in_dev:\n/dev/console\n\n문제점1. /dev 디렉터리에 일반 파일(디바이스 파일이 아닌)이 존재합니다.",
+    "ProcessedConfig": "dev_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-27",
+    "Description": "rhosts and hosts.equiv files should be properly configured or not used.",
+    "Status": 0,
+    "RawConfig": "\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "rhosts_check=done",
+    "ErrMsg": "open /etc/hosts.equiv: no such file or directory\nopen /root/.rhosts: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-28",
+    "Description": "Specific IP and port access restrictions should be configured (hosts.allow/deny).",
+    "Status": 1,
+    "RawConfig": "\n",
+    "VulnerableConfig": "hosts_allow_deny=NOT_CONFIGURED\n문제점1. 특정 호스트에 대한 IP/포트 접근 제한이 설정되어 있지 않습니다.",
+    "ProcessedConfig": "access_restriction_check=done",
+    "ErrMsg": "open /etc/hosts.allow: no such file or directory\nopen /etc/hosts.deny: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-29",
+    "Description": "/etc/hosts.lpd should not exist or be owned by root with permission 600 or less if used.",
+    "Status": 0,
+    "RawConfig": "/etc/hosts.lpd does not exist",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "/etc/hosts.lpd=not_exist",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-30",
+    "Description": "UMASK should be set to 022 or greater (more restrictive).",
+    "Status": 0,
+    "RawConfig": "#\n# Please note that the parameters in this configuration file control the\n# behavior of the tools from the shadow-utils component. None of these\n# tools uses the PAM mechanism, and the utilities that use PAM (such as the\n# passwd command) should therefore be configured elsewhere. Refer to\n# /etc/pam.d/system-auth for more information.\n#\n\n#\n# Delay in seconds before being allowed another attempt after a login failure\n# Note: When PAM is used, some modules may enforce a minimum delay (e.g.\n#       pam_unix(8) enforces a 2s delay)\n#\n#FAIL_DELAY\t\t3\n\n# Currently FAILLOG_ENAB is not supported\n\n#\n# Enable display of unknown usernames when login(1) failures are recorded.\n#\n#LOG_UNKFAIL_ENAB\tno\n\n# Currently LOG_OK_LOGINS is not supported\n\n# Currently LASTLOG_ENAB is not supported\n\n#\n# Limit the highest user ID number for which the lastlog entries should\n# be updated.\n#\n# No LASTLOG_UID_MAX means that there is no user ID limit for writing\n# lastlog entries.\n#\n#LASTLOG_UID_MAX\n\n# Currently MAIL_CHECK_ENAB is not supported\n\n# Currently OBSCURE_CHECKS_ENAB is not supported\n\n# Currently PORTTIME_CHECKS_ENAB is not supported\n\n# Currently QUOTAS_ENAB is not supported\n\n# Currently SYSLOG_SU_ENAB is not supported\n\n#\n# Enable \"syslog\" logging of newgrp(1) and sg(1) activity.\n#\n#SYSLOG_SG_ENAB\t\tyes\n\n# Currently CONSOLE is not supported\n\n# Currently SULOG_FILE is not supported\n\n# Currently MOTD_FILE is not supported\n\n# Currently ISSUE_FILE is not supported\n\n# Currently TTYTYPE_FILE is not supported\n\n# Currently FTMP_FILE is not supported\n\n# Currently NOLOGINS_FILE is not supported\n\n# Currently SU_NAME is not supported\n\n# *REQUIRED*\n#   Directory where mailboxes reside, _or_ name of file, relative to the\n#   home directory.  If you _do_ define both, MAIL_DIR takes precedence.\n#\nMAIL_DIR\t/var/spool/mail\n#MAIL_FILE\t.mail\n\n#\n# If defined, file which inhibits all the usual chatter during the login\n# sequence.  If a full pathname, then hushed mode will be enabled if the\n# user's name or shell are found in the file.  If not a full pathname, then\n# hushed mode will be enabled if the file exists in the user's home directory.\n#\n#HUSHLOGIN_FILE\t.hushlogin\n#HUSHLOGIN_FILE\t/etc/hushlogins\n\n# Currently ENV_TZ is not supported\n\n# Currently ENV_HZ is not supported\n\n#\n# The default PATH settings, for superuser and normal users.\n#\n# (they are minimal, add the rest in the shell startup files)\n#ENV_SUPATH\tPATH=/sbin:/bin:/usr/sbin:/usr/bin\n#ENV_PATH\tPATH=/bin:/usr/bin\n\n#\n# Terminal permissions\n#\n#\tTTYGROUP\tLogin tty will be assigned this group ownership.\n#\tTTYPERM\t\tLogin tty will be set to this permission.\n#\n# If you have a write(1) program which is \"setgid\" to a special group\n# which owns the terminals, define TTYGROUP as the number of such group\n# and TTYPERM as 0620.  Otherwise leave TTYGROUP commented out and\n# set TTYPERM to either 622 or 600.\n#\n#TTYGROUP\ttty\n#TTYPERM\t\t0600\n\n# Currently ERASECHAR, KILLCHAR and ULIMIT are not supported\n\n# Default initial \"umask\" value used by login(1) on non-PAM enabled systems.\n# Default \"umask\" value for pam_umask(8) on PAM enabled systems.\n# UMASK is also used by useradd(8) and newusers(8) to set the mode for new\n# home directories if HOME_MODE is not set.\n# 022 is the default value, but 027, or even 077, could be considered\n# for increased privacy. There is no One True Answer here: each sysadmin\n# must make up their mind.\nUMASK\t\t022\n\n# HOME_MODE is used by useradd(8) and newusers(8) to set the mode for new\n# home directories.\n# If HOME_MODE is not set, the value of UMASK is used to create the mode.\nHOME_MODE\t0700\n\n# Password aging controls:\n#\n#\tPASS_MAX_DAYS\tMaximum number of days a password may be used.\n#\tPASS_MIN_DAYS\tMinimum number of days allowed between password changes.\n#\tPASS_MIN_LEN\tMinimum acceptable password length.\n#\tPASS_WARN_AGE\tNumber of days warning given before a password expires.\n#\nPASS_MAX_DAYS\t99999\nPASS_MIN_DAYS\t0\nPASS_WARN_AGE\t7\n\n# Currently PASS_MIN_LEN is not supported\n\n# Currently SU_WHEEL_ONLY is not supported\n\n# Currently CRACKLIB_DICTPATH is not supported\n\n#\n# Min/max values for automatic uid selection in useradd(8)\n#\nUID_MIN                  1000\nUID_MAX                 60000\n# System accounts\nSYS_UID_MIN               201\nSYS_UID_MAX               999\n# Extra per user uids\nSUB_UID_MIN\t\t   100000\nSUB_UID_MAX\t\t600100000\nSUB_UID_COUNT\t\t    65536\n\n#\n# Min/max values for automatic gid selection in groupadd(8)\n#\nGID_MIN                  1000\nGID_MAX                 60000\n# System accounts\nSYS_GID_MIN               201\nSYS_GID_MAX               999\n# Extra per user group ids\nSUB_GID_MIN\t\t   100000\nSUB_GID_MAX\t\t600100000\nSUB_GID_COUNT\t\t    65536\n\n#\n# Max number of login(1) retries if password is bad\n#\n#LOGIN_RETRIES\t\t3\n\n#\n# Max time in seconds for login(1)\n#\n#LOGIN_TIMEOUT\t\t60\n\n# Currently PASS_CHANGE_TRIES is not supported\n\n# Currently PASS_ALWAYS_WARN is not supported\n\n# Currently PASS_MAX_LEN is not supported\n\n# Currently CHFN_AUTH is not supported\n\n#\n# Which fields may be changed by regular users using chfn(1) - use\n# any combination of letters \"frwh\" (full name, room number, work\n# phone, home phone).  If not defined, no changes are allowed.\n# For backward compatibility, \"yes\" = \"rwh\" and \"no\" = \"frwh\".\n# \n#CHFN_RESTRICT\t\trwh\n\n# Currently LOGIN_STRING is not supported\n\n# Currently MD5_CRYPT_ENAB is not supported\n\n#\n# If set to MD5, MD5-based algorithm will be used for encrypting password\n# If set to SHA256, SHA256-based algorithm will be used for encrypting password\n# If set to SHA512, SHA512-based algorithm will be used for encrypting password\n# If set to BLOWFISH, BLOWFISH-based algorithm will be used for encrypting password\n# If set to DES, DES-based algorithm will be used for encrypting password (default)\n#\nENCRYPT_METHOD SHA512\n\n#\n# Only works if ENCRYPT_METHOD is set to SHA256 or SHA512.\n#\n# Define the number of SHA rounds.\n# With a lot of rounds, it is more difficult to brute-force the password.\n# However, more CPU resources will be needed to authenticate users if\n# this value is increased.\n#\n# If not specified, the libc will choose the default number of rounds (5000).\n# The values must be within the 1000-999999999 range.\n#\n#SHA_CRYPT_MAX_ROUNDS 5000\n\n# Currently SHA_CRYPT_MIN_ROUNDS is not supported\n\n# Currently BCRYPT_MIN_ROUNDS and BCRYPT_MAX_ROUNDS are not supported\n\n# Currently CONSOLE_GROUPS is not supported\n\n#\n# Should login be allowed if we can't cd to the home directory?\n# Default is yes.\n#\n#DEFAULT_HOME\tyes\n\n# Currently ENVIRON_FILE is not supported\n\n#\n# If defined, this command is run when removing a user.\n# It should remove any at/cron/print jobs etc. owned by\n# the user to be removed (passed as the first argument).\n#\n#USERDEL_CMD\t/usr/sbin/userdel_local\n\n#\n# Enables userdel(8) to remove user groups if no members exist.\n#\nUSERGROUPS_ENAB yes\n\n#\n# If set to a non-zero number, the shadow utilities will make sure that\n# groups never have more than this number of users on one line.\n# This permits to support split groups (groups split into multiple lines,\n# with the same group ID, to avoid limitation of the line length in the\n# group file).\n#\n# 0 is the default value and disables this feature.\n#\n#MAX_MEMBERS_PER_GROUP\t0\n\n#\n# If useradd(8) should create home directories for users by default (non\n# system users only).\n# This option is overridden with the -M or -m flags on the useradd(8)\n# command-line.\n#\nCREATE_HOME\tyes\n\n#\n# Force use shadow, even if shadow passwd \u0026 shadow group files are\n# missing.\n#\n#FORCE_SHADOW    yes\n\n#\n# Select the HMAC cryptography algorithm.\n# Used in pam_timestamp module to calculate the keyed-hash message\n# authentication code.\n#\n# Note: It is recommended to check hmac(3) to see the possible algorithms\n# that are available in your system.\n#\nHMAC_CRYPTO_ALGO SHA512\nPASS_MIN_LEN 8\nPASS_MAX_DAYS 90\nPASS_MIN_DAYS 1\nUMASK 022\nENCRYPT_METHOD SHA512\n\nPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\nTMOUT=600\nexport TMOUT\nreadonly TMOUT\numask 022\n\n# /etc/bashrc\n\n# System wide functions and aliases\n# Environment stuff goes in /etc/profile\n\n# It's NOT a good idea to change this file unless you know what you\n# are doing. It's much better to create a custom.sh shell script in\n# /etc/profile.d/ to make custom changes to your environment, as this\n# will prevent the need for merging in future updates.\n\n# Prevent doublesourcing\nif [ -z \"$BASHRCSOURCED\" ]; then\n  BASHRCSOURCED=\"Y\"\n\n  # are we an interactive shell?\n  if [ \"$PS1\" ]; then\n    if [ -z \"$PROMPT_COMMAND\" ]; then\n      case $TERM in\n      xterm*|vte*)\n        if [ -e /etc/sysconfig/bash-prompt-xterm ]; then\n            PROMPT_COMMAND=/etc/sysconfig/bash-prompt-xterm\n        else\n            PROMPT_COMMAND='printf \"\\033]0;%s@%s:%s\\007\" \"${USER}\" \"${HOSTNAME%%.*}\" \"${PWD/#$HOME/\\~}\"'\n        fi\n        ;;\n      screen*)\n        if [ -e /etc/sysconfig/bash-prompt-screen ]; then\n            PROMPT_COMMAND=/etc/sysconfig/bash-prompt-screen\n        else\n            PROMPT_COMMAND='printf \"\\033k%s@%s:%s\\033\\\\\" \"${USER}\" \"${HOSTNAME%%.*}\" \"${PWD/#$HOME/\\~}\"'\n        fi\n        ;;\n      *)\n        [ -e /etc/sysconfig/bash-prompt-default ] \u0026\u0026 PROMPT_COMMAND=/etc/sysconfig/bash-prompt-default\n        ;;\n      esac\n    fi\n    # Turn on parallel history\n    shopt -s histappend\n    history -a\n    # Turn on checkwinsize\n    shopt -s checkwinsize\n    [ \"$PS1\" = \"\\\\s-\\\\v\\\\\\$ \" ] \u0026\u0026 PS1=\"[\\u@\\h \\W]\\\\$ \"\n    # You might want to have e.g. tty in prompt (e.g. more virtual machines)\n    # and console windows\n    # If you want to do so, just add e.g.\n    # if [ \"$PS1\" ]; then\n    #   PS1=\"[\\u@\\h:\\l \\W]\\\\$ \"\n    # fi\n    # to your custom modification shell script in /etc/profile.d/ directory\n  fi\n\n  if ! shopt -q login_shell ; then # We're not a login shell\n    # Need to redefine pathmunge, it gets undefined at the end of /etc/profile\n    pathmunge () {\n        case \":${PATH}:\" in\n            *:\"$1\":*)\n                ;;\n            *)\n                if [ \"$2\" = \"after\" ] ; then\n                    PATH=$PATH:$1\n                else\n                    PATH=$1:$PATH\n                fi\n        esac\n    }\n\n    # Set default umask for non-login shell only if it is set to 0\n    [ `umask` -eq 0 ] \u0026\u0026 umask 022\n\n    SHELL=/bin/bash\n    # Only display echos from profile.d scripts if we are no login shell\n    # and interactive - otherwise just process them to set envvars\n    for i in /etc/profile.d/*.sh; do\n        if [ -r \"$i\" ]; then\n            if [ \"$PS1\" ]; then\n                . \"$i\"\n            else\n                . \"$i\" \u003e/dev/null\n            fi\n        fi\n    done\n\n    unset i\n    unset -f pathmunge\n  fi\n\nfi\n# vim:ts=4:sw=4\n\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "UMASK=022",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-31",
+    "Description": "Home directories should be owned by the corresponding user and not writable by others.",
+    "Status": 1,
+    "RawConfig": "",
+    "VulnerableConfig": "/var/spool/mail (other write)\n문제점1. 홈 디렉토리 소유자 또는 타 사용자 쓰기 권한이 올바르지 않습니다.",
+    "ProcessedConfig": "home_dir_check=done issues=1",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-32",
+    "Description": "Home directory specified in /etc/passwd must actually exist.",
+    "Status": 0,
+    "RawConfig": "root:x:0:0:root:/root:/bin/bash\nbin:x:1:1:bin:/bin:/sbin/nologin\ndaemon:x:2:2:daemon:/sbin:/sbin/nologin\nadm:x:3:4:adm:/var/adm:/sbin/nologin\nlp:x:4:7:lp:/var/spool/lpd:/sbin/nologin\nsync:x:5:0:sync:/sbin:/bin/sync\nshutdown:x:6:0:shutdown:/sbin:/sbin/shutdown\nhalt:x:7:0:halt:/sbin:/sbin/halt\nmail:x:8:12:mail:/var/spool/mail:/sbin/nologin\noperator:x:11:0:operator:/root:/sbin/nologin\ngames:x:12:100:games:/usr/games:/sbin/nologin\nftp:x:14:50:FTP User:/var/ftp:/sbin/nologin\nnobody:x:65534:65534:Kernel Overflow User:/:/sbin/nologin\ntss:x:59:59:Account used for TPM access:/:/usr/sbin/nologin\nauditor:x:2000:2000::/home/auditor:/bin/bash\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "home_existence_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-33",
+    "Description": "Unnecessary or suspicious hidden files and directories should be removed.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "hidden_file_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-34",
+    "Description": "Finger service should be disabled.",
+    "Status": 0,
+    "RawConfig": "not_active",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "finger_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-35",
+    "Description": "Anonymous access to shared services should be restricted.",
+    "Status": 0,
+    "RawConfig": "anonymous_enable=NO\n\n[public]\nguest ok = no\nmap to guest = never\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "anonymous_access_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-36",
+    "Description": "Unnecessary r-series services (rsh, rlogin, rexec) should be disabled.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "r_services_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-37",
+    "Description": "crontab and at related files should have permission 640 or less and no general user execute permission.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "crontab_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-38",
+    "Description": "DoS-vulnerable services (echo, discard, daytime, chargen) should be disabled.",
+    "Status": 0,
+    "RawConfig": "not_active",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "dos_service_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-39",
+    "Description": "Unnecessary NFS services should be disabled.",
+    "Status": 0,
+    "RawConfig": "not_active",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "nfs_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-40",
+    "Description": "NFS access control should be properly configured.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "nfs_access_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-41",
+    "Description": "Unnecessary automountd service should be disabled.",
+    "Status": 0,
+    "RawConfig": "not_active",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "automountd_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-42",
+    "Description": "Unnecessary RPC services should be disabled.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "rpc_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-43",
+    "Description": "NIS/NIS+ service should be disabled or NIS+ should be used if necessary.",
+    "Status": 0,
+    "RawConfig": "not_active",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "nis_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-44",
+    "Description": "tftp, talk, ntalk services should be disabled.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "tftp_talk_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-45",
+    "Description": "Mail service version should be up to date.",
+    "Status": 2,
+    "RawConfig": "not_active",
+    "VulnerableConfig": "문제점1. 메일 서비스 버전을 확인하고 최신 버전으로 유지하세요.",
+    "ProcessedConfig": "mail_version_check=interview",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-46",
+    "Description": "일반 사용자의 메일 서비스 실행을 제한해야 합니다.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "mail_restrict_check=done",
+    "ErrMsg": "open /etc/mail/sendmail.mc: no such file or directory\nopen /etc/postfix/main.cf: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-47",
+    "Description": "스팸 메일 릴레이를 제한해야 합니다.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "mail_relay_check=done",
+    "ErrMsg": "open /etc/mail/sendmail.mc: no such file or directory\nopen /etc/postfix/main.cf: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-48",
+    "Description": "expn, vrfy 명령어를 제한해야 합니다.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "expn_vrfy_check=done",
+    "ErrMsg": "open /etc/mail/sendmail.mc: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-49",
+    "Description": "DNS 보안 버전 패치를 주기적으로 적용해야 합니다.",
+    "Status": 2,
+    "RawConfig": "ports=53",
+    "VulnerableConfig": "문제점1. DNS 보안 패치 적용 여부를 수동으로 확인해야 합니다.",
+    "ProcessedConfig": "dns_patch_check=interview",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-50",
+    "Description": "DNS Zone Transfer는 허가된 사용자에게만 허용해야 합니다.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "zone_transfer_check=done",
+    "ErrMsg": "open /etc/named.conf: no such file or directory\nopen /etc/bind/named.conf: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-51",
+    "Description": "DNS 동적 업데이트는 비활성화하거나 적절히 통제해야 합니다.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "dynamic_update_check=done",
+    "ErrMsg": "open /etc/named.conf: no such file or directory\nopen /etc/bind/named.conf: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-52",
+    "Description": "Telnet service should be disabled (use SSH instead).",
+    "Status": 0,
+    "RawConfig": "not_active",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "telnet_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-53",
+    "Description": "FTP banner should not expose unnecessary information.",
+    "Status": 1,
+    "RawConfig": "anonymous_enable=NO\n",
+    "VulnerableConfig": "ftpd_banner=NOT_SET\n문제점1. FTP 접속 배너에 정보가 노출될 수 있습니다. ftpd_banner 설정을 확인하세요.",
+    "ProcessedConfig": "ftp_banner_check=done",
+    "ErrMsg": "open /etc/vsftpd.conf: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-54",
+    "Description": "Unencrypted FTP service should be disabled.",
+    "Status": 0,
+    "RawConfig": "not_active",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "ftp_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-55",
+    "Description": "FTP accounts should have nologin or false shell.",
+    "Status": 0,
+    "RawConfig": "root:x:0:0:root:/root:/bin/bash\nbin:x:1:1:bin:/bin:/sbin/nologin\ndaemon:x:2:2:daemon:/sbin:/sbin/nologin\nadm:x:3:4:adm:/var/adm:/sbin/nologin\nlp:x:4:7:lp:/var/spool/lpd:/sbin/nologin\nsync:x:5:0:sync:/sbin:/bin/sync\nshutdown:x:6:0:shutdown:/sbin:/sbin/shutdown\nhalt:x:7:0:halt:/sbin:/sbin/halt\nmail:x:8:12:mail:/var/spool/mail:/sbin/nologin\noperator:x:11:0:operator:/root:/sbin/nologin\ngames:x:12:100:games:/usr/games:/sbin/nologin\nftp:x:14:50:FTP User:/var/ftp:/sbin/nologin\nnobody:x:65534:65534:Kernel Overflow User:/:/sbin/nologin\ntss:x:59:59:Account used for TPM access:/:/usr/sbin/nologin\nauditor:x:2000:2000::/home/auditor:/bin/bash\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "ftp_shell_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-56",
+    "Description": "FTP access control should be configured (e.g. tcp_wrappers or vsftpd config).",
+    "Status": 1,
+    "RawConfig": "anonymous_enable=NO\n",
+    "VulnerableConfig": "ftp_access_control=NOT_FOUND\n문제점1. FTP 서비스에 접근 제어 설정이 적용되어 있지 않습니다.",
+    "ProcessedConfig": "ftp_access_check=done",
+    "ErrMsg": "open /etc/vsftpd.conf: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-57",
+    "Description": "root account should be blocked from FTP login (ftpusers file).",
+    "Status": 1,
+    "RawConfig": "",
+    "VulnerableConfig": "root_in_ftpusers=false\n문제점1. ftpusers 파일에 root 계정이 차단되어 있지 않습니다.",
+    "ProcessedConfig": "ftpusers_root_block=false",
+    "ErrMsg": "open /etc/ftpusers: no such file or directory\nopen /etc/vsftpd/ftpusers: no such file or directory\nopen /etc/vsftpd/user_list: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-58",
+    "Description": "SNMP service should not be running if not necessary.",
+    "Status": 0,
+    "RawConfig": "not_active",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "snmp_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-59",
+    "Description": "SNMP should use v3 or higher if enabled.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "snmp_version_check=done",
+    "ErrMsg": "open /etc/snmp/snmpd.conf: no such file or directory\nopen /etc/snmpd.conf: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-60",
+    "Description": "SNMP Community String should be complex (not public/private).",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "snmp_community_check=done",
+    "ErrMsg": "open /etc/snmp/snmpd.conf: no such file or directory\nopen /etc/snmpd.conf: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-61",
+    "Description": "SNMP should have proper access control configured.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "snmp_acl_check=done",
+    "ErrMsg": "open /etc/snmp/snmpd.conf: no such file or directory\nopen /etc/snmpd.conf: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-62",
+    "Description": "Login warning banner should be set for SSH, Telnet, FTP, etc.",
+    "Status": 0,
+    "RawConfig": "\\S\nKernel \\r on an \\m\n\n\n\\S\nKernel \\r on an \\m\n\n\nPermitRootLogin no\nPasswordAuthentication yes\n\n",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "banner_check=done",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-63",
+    "Description": "/etc/sudoers should be owned by root with permission exactly 640.",
+    "Status": 1,
+    "RawConfig": "",
+    "VulnerableConfig": "/etc/sudoers perm=440 owner=root\n문제점1. /etc/sudoers 파일의 소유자(root) 또는 권한(640)이 올바르지 않습니다.",
+    "ProcessedConfig": "/etc/sudoers perm=440",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-64",
+    "Description": "Periodic security patches and vendor recommendations should be applied.",
+    "Status": 2,
+    "RawConfig": "linux a1e924614a3c 6.12.76-linuxkit #1 smp fri may 29 10:00:01 utc 2026 aarch64 aarch64 aarch64 gnu/linux\n\nname=\"rocky linux\"\nversion=\"9.3 (blue onyx)\"\nid=\"rocky\"\nid_like=\"rhel centos fedora\"\nversion_id=\"9.3\"\nplatform_id=\"platform:el9\"\npretty_name=\"rocky linux 9.3 (blue onyx)\"\nansi_color=\"0;32\"\nlogo=\"fedora-logo-icon\"\ncpe_name=\"cpe:/o:rocky:rocky:9::baseos\"\nhome_url=\"https://rockylinux.org/\"\nbug_report_url=\"https://bugs.rockylinux.org/\"\nsupport_end=\"2032-05-31\"\nrocky_support_product=\"rocky-linux-9\"\nrocky_support_product_version=\"9.3\"\nredhat_support_product=\"rocky linux\"\nredhat_support_product_version=\"9.3\"\n",
+    "VulnerableConfig": "문제점1. 주기적 보안 패치 및 벤더 권고사항 적용 여부를 수동으로 확인해야 합니다.",
+    "ProcessedConfig": "patch_check=interview",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-65",
+    "Description": "NTP time synchronization should be properly configured.",
+    "Status": 1,
+    "RawConfig": "",
+    "VulnerableConfig": "ntp_server=NOT_FOUND\n문제점1. NTP 시간 동기화 설정이 되어 있지 않습니다.",
+    "ProcessedConfig": "ntp_check=done",
+    "ErrMsg": "open /etc/ntp.conf: no such file or directory\nopen /etc/chrony.conf: no such file or directory\nopen /etc/chrony/chrony.conf: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-66",
+    "Description": "System logging should be configured according to security policy.",
+    "Status": 1,
+    "RawConfig": "",
+    "VulnerableConfig": "syslog_policy=NOT_FOUND\n문제점1. 보안 정책에 따른 시스템 로깅 설정이 되어 있지 않습니다.",
+    "ProcessedConfig": "logging_check=done",
+    "ErrMsg": "open /etc/rsyslog.conf: no such file or directory",
+    "MitreAttack": {}
+  },
+  {
+    "Code": "U-67",
+    "Description": "Log directory and files should be owned by root with permission 644 or less.",
+    "Status": 0,
+    "RawConfig": "",
+    "VulnerableConfig": "",
+    "ProcessedConfig": "/var/log perm=755",
+    "ErrMsg": "",
+    "MitreAttack": {}
+  }
+]

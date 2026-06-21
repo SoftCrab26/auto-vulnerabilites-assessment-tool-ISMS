@@ -3,10 +3,24 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 )
+
+type JSONCheckResult struct {
+	OS               string
+	Item             int
+	Description      string
+	Status           Status
+	RawConfig        string
+	VulnerableConfig string
+	ProcessedConfig  string
+	ErrMsg           string
+	MitreAttack      MitreAttack
+}
 
 func getLocalIP() string {
 	addrs, err := net.InterfaceAddrs()
@@ -29,6 +43,17 @@ func sanitize(s string) string {
 }
 
 func main() {
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "unknown_host"
+	}
+
+	ip := getLocalIP()
+	baseName := fmt.Sprintf("%s_%s", sanitize(hostname), sanitize(ip))
+
+	cleanupStdout := setupStdoutLogging(baseName + ".stdout.log")
+	defer cleanupStdout()
+
 	runtime := collectRuntimeData()
 	services := detectServices(runtime)
 	ctx := ScanContext{
@@ -152,16 +177,9 @@ func main() {
 	// =========================
 	// JSON FILE OUTPUT
 	// =========================
-	hostname, err := os.Hostname()
-	if err != nil {
-		hostname = "unknown_host"
-	}
+	fileName := baseName + ".json"
 
-	ip := getLocalIP()
-
-	fileName := fmt.Sprintf("%s_%s.json", sanitize(hostname), sanitize(ip))
-
-	jsonData, err := json.MarshalIndent(results, "", "  ")
+	jsonData, err := json.MarshalIndent(toJSONCheckResults(results), "", "  ")
 	if err != nil {
 		fmt.Println("JSON marshal error:", err)
 		return
@@ -174,4 +192,67 @@ func main() {
 	}
 
 	fmt.Println("JSON saved to:", fileName)
+	fmt.Println("STDOUT saved to:", baseName+".stdout.log")
+}
+
+func toJSONCheckResults(results []CheckResult) []JSONCheckResult {
+	jsonResults := make([]JSONCheckResult, 0, len(results))
+	for _, result := range results {
+		jsonResults = append(jsonResults, JSONCheckResult{
+			OS:               "LINUX",
+			Item:             parseCheckItem(result.Code),
+			Description:      result.Description,
+			Status:           result.Status,
+			RawConfig:        result.RawConfig,
+			VulnerableConfig: result.VulnerableConfig,
+			ProcessedConfig:  result.ProcessedConfig,
+			ErrMsg:           result.ErrMsg,
+			MitreAttack:      result.MitreAttack,
+		})
+	}
+	return jsonResults
+}
+
+func parseCheckItem(code string) int {
+	parts := strings.Split(code, "-")
+	if len(parts) != 2 {
+		return 0
+	}
+	item, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return 0
+	}
+	return item
+}
+
+func setupStdoutLogging(path string) func() {
+	stdout := os.Stdout
+	file, err := os.Create(path)
+	if err != nil {
+		fmt.Println("stdout log create error:", err)
+		return func() {}
+	}
+
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		fmt.Println("stdout pipe create error:", err)
+		_ = file.Close()
+		return func() {}
+	}
+
+	done := make(chan struct{})
+	go func() {
+		_, _ = io.Copy(io.MultiWriter(stdout, file), reader)
+		_ = reader.Close()
+		_ = file.Close()
+		close(done)
+	}()
+
+	os.Stdout = writer
+
+	return func() {
+		_ = writer.Close()
+		<-done
+		os.Stdout = stdout
+	}
 }

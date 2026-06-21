@@ -37,8 +37,13 @@ start_listener chargen 19
 
 sleep 1
 
-if [[ ! -x "$1" ]]; then
-	echo "linux-check executable is missing or not executable: $1" >&2
+target="${1:-/usr/local/bin/linux-check}"
+if [[ $# -eq 0 ]]; then
+	set -- "$target"
+fi
+
+if [[ ! -x "$target" ]]; then
+	echo "linux-check executable is missing or not executable: $target" >&2
 	echo "Build it on the host: cd scripts/linux && GOOS=linux GOARCH=\$(go env GOARCH) go build -o bin/linux-check ." >&2
 	exit 127
 fi
