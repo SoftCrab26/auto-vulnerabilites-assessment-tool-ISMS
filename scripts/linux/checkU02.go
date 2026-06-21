@@ -10,25 +10,22 @@ type U02Input struct {
 	LoginDefs  string
 }
 
-func checkU02() CheckResult {
+func checkU02(ctx ScanContext) CheckResult {
 	const code = "U-02"
+	const description = "Password complexity must be enforced through PAM and password quality settings."
 	mitreAttack := MitreAttack{
 		tactic:      "Credential Access",
-		techniques:  []string{"T1110"}, //  Brute Force
+		techniques:  []string{"T1110"}, // Brute Force
 		mitigations: []string{"M1027"}, // Password Policies
 	}
-	const description = "Password complexity must be enforced through PAM and password quality settings."
 
 	input, errs := loadU02Input()
-	if len(errs) > 0 {
-		return errorResult(code, errs)
-	}
 
 	result := evalU02(input)
 	result.Code = code
 	result.Description = description
 	result.MitreAttack = mitreAttack
-	return result
+	return resultWithErrors(result, errs)
 }
 
 func loadU02Input() (U02Input, []string) {

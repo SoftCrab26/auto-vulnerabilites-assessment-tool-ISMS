@@ -8,7 +8,7 @@ type U03Input struct {
 	SystemAuth string
 }
 
-func checkU03() CheckResult {
+func checkU03(ctx ScanContext) CheckResult {
 	const code = "U-03"
 	const description = "Account lockout thresholds should be configured to limit brute-force sign-in attempts."
 	mitreAttack := MitreAttack{
@@ -18,15 +18,12 @@ func checkU03() CheckResult {
 	}
 
 	input, errs := loadU03Input()
-	if len(errs) > 0 {
-		return errorResult(code, errs)
-	}
 
 	result := evalU03(input)
 	result.Code = code
 	result.Description = description
 	result.MitreAttack = mitreAttack
-	return result
+	return resultWithErrors(result, errs)
 }
 
 func loadU03Input() (U03Input, []string) {
@@ -65,7 +62,7 @@ func evalU03(input U03Input) CheckResult {
 
 	result := StatusVulnerable
 	vulnerableConfig := ""
-	if lockModule != "NOT_FOUND" && denyValue != "NOT_FOUND" && safeAtoi(denyValue) >= 5 {
+	if lockModule != "NOT_FOUND" && denyValue != "NOT_FOUND" && safeAtoi(denyValue) > 0 && safeAtoi(denyValue) <= 10 {
 		result = StatusGood
 	} else {
 		reasons := []string{}
@@ -74,8 +71,8 @@ func evalU03(input U03Input) CheckResult {
 		}
 		if denyValue == "NOT_FOUND" {
 			reasons = append(reasons, "문제점2. deny 값이 설정되어 있지 않습니다.")
-		} else if safeAtoi(denyValue) < 5 {
-			reasons = append(reasons, "문제점2. deny 값이 5 미만입니다.")
+		} else if safeAtoi(denyValue) <= 0 || safeAtoi(denyValue) > 10 {
+			reasons = append(reasons, "문제점2. deny 값이 10회 이하로 설정되어 있지 않습니다.")
 		}
 		vulnerableConfig = buildVulnerableConfig(
 			"module="+lockModule,

@@ -1,0 +1,11 @@
+services:
+  linux-check-secure:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: linux-check-secure
+    working_dir: /out
+    volumes:
+      - ../bin/linux-check:/usr/local/bin/linux-check:ro
+      - ../test-output/secure:/out
+    command: ["/usr/local/bin/linux-check"]

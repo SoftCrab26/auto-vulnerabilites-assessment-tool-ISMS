@@ -85,12 +85,26 @@ func joinErrors(errs []string) string {
 	return strings.Join(errs, "\n")
 }
 
-func errorResult(code string, errs []string) CheckResult {
+func errorResult(code, description string, mitre MitreAttack, errs []string) CheckResult {
 	return CheckResult{
-		Code:   code,
-		Status: StatusError,
-		ErrMsg: joinErrors(errs),
+		Code:        code,
+		Description: description,
+		Status:      StatusError,
+		ErrMsg:      joinErrors(errs),
+		MitreAttack: mitre,
 	}
+}
+
+func resultWithErrors(result CheckResult, errs []string) CheckResult {
+	if len(errs) == 0 {
+		return result
+	}
+	if result.ErrMsg == "" {
+		result.ErrMsg = joinErrors(errs)
+		return result
+	}
+	result.ErrMsg += "\n" + joinErrors(errs)
+	return result
 }
 
 func safeAtoi(value string) int {

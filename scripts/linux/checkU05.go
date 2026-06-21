@@ -1,95 +1,74 @@
 package main
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 )
 
 type U05Input struct {
-	PathEnv string
+	Passwd string
 }
 
-func checkU05() CheckResult {
+func checkU05(ctx ScanContext) CheckResult {
 	const code = "U-05"
-
-	const description = "PATH should not contain insecure or relative entries."
+	const description = "No accounts other than root should have UID 0."
 	mitreAttack := MitreAttack{
-		tactic:      "Stealth; Execution",
-		techniques:  []string{"T1574.007"}, // Hijack Execution Flow: PATH interception by PATH Environment Variable
-		mitigations: []string{"M1047"},     // Audit
+		tactic:      "Credential Access",
+		techniques:  []string{"T1078"},
+		mitigations: []string{"M1026"},
 	}
-	input := loadU05Input()
+
+	input, errs := loadU05Input()
+
 	result := evalU05(input)
 	result.Code = code
 	result.Description = description
 	result.MitreAttack = mitreAttack
-	return result
+	return resultWithErrors(result, errs)
 }
 
-func loadU05Input() U05Input {
-	return U05Input{PathEnv: os.Getenv("PATH")}
+func loadU05Input() (U05Input, []string) {
+	files, errs := collectFiles("/etc/passwd")
+	if len(files) == 0 {
+		return U05Input{}, errs
+	}
+	return U05Input{Passwd: files[0].Content}, errs
 }
 
 func evalU05(input U05Input) CheckResult {
-	pathEnv := input.PathEnv
-	pathParts := strings.Split(pathEnv, ":")
-	issues := []string{}
+	passwdContent := input.Passwd
+	var badAccounts []string
 
-	for _, part := range pathParts {
-		if part == "" {
-			issues = append(issues, "empty path entry")
+	for _, line := range strings.Split(passwdContent, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		if part == "." || strings.HasPrefix(part, "./") || strings.Contains(part, "..") {
-			issues = append(issues, "relative path: "+part)
-		}
-		if filepath.IsAbs(part) {
-			info, err := os.Stat(part)
-			if err == nil && info.IsDir() {
-				perm := info.Mode().Perm()
-				if perm&0002 != 0 {
-					issues = append(issues, "world-writable PATH dir: "+part)
-				}
+		fields := strings.Split(line, ":")
+		if len(fields) >= 3 {
+			username := fields[0]
+			uid := strings.TrimSpace(fields[2])
+			if uid == "0" && username != "root" {
+				badAccounts = append(badAccounts, username)
 			}
 		}
 	}
 
-	configPaths := []string{"/etc/profile"}
-	home, err := os.UserHomeDir()
-	if err == nil {
-		configPaths = append(configPaths, filepath.Join(home, ".bash_profile"), filepath.Join(home, ".profile"))
-	}
-
-	var configContents []string
-	for _, path := range configPaths {
-		if data, err := os.ReadFile(path); err == nil {
-			configContents = append(configContents, "# "+path+"\n"+string(data))
-		}
-	}
-
 	status := StatusGood
-	if len(issues) > 0 {
-		status = StatusVulnerable
-	}
-
 	vulnerableConfig := ""
-	if status == StatusVulnerable {
-		reasons := []string{}
-		for _, issue := range issues {
-			reasons = append(reasons, "문제점. "+issue)
-		}
+	processed := "uid0_check=completed"
+	if len(badAccounts) > 0 {
+		status = StatusVulnerable
+		reason := "문제점1. root 계정과 동일한 UID(0)를 갖는 계정이 존재합니다: " + strings.Join(badAccounts, ", ")
 		vulnerableConfig = buildVulnerableConfig(
-			"PATH="+pathEnv,
-			"issues="+strings.Join(issues, ", "),
-			strings.Join(reasons, "\n"),
+			"bad_uid0_accounts="+strings.Join(badAccounts, ","),
+			reason,
 		)
 	}
 
 	return CheckResult{
 		Status:           status,
-		RawConfig:        strings.Join(configContents, "\n"),
-		ProcessedConfig:  buildProcessedConfig("PATH=" + pathEnv + "\n issues=" + strings.Join(issues, ", ")),
+		RawConfig:        passwdContent,
+		ProcessedConfig:  buildProcessedConfig(processed, "bad_accounts="+strings.Join(badAccounts, ",")),
 		VulnerableConfig: vulnerableConfig,
 	}
 }

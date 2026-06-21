@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+type ScanContext struct {
+	Services map[string]Service
+	Runtime  RuntimeData
+}
+
 type RuntimeData struct {
 	ProcessList string
 	PortList    string
@@ -71,12 +76,67 @@ func collectRuntimeData() RuntimeData {
 	}
 }
 
+func (s Service) IsActive() bool {
+	return s.Running || s.Listening
+}
+
+func (r RuntimeData) HasAnyPort(ports ...string) bool {
+	for _, port := range ports {
+		if strings.Contains(r.PortList, ":"+port) {
+			return true
+		}
+	}
+	return false
+}
+
+func formatServiceStatus(s Service) string {
+	var parts []string
+	if len(s.ProcessMatches) > 0 {
+		parts = append(parts, "process="+strings.Join(s.ProcessMatches, ","))
+	}
+	if len(s.ListeningPorts) > 0 {
+		parts = append(parts, "ports="+strings.Join(s.ListeningPorts, ","))
+	}
+	if s.Version != "" && s.Version != "NOT_RUNNING" {
+		parts = append(parts, "version="+s.Version)
+	}
+	if len(parts) == 0 {
+		return "not_active"
+	}
+	return strings.Join(parts, " ")
+}
+
+func anyServiceActive(services map[string]Service, keys ...string) bool {
+	for _, key := range keys {
+		if svc, ok := services[key]; ok && svc.IsActive() {
+			return true
+		}
+	}
+	return false
+}
+
+func activeServiceLabels(services map[string]Service, keys ...string) []string {
+	var found []string
+	for _, key := range keys {
+		svc, ok := services[key]
+		if !ok || !svc.IsActive() {
+			continue
+		}
+		label := key
+		if len(svc.ProcessMatches) > 0 {
+			label += "(" + strings.Join(svc.ProcessMatches, ",") + ")"
+		}
+		found = append(found, label)
+	}
+	return found
+}
+
 func detectServices(runtime RuntimeData) map[string]Service {
 
 	services := map[string]Service{
 		"dns": {
 			Name:         "DNS",
-			Keywords:     []string{"named", "dnsmasq"},
+			Keywords:     []string{"named", "bind9", "dnsmasq"},
 			DefaultPorts: []string{"53"},
 
 			VersionChecks: []VersionCheck{
@@ -118,7 +178,7 @@ func detectServices(runtime RuntimeData) map[string]Service {
 
 		"ftp": {
 			Name:         "FTP",
-			Keywords:     []string{"vsftpd", "proftpd"},
+			Keywords:     []string{"vsftpd", "proftpd", "ftpd"},
 			DefaultPorts: []string{"21"},
 
 			VersionChecks: []VersionCheck{
@@ -178,6 +238,70 @@ func detectServices(runtime RuntimeData) map[string]Service {
 					Command: "postgres --version",
 				},
 			},
+		},
+
+		"telnet": {
+			Name:         "Telnet",
+			Keywords:     []string{"telnet", "in.telnetd"},
+			DefaultPorts: []string{"23"},
+		},
+
+		"finger": {
+			Name:         "Finger",
+			Keywords:     []string{"finger", "in.fingerd"},
+			DefaultPorts: []string{"79"},
+		},
+
+		"nfs": {
+			Name:         "NFS",
+			Keywords:     []string{"nfsd", "rpc.nfsd", "mountd"},
+			DefaultPorts: []string{"2049"},
+		},
+
+		"automount": {
+			Name:     "Automount",
+			Keywords: []string{"automount", "autofs"},
+		},
+
+		"rpc": {
+			Name:         "RPC",
+			Keywords:     []string{"rpcbind", "portmap", "rpc.statd", "rpc.mountd"},
+			DefaultPorts: []string{"111"},
+		},
+
+		"nis": {
+			Name:     "NIS",
+			Keywords: []string{"ypserv", "ypbind"},
+		},
+
+		"tftp": {
+			Name:         "TFTP",
+			Keywords:     []string{"tftp", "in.tftpd"},
+			DefaultPorts: []string{"69"},
+		},
+
+		"talk": {
+			Name:         "Talk",
+			Keywords:     []string{"talk", "ntalk"},
+			DefaultPorts: []string{"517", "518"},
+		},
+
+		"mail": {
+			Name:         "Mail",
+			Keywords:     []string{"sendmail", "postfix", "exim", "dovecot"},
+			DefaultPorts: []string{"25", "587"},
+		},
+
+		"rsh": {
+			Name:         "RSH",
+			Keywords:     []string{"rsh", "rlogin", "rexec", "rshd", "rlogind"},
+			DefaultPorts: []string{"513", "514"},
+		},
+
+		"dos": {
+			Name:         "DoS",
+			Keywords:     []string{"echo", "discard", "daytime", "chargen", "xinetd", "inetd"},
+			DefaultPorts: []string{"7", "9", "13", "19"},
 		},
 	}
 

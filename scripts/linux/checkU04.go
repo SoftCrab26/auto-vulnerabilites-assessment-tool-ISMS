@@ -10,7 +10,7 @@ type U04Input struct {
 	Paths []string
 }
 
-func checkU04() CheckResult {
+func checkU04(ctx ScanContext) CheckResult {
 	const code = "U-04"
 	const description = "The permissions of /etc/passwd and /etc/shadow should be set to prevent unauthorized access to password information."
 	mitreAttack := MitreAttack{
@@ -18,16 +18,14 @@ func checkU04() CheckResult {
 		techniques:  []string{"T1003.008"}, // OS Credential Dumping: /etc/passwd and /etc/shadow
 		mitigations: []string{"M1026"},     // Privileged Account Management
 	}
+
 	input, errs := loadU04Input()
-	if len(errs) > 0 {
-		return errorResult(code, errs)
-	}
 
 	result := evalU04(input)
 	result.Code = code
 	result.Description = description
 	result.MitreAttack = mitreAttack
-	return result
+	return resultWithErrors(result, errs)
 }
 
 func loadU04Input() (U04Input, []string) {
@@ -57,8 +55,10 @@ func evalU04(input U04Input) CheckResult {
 	passwd, err1 := os.Stat("/etc/passwd")
 	shadow, err2 := os.Stat("/etc/shadow")
 
-	if err1 != nil || err2 != nil {
+	if err1 != nil && err2 != nil {
 		status = StatusError
+	} else if err1 != nil || err2 != nil {
+		status = StatusVulnerable
 	}
 
 	if err1 == nil {
@@ -78,10 +78,16 @@ func evalU04(input U04Input) CheckResult {
 	vulnerableConfig := ""
 	if status == StatusVulnerable {
 		reasons := []string{}
+		if err1 != nil {
+			reasons = append(reasons, "문제점1. /etc/passwd 파일을 확인할 수 없습니다.")
+		}
 		if err1 == nil {
 			if passwd.Mode().Perm()&022 != 0 {
 				reasons = append(reasons, "문제점1. /etc/passwd가 그룹이나 다른 사용자 쓰기 가능 권한을 가집니다.")
 			}
+		}
+		if err2 != nil {
+			reasons = append(reasons, "문제점2. /etc/shadow 파일을 확인할 수 없습니다.")
 		}
 		if err2 == nil {
 			if shadow.Mode().Perm()&0007 != 0 {

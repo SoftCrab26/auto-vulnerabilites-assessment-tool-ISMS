@@ -1,0 +1,11 @@
+services:
+  linux-check-vulnerable:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: linux-check-vulnerable
+    working_dir: /out
+    volumes:
+      - ../bin/linux-check:/usr/local/bin/linux-check:ro
+      - ../test-output/vulnerable:/out
+    command: ["/usr/local/bin/linux-check"]
