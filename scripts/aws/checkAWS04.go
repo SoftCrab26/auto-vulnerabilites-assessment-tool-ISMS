@@ -1,37 +1,14 @@
 package main
 
-type AWS04Input struct {
-	RawData string
-}
-
 func checkAWS04(ctx ScanContext) CheckResult {
-	const code = "AWS-04"
-	const description = "1.4 IAM 그룹 사용자 계정 관리"
-	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1078"},
-		mitigations: []string{"M1026"},
-	}
+	const code, guideCode, description = "AWS-04", "1.4", "IAM 그룹 사용자 계정 관리"
+	mitre := MitreAttack{tactic: "Initial Access", techniques: []string{"T1078"}, mitigations: []string{"M1026"}}
 
-	input, errs := loadAWS04Input(ctx)
-
-	result := evalAWS04(input)
-	result.Code = code
-	result.GuideCode = "1.4"
-	result.Description = description
-	result.MitreAttack = mitreAttack
-	return resultWithErrors(result, errs)
-}
-
-func loadAWS04Input(ctx ScanContext) (AWS04Input, []string) {
-	return AWS04Input{RawData: ctx.Runtime.IAMGroups}, nil
-}
-
-func evalAWS04(input AWS04Input) CheckResult {
-	return CheckResult{
+	result := CheckResult{
 		Status:           StatusManual,
-		RawConfig:        input.RawData,
-		ProcessedConfig:  buildProcessedConfig("guide=1.4", "implementation=stub"),
-		VulnerableConfig: "",
+		RawConfig:        ctx.Runtime.IAMGroups,
+		ProcessedConfig:  buildProcessedConfig("implementation=requires_group_membership_review"),
+		VulnerableConfig: "각 IAM 그룹의 사용자 목록 검토 필요: 불필요한 계정 존재 여부 확인",
 	}
+	return checkAWSGeneric(code, guideCode, description, mitre, result)
 }

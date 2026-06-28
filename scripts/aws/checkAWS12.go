@@ -1,37 +1,9 @@
 package main
 
-type AWS12Input struct {
-	RawData string
-}
-
 func checkAWS12(ctx ScanContext) CheckResult {
-	const code = "AWS-12"
-	const description = "1.12 EKS 서비스 어카운트 관리"
-	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1078"},
-		mitigations: []string{"M1026"},
-	}
+	const code, guideCode, description = "AWS-12", "1.12", "EKS 서비스 어카운트 관리"
+	mitre := MitreAttack{tactic: "Credential Access", techniques: []string{"T1555"}, mitigations: []string{"M1015"}}
 
-	input, errs := loadAWS12Input(ctx)
-
-	result := evalAWS12(input)
-	result.Code = code
-	result.GuideCode = "1.12"
-	result.Description = description
-	result.MitreAttack = mitreAttack
-	return resultWithErrors(result, errs)
-}
-
-func loadAWS12Input(ctx ScanContext) (AWS12Input, []string) {
-	return AWS12Input{RawData: ctx.Runtime.EKSClusters}, nil
-}
-
-func evalAWS12(input AWS12Input) CheckResult {
-	return CheckResult{
-		Status:           StatusManual,
-		RawConfig:        input.RawData,
-		ProcessedConfig:  buildProcessedConfig("guide=1.12", "implementation=stub"),
-		VulnerableConfig: "",
-	}
+	result := evalEKS(ctx.Runtime.EKSClusters, "서비스 어카운트 설정 검토 필요\nautomountServiceAccountToken 값이 False로 설정되어 있는지 확인\n명령어: kubectl get serviceaccount -A -o yaml | grep automountServiceAccountToken")
+	return checkAWSGeneric(code, guideCode, description, mitre, result)
 }

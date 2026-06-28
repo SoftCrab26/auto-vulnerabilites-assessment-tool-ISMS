@@ -81,3 +81,53 @@ func appendUniqueError(errs []string, err string) []string {
 	}
 	return append(errs, err)
 }
+
+func checkAWSGeneric(code, guideCode, description string, mitre MitreAttack, result CheckResult) CheckResult {
+	result.Code = code
+	result.GuideCode = guideCode
+	result.Description = description
+	result.MitreAttack = mitre
+	return result
+}
+
+func formatCount(count int) string {
+	return strconv.Itoa(count)
+}
+
+func filterUsers(users []struct {
+	UserName   string `json:"UserName"`
+	Arn        string `json:"Arn"`
+	CreateDate string `json:"CreateDate"`
+}, predicate func(struct {
+	UserName   string `json:"UserName"`
+	Arn        string `json:"Arn"`
+	CreateDate string `json:"CreateDate"`
+}) bool) []struct {
+	UserName   string `json:"UserName"`
+	Arn        string `json:"Arn"`
+	CreateDate string `json:"CreateDate"`
+} {
+	var result []struct {
+		UserName   string `json:"UserName"`
+		Arn        string `json:"Arn"`
+		CreateDate string `json:"CreateDate"`
+	}
+	for _, user := range users {
+		if predicate(user) {
+			result = append(result, user)
+		}
+	}
+	return result
+}
+
+func extractNames(users []struct {
+	UserName   string `json:"UserName"`
+	Arn        string `json:"Arn"`
+	CreateDate string `json:"CreateDate"`
+}) []string {
+	var names []string
+	for _, user := range users {
+		names = append(names, user.UserName)
+	}
+	return names
+}
