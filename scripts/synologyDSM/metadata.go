@@ -23,28 +23,22 @@ type DSMMetadata struct {
 func collectMetadata(ctx context.Context, executor CommandExecutor, timeout time.Duration) (DSMMetadata, []string) {
 	var warnings []string
 
-	versionFile, err := collectFirstExisting("/etc/VERSION", "/etc.defaults/VERSION")
-	if err != nil {
-		warnings = append(warnings, "DSM version metadata: "+err.Error())
-	}
-	synoinfoFile, err := collectFirstExisting("/etc/synoinfo.conf", "/etc.defaults/synoinfo.conf")
-	if err != nil {
-		warnings = append(warnings, "DSM system metadata: "+err.Error())
-	}
-	hardwareFile := collectFiles("/proc/sys/kernel/syno_hw_version")
-	if len(hardwareFile) == 1 && hardwareFile[0].Err != nil {
-		warnings = append(warnings, "DSM hardware metadata: "+hardwareFile[0].Err.Error())
-	}
+	versionFile, versionErrors := collectFirstExisting(preferredDSMPaths("VERSION")...)
+	warnings = append(warnings, prefixErrors("DSM version metadata", versionErrors)...)
+	synoinfoFile, synoinfoErrors := collectFirstExisting(preferredDSMPaths("synoinfo.conf")...)
+	warnings = append(warnings, prefixErrors("DSM system metadata", synoinfoErrors)...)
+	hardwareFiles, hardwareErrors := collectFiles("/proc/sys/kernel/syno_hw_version")
+	warnings = append(warnings, prefixErrors("DSM hardware metadata", hardwareErrors)...)
 
 	var versionData, synoinfoData, hardwareData string
-	if versionFile.Err == nil {
-		versionData = string(versionFile.Data)
+	if versionFile.Path != "" {
+		versionData = versionFile.Content
 	}
-	if synoinfoFile.Err == nil {
-		synoinfoData = string(synoinfoFile.Data)
+	if synoinfoFile.Path != "" {
+		synoinfoData = synoinfoFile.Content
 	}
-	if len(hardwareFile) == 1 && hardwareFile[0].Err == nil {
-		hardwareData = string(hardwareFile[0].Data)
+	if len(hardwareFiles) == 1 {
+		hardwareData = hardwareFiles[0].Content
 	}
 
 	metadata := parseDSMMetadata(versionData, synoinfoData, hardwareData)
@@ -63,6 +57,14 @@ func collectMetadata(ctx context.Context, executor CommandExecutor, timeout time
 	return metadata, warnings
 }
 
+func prefixErrors(prefix string, errors []string) []string {
+	prefixed := make([]string, 0, len(errors))
+	for _, err := range errors {
+		prefixed = append(prefixed, prefix+": "+err)
+	}
+	return prefixed
+}
+
 func parseDSMMetadata(versionData, synoinfoData, hardwareData string) DSMMetadata {
 	version := parseKeyValues(versionData)
 	synoinfo := parseKeyValues(synoinfoData)
@@ -74,7 +76,7 @@ func parseDSMMetadata(versionData, synoinfoData, hardwareData string) DSMMetadat
 		BuildNumber:    version["buildnumber"],
 		SmallFixNumber: version["smallfixnumber"],
 		Model:          strings.TrimSpace(hardwareData),
-		Architecture:   firstNonEmpty(synoinfo["arch"], architectureFromUnique(synoinfo["unique"])),
+		Architecture:   synoinfo["arch"],
 	}
 	if metadata.Model == "" {
 		metadata.Model = firstNonEmpty(synoinfo["upnpmodelname"], synoinfo["modelname"])
@@ -86,17 +88,6 @@ func parseDSMMetadata(versionData, synoinfoData, hardwareData string) DSMMetadat
 		metadata.MajorVersion == "6" &&
 		metadata.MinorVersion == "2"
 	return metadata
-}
-
-func architectureFromUnique(unique string) string {
-	unique = strings.TrimSpace(unique)
-	if unique == "" {
-		return ""
-	}
-	if index := strings.IndexByte(unique, '_'); index >= 0 && index+1 < len(unique) {
-		return unique[index+1:]
-	}
-	return unique
 }
 
 func joinVersion(major, minor string) string {

@@ -44,7 +44,8 @@ func collectRuntimeData(ctx context.Context, executor CommandExecutor, timeout t
 
 	process, err := runFirst(ctx, executor, timeout, []commandVariant{
 		{name: "ps", args: []string{"-ef"}},
-		{name: "w"},
+		{name: "ps", args: []string{"w"}},
+		{name: "ps"},
 	})
 	if err != nil {
 		data.Errors = append(data.Errors, "process collection: "+err.Error())
