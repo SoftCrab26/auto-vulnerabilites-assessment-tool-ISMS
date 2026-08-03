@@ -20,12 +20,24 @@
 
 $ErrorActionPreference = "Stop"
 
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = (Resolve-Path (Join-Path $scriptDir "..")).Path
+Set-Location $repoRoot
+
 Write-Host "==== 🛡️  Windows 위험 명령어 블랙리스트 스캔 시작 ====" -ForegroundColor Cyan
+Write-Host "📂 대상 루트: $repoRoot"
 
 $violationFound = $false
 
-$targetFiles = Get-ChildItem -Path . -Recurse -Include *.ps1, *.bat, *.cmd -File |
-    Where-Object { $_.FullName -notmatch '\\\.git\\' }
+# CI 스크립트·의도적 취약 랩/픽스처는 제외한다.
+$targetFiles = Get-ChildItem -Path $repoRoot -Recurse -Include *.ps1, *.bat, *.cmd -File |
+    Where-Object {
+        $_.FullName -notmatch '\\\.git\\' -and
+        $_.FullName -notmatch '[\\/]ci[\\/]' -and
+        $_.FullName -notmatch '[\\/]test-lab[\\/]' -and
+        $_.FullName -notmatch '[\\/]vulnerableEnviorment[\\/]' -and
+        $_.FullName -notmatch '[\\/]vulnerableEnvironment[\\/]'
+    }
 
 if (-not $targetFiles) {
     Write-Host "ℹ️  검사 대상 .ps1/.bat/.cmd 파일이 없습니다."
@@ -40,7 +52,7 @@ $rules = @(
     @{ Desc = "강제 대량 삭제(Remove-Item -Recurse -Force, del /f /s /q) - 데이터 파괴 위험"
        Pattern = '(?im)(Remove-Item\s+.*-Recurse.*-Force|del\s+/f\s*/s\s*/q|rd\s+/s\s*/q)' },
 
-    @{ Desc = "원격 스크립트 다운로드 후 즉시 실행(IEX, DownloadString, iwr|iex) - 매우 위험" 
+    @{ Desc = "원격 스크립트 다운로드 후 즉시 실행(IEX, DownloadString, iwr|iex) - 매우 위험"
        Pattern = '(?im)(IEX\s*\(|Invoke-Expression|DownloadString|iwr\s+.*\|\s*iex|curl\s+.*\|\s*iex)' },
 
     @{ Desc = "PowerShell 실행 정책 우회(ExecutionPolicy Bypass/Unrestricted)"

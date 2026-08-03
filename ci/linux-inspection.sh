@@ -10,11 +10,24 @@
 
 set -uo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+cd "${REPO_ROOT}"
+
 echo "==== 🛡️  Linux 위험 명령어 블랙리스트 스캔 시작 ===="
+echo "📂 대상 루트: ${REPO_ROOT}"
 
 VIOLATION_FOUND=false
 
-SH_FILES=$(find . -name "*.sh" -not -path "*/.*")
+# CI 스크립트·의도적 취약 랩/픽스처는 제외한다.
+SH_FILES=$(find . -name "*.sh" \
+  -not -path "*/.*" \
+  -not -path "./ci/*" \
+  -not -path "*/ci/*" \
+  -not -path "./test-lab/*" \
+  -not -path "*/test-lab/*" \
+  -not -path "*/vulnerableEnviorment/*" \
+  -not -path "*/vulnerableEnvironment/*")
 
 if [ -z "$SH_FILES" ]; then
   echo "ℹ️  검사 대상 .sh 파일이 없습니다."

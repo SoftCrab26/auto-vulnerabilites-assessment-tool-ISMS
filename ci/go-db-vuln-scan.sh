@@ -14,11 +14,26 @@
 
 set -uo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+cd "${REPO_ROOT}"
+
 echo "==== 🛡️  Go DB 취약점 블랙리스트 스캔 시작 ===="
+echo "📂 대상 루트: ${REPO_ROOT}"
 
 VIOLATION_FOUND=false
 
-GO_FILES=$(find . -name "*.go" -not -path "*/vendor/*" -not -path "*/.git/*")
+# 테스트 픽스처의 가짜 비밀번호/DSN 문자열은 제외한다.
+GO_FILES=$(find . -name "*.go" \
+  -not -name "*_test.go" \
+  -not -path "*/vendor/*" \
+  -not -path "*/.git/*" \
+  -not -path "./ci/*" \
+  -not -path "*/ci/*" \
+  -not -path "./test-lab/*" \
+  -not -path "*/test-lab/*" \
+  -not -path "*/vulnerableEnviorment/*" \
+  -not -path "*/vulnerableEnvironment/*")
 
 if [ -z "$GO_FILES" ]; then
   echo "ℹ️  검사 대상 .go 파일이 없습니다."
