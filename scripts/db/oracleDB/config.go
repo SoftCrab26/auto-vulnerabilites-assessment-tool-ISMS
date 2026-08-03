@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	defaultQueryTimeout = 15 * time.Second
+	defaultQueryTimeout = 45 * time.Second // D-18 PUBLIC privilege inventory can be slow on large catalogs
 	minQueryTimeout     = time.Second
 	maxQueryTimeout     = 5 * time.Minute
 )

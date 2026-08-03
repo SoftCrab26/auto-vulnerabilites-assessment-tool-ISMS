@@ -16,6 +16,7 @@ var d01Mitre = MitreAttack{
 
 type D01Input struct {
 	Accounts []string
+	RawRows  [][]string
 	LoadErr  error
 }
 
@@ -46,18 +47,20 @@ ORDER BY u.username;`
 		}
 		accounts = append(accounts, "username="+sanitizeEvidence(row[0])+", account_status="+sanitizeEvidence(row[1]))
 	}
-	return D01Input{Accounts: accounts}
+	return D01Input{Accounts: accounts, RawRows: rows}
 }
 
 func evalD01(input D01Input) CheckResult {
 	if input.LoadErr != nil {
 		return errorResult("D-01", d01Description, d01Mitre, input.LoadErr)
 	}
+	rawConfig := formatSQLTable([]string{"USERNAME", "ACCOUNT_STATUS"}, input.RawRows)
+	processed := formatProcessedRaw(input.RawRows)
 	if len(input.Accounts) == 0 {
 		return CheckResult{
 			Status:          StatusGood,
-			RawConfig:       "default_password_accounts=none",
-			ProcessedConfig: "default_password_accounts_found=false",
+			RawConfig:       rawConfig,
+			ProcessedConfig: processed,
 		}
 	}
 	evidence := make([]string, len(input.Accounts))
@@ -67,8 +70,8 @@ func evalD01(input D01Input) CheckResult {
 	raw := strings.Join(evidence, "; ")
 	return CheckResult{
 		Status:           StatusVulnerable,
-		RawConfig:        raw,
+		RawConfig:        rawConfig,
 		VulnerableConfig: raw,
-		ProcessedConfig:  "default_password_accounts_found=true",
+		ProcessedConfig:  processed,
 	}
 }

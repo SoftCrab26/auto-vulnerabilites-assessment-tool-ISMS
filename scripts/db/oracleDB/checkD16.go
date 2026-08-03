@@ -14,7 +14,7 @@ func checkD16(_ ScanContext) CheckResult {
 		Description:     d16Description,
 		Status:          StatusNotApplicable,
 		RawConfig:       "engine=ORACLE; criterion=SQL_SERVER_ONLY",
-		ProcessedConfig: "applicable=false",
+		ProcessedConfig: "engine=ORACLE; criterion=SQL_SERVER_ONLY",
 		MitreAttack:     d16Mitre,
 	}
 }

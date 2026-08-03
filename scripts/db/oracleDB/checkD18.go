@@ -25,6 +25,7 @@ type D18Grant struct {
 
 type D18Input struct {
 	Grants  []D18Grant
+	RawRows [][]string
 	LoadErr error
 }
 
@@ -74,7 +75,7 @@ ORDER BY grant_kind, owner_name, object_name, privilege_name;`
 			Kind: row[0], Owner: row[1], Object: row[2], Privilege: row[3],
 		})
 	}
-	return D18Input{Grants: grants}
+	return D18Input{Grants: grants, RawRows: rows}
 }
 
 func evalD18(input D18Input) CheckResult {
@@ -84,8 +85,8 @@ func evalD18(input D18Input) CheckResult {
 	if len(input.Grants) == 0 {
 		return CheckResult{
 			Status:          StatusGood,
-			RawConfig:       "public_grants=none",
-			ProcessedConfig: "dangerous_public_grants=0; review_grants=0",
+			RawConfig:       formatSQLTable([]string{"GRANT_KIND", "OWNER_NAME", "OBJECT_NAME", "PRIVILEGE_NAME"}, nil),
+			ProcessedConfig: formatProcessedRaw(nil),
 		}
 	}
 
@@ -102,13 +103,10 @@ func evalD18(input D18Input) CheckResult {
 	}
 	sort.Strings(dangerous)
 	sort.Strings(review)
-	allEvidence := append(append([]string{}, dangerous...), review...)
-	sort.Strings(allEvidence)
 
 	result := CheckResult{
-		RawConfig: strings.Join(allEvidence, " | "),
-		ProcessedConfig: fmt.Sprintf("dangerous_public_grants=%d; review_grants=%d",
-			len(dangerous), len(review)),
+		RawConfig:       formatSQLTable([]string{"GRANT_KIND", "OWNER_NAME", "OBJECT_NAME", "PRIVILEGE_NAME"}, input.RawRows),
+		ProcessedConfig: formatProcessedRaw(input.RawRows),
 	}
 	if len(dangerous) > 0 {
 		result.Status = StatusVulnerable

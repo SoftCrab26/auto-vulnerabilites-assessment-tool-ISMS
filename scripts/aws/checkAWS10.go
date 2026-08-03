@@ -5,19 +5,21 @@ import (
 	"fmt"
 )
 
+type passwordPolicyDetail struct {
+	MinimumPasswordLength      int  `json:"MinimumPasswordLength"`
+	RequireSymbols             bool `json:"RequireSymbols"`
+	RequireNumbers             bool `json:"RequireNumbers"`
+	RequireUppercaseCharacters bool `json:"RequireUppercaseCharacters"`
+	RequireLowercaseCharacters bool `json:"RequireLowercaseCharacters"`
+	AllowUsersToChangePassword bool `json:"AllowUsersToChangePassword"`
+	ExpirePasswords            bool `json:"ExpirePasswords"`
+	MaxPasswordAge             int  `json:"MaxPasswordAge"`
+	PasswordReusePrevention    int  `json:"PasswordReusePrevention"`
+	HardExpiry                 bool `json:"HardExpiry"`
+}
+
 type PasswordPolicy struct {
-	PasswordPolicy struct {
-		MinimumPasswordLength      int  `json:"MinimumPasswordLength"`
-		RequireSymbols             bool `json:"RequireSymbols"`
-		RequireNumbers             bool `json:"RequireNumbers"`
-		RequireUppercaseCharacters bool `json:"RequireUppercaseCharacters"`
-		RequireLowercaseCharacters bool `json:"RequireLowercaseCharacters"`
-		AllowUsersToChangePassword bool `json:"AllowUsersToChangePassword"`
-		ExpirePasswords            bool `json:"ExpirePasswords"`
-		MaxPasswordAge             int  `json:"MaxPasswordAge"`
-		PasswordReusePrevention    int  `json:"PasswordReusePrevention"`
-		HardExpiry                 bool `json:"HardExpiry"`
-	} `json:"PasswordPolicy"`
+	PasswordPolicy passwordPolicyDetail `json:"PasswordPolicy"`
 }
 
 func checkAWS10(ctx ScanContext) CheckResult {
@@ -55,18 +57,7 @@ func evalAWS10(raw string) CheckResult {
 	return CheckResult{Status: StatusGood, RawConfig: raw, ProcessedConfig: processedConfig}
 }
 
-func validatePasswordPolicy(pp struct {
-	MinimumPasswordLength      int
-	RequireSymbols             bool
-	RequireNumbers             bool
-	RequireUppercaseCharacters bool
-	RequireLowercaseCharacters bool
-	AllowUsersToChangePassword bool
-	ExpirePasswords            bool
-	MaxPasswordAge             int
-	PasswordReusePrevention    int
-	HardExpiry                 bool
-}) []string {
+func validatePasswordPolicy(pp passwordPolicyDetail) []string {
 	var violations []string
 	if pp.MinimumPasswordLength < 8 {
 		violations = append(violations, fmt.Sprintf("최소 길이 미달 (현재: %d, 권장: 8)", pp.MinimumPasswordLength))

@@ -17,6 +17,7 @@ var d22Mitre = MitreAttack{
 
 type D22Input struct {
 	ResourceLimit string
+	RawRows       [][]string
 	LoadErr       error
 }
 
@@ -47,7 +48,7 @@ WHERE name = 'resource_limit';`
 	if !strings.EqualFold(strings.TrimSpace(rows[0][0]), "resource_limit") {
 		return D22Input{LoadErr: errors.New("D-22 query returned an unexpected parameter")}
 	}
-	return D22Input{ResourceLimit: strings.ToUpper(strings.TrimSpace(rows[0][1]))}
+	return D22Input{ResourceLimit: strings.ToUpper(strings.TrimSpace(rows[0][1])), RawRows: rows}
 }
 
 func evalD22(input D22Input) CheckResult {
@@ -60,16 +61,17 @@ func evalD22(input D22Input) CheckResult {
 		return errorResult("D-22", d22Description, d22Mitre, errors.New("required parameter resource_limit is missing"))
 	}
 	result := CheckResult{
-		RawConfig: "resource_limit=" + sanitizeEvidence(value),
+		RawConfig: formatSQLTable([]string{"NAME", "VALUE"}, input.RawRows),
 	}
+	processed := formatProcessedRaw(input.RawRows)
 	switch value {
 	case "TRUE":
 		result.Status = StatusGood
-		result.ProcessedConfig = "resource_limit_enabled=true"
+		result.ProcessedConfig = processed
 	case "FALSE":
 		result.Status = StatusVulnerable
 		result.VulnerableConfig = "resource_limit=FALSE"
-		result.ProcessedConfig = "resource_limit_enabled=false"
+		result.ProcessedConfig = processed
 	default:
 		return errorResult("D-22", d22Description, d22Mitre, fmt.Errorf("resource_limit returned an unsupported boolean value"))
 	}

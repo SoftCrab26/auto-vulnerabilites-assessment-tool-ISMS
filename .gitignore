@@ -79,3 +79,5 @@ docker-compose.override.yml
 # Scratch / Temporary workspace
 # ==============================
 scratch/
+# Cross-compiled scanner binaries
+build/

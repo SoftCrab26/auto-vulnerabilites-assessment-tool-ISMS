@@ -22,6 +22,7 @@ type D03Setting struct {
 
 type D03Input struct {
 	Settings []D03Setting
+	RawRows  [][]string
 	LoadErr  error
 }
 
@@ -55,7 +56,7 @@ ORDER BY profile, resource_name;`
 			Profile: sanitizeEvidence(row[0]), Resource: sanitizeEvidence(row[1]), Limit: sanitizeEvidence(row[2]),
 		})
 	}
-	return D03Input{Settings: settings}
+	return D03Input{Settings: settings, RawRows: rows}
 }
 
 func evalD03(input D03Input) CheckResult {
@@ -66,7 +67,7 @@ func evalD03(input D03Input) CheckResult {
 		return errorResult("D-03", d03Description, d03Mitre, errors.New("D-03 password policy evidence is missing"))
 	}
 
-	var evidence, vulnerable []string
+	var vulnerable []string
 	for _, setting := range input.Settings {
 		profile := sanitizeEvidence(setting.Profile)
 		resource := strings.ToUpper(strings.TrimSpace(setting.Resource))
@@ -75,7 +76,6 @@ func evalD03(input D03Input) CheckResult {
 			return errorResult("D-03", d03Description, d03Mitre, errors.New("D-03 password policy contains an empty required value"))
 		}
 		item := "profile=" + profile + ", resource=" + sanitizeEvidence(resource) + ", limit=" + sanitizeEvidence(limit)
-		evidence = append(evidence, item)
 		if resource == "PASSWORD_LIFE_TIME" && limit == "UNLIMITED" {
 			vulnerable = append(vulnerable, item)
 		}
@@ -83,18 +83,19 @@ func evalD03(input D03Input) CheckResult {
 			vulnerable = append(vulnerable, item)
 		}
 	}
-	raw := strings.Join(evidence, "; ")
+	rawConfig := formatSQLTable([]string{"PROFILE", "RESOURCE_NAME", "LIMIT"}, input.RawRows)
+	processed := formatProcessedRaw(input.RawRows)
 	if len(vulnerable) > 0 {
 		return CheckResult{
 			Status:           StatusVulnerable,
-			RawConfig:        raw,
+			RawConfig:        rawConfig,
 			VulnerableConfig: strings.Join(vulnerable, "; "),
-			ProcessedConfig:  "password_expiration_or_complexity_control_clearly_disabled=true",
+			ProcessedConfig:  processed,
 		}
 	}
 	return CheckResult{
 		Status:          StatusManual,
-		RawConfig:       raw,
-		ProcessedConfig: "Human decision required: compare every profile's lifetime, complexity function, and failed-login threshold with the institution's approved password policy.",
+		RawConfig:       rawConfig,
+		ProcessedConfig: processed,
 	}
 }

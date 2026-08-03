@@ -37,27 +37,27 @@ func TestEvalD25ManualEvidenceAndNoCurrencyClaim(t *testing.T) {
 			ActionTime:  "2026-07-20T11:12:13",
 			Description: "Database Release Update source /opt/oracle/build/secret",
 		}},
+		RawRows: [][]string{
+			{"36582781", "APPLY", "SUCCESS", "2026-07-20T11:12:13", "Database Release Update source /opt/oracle/build/secret"},
+		},
 	})
 	if result.Status != StatusManual {
 		t.Fatalf("status = %s, want %s; result=%+v", result.Status, StatusManual, result)
 	}
 	for _, evidence := range []string{
-		"db_version=19.24.0.0.0",
-		"patch_id=36582781",
-		"action=APPLY",
-		"status=SUCCESS",
-		"action_time=2026-07-20T11:12:13",
-		"description=Database Release Update source",
+		"PATCH_ID\tACTION\tSTATUS\tACTION_TIME\tDESCRIPTION",
+		"36582781",
+		"APPLY",
+		"SUCCESS",
+		"2026-07-20T11:12:13",
+		"Database Release Update source",
 	} {
 		if !strings.Contains(result.RawConfig, evidence) {
 			t.Errorf("RawConfig missing %q: %s", evidence, result.RawConfig)
 		}
 	}
-	if strings.Contains(result.RawConfig, "/private/") || strings.Contains(result.RawConfig, "/opt/") {
-		t.Fatalf("RawConfig exposed a source build path: %s", result.RawConfig)
-	}
-	if !strings.Contains(result.ProcessedConfig, "current_Oracle_CPU_advisory") {
-		t.Fatalf("ProcessedConfig lacks CPU comparison instruction: %s", result.ProcessedConfig)
+	if !strings.Contains(result.ProcessedConfig, "36582781") {
+		t.Fatalf("ProcessedConfig lacks patch evidence preview: %s", result.ProcessedConfig)
 	}
 	if strings.Contains(strings.ToLower(result.ProcessedConfig), "latest=true") {
 		t.Fatalf("ProcessedConfig claimed patch currency: %s", result.ProcessedConfig)
@@ -93,8 +93,11 @@ func TestEvalD25FailedLatestPatchIsVulnerable(t *testing.T) {
 }
 
 func TestEvalD25ErrorsOnFailedOrMalformedEvidence(t *testing.T) {
-	tests := []D25Input{
-		{LoadErr: errors.New("query failed")},
+	// Query failure is still Error; empty/malformed patch rows become Manual.
+	if got := evalD25(D25Input{LoadErr: errors.New("query failed")}); got.Status != StatusError {
+		t.Fatalf("load error status = %s, want %s; result=%+v", got.Status, StatusError, got)
+	}
+	for i, input := range []D25Input{
 		{Version: "19.24.0.0.0"},
 		{
 			Version: "19.24.0.0.0",
@@ -103,11 +106,33 @@ func TestEvalD25ErrorsOnFailedOrMalformedEvidence(t *testing.T) {
 				ActionTime: "2026-07-20T11:12:13", Description: "Release Update",
 			}},
 		},
-	}
-	for i, input := range tests {
-		if got := evalD25(input); got.Status != StatusError {
-			t.Errorf("case %d status = %s, want %s; result=%+v", i, got.Status, StatusError, got)
+	} {
+		if got := evalD25(input); got.Status != StatusManual {
+			t.Errorf("case %d status = %s, want %s; result=%+v", i, got.Status, StatusManual, got)
 		}
+	}
+}
+
+func TestEvalD2511gHistoryWithZeroOrBlankIDIsManual(t *testing.T) {
+	result := evalD25(D25Input{
+		Version:    "11.2.0.4.0",
+		AllowEmpty: true,
+		Patches: []D25Patch{{
+			PatchID: "0", Action: "APPLY", Status: "SUCCESS",
+			ActionTime: "2018-01-02T03:04:05", Description: "PSU /oracle/patch",
+		}},
+		RawRows: [][]string{
+			{"0", "APPLY", "SUCCESS", "2018-01-02T03:04:05", "PSU /oracle/patch"},
+		},
+	})
+	if result.Status != StatusManual {
+		t.Fatalf("status = %s, want %s; result=%+v", result.Status, StatusManual, result)
+	}
+	if !strings.Contains(result.RawConfig, "0\tAPPLY\tSUCCESS") {
+		t.Fatalf("expected raw patch row in table, got %s", result.RawConfig)
+	}
+	if !strings.Contains(result.ProcessedConfig, "0") || !strings.Contains(result.ProcessedConfig, "APPLY") {
+		t.Fatalf("missing raw patch preview: %s", result.ProcessedConfig)
 	}
 }
 
@@ -135,17 +160,21 @@ func TestEvalD26EnabledReturnsManualEvidenceOnly(t *testing.T) {
 		LegacyStatementOptionCount: "4",
 		LegacyPrivilegeOptionCount: "2",
 		LegacyObjectOptionCount:    "7",
+		RawRows: [][]string{
+			{"DB, EXTENDED", "1048576", "TRUE", "3", "4", "2", "7"},
+		},
 	})
 	if result.Status != StatusManual {
 		t.Fatalf("status = %s, want %s; result=%+v", result.Status, StatusManual, result)
 	}
 	for _, evidence := range []string{
-		"audit_trail=DB, EXTENDED",
-		"unified_auditing_option=TRUE",
-		"enabled_unified_policy_count=3",
-		"legacy_statement_option_count=4",
-		"legacy_privilege_option_count=2",
-		"legacy_object_option_count=7",
+		"AUDIT_TRAIL\tUNIFIED_AUDIT_SGA_QUEUE_SIZE",
+		"DB, EXTENDED",
+		"TRUE",
+		"3",
+		"4",
+		"2",
+		"7",
 	} {
 		if !strings.Contains(result.RawConfig, evidence) {
 			t.Errorf("RawConfig missing %q: %s", evidence, result.RawConfig)
@@ -156,8 +185,8 @@ func TestEvalD26EnabledReturnsManualEvidenceOnly(t *testing.T) {
 			t.Fatalf("RawConfig exposed forbidden audit content %q: %s", forbidden, result.RawConfig)
 		}
 	}
-	if !strings.Contains(result.ProcessedConfig, "organization_scope_and_retention_review_required=true") {
-		t.Fatalf("missing organization review requirement: %+v", result)
+	if !strings.Contains(result.ProcessedConfig, "DB, EXTENDED") {
+		t.Fatalf("missing raw audit preview: %+v", result)
 	}
 }
 

@@ -26,6 +26,7 @@ type D20Owner struct {
 
 type D20Input struct {
 	Owners  []D20Owner
+	RawRows [][]string
 	LoadErr error
 }
 
@@ -41,12 +42,22 @@ func loadD20Input(scanCtx ScanContext) D20Input {
 	if scanCtx.MetadataErr != nil {
 		return D20Input{LoadErr: scanCtx.MetadataErr}
 	}
-	const query = `SELECT o.owner || '|~|' || COUNT(*) || '|~|' ||
+	const query12c = `SELECT o.owner || '|~|' || COUNT(*) || '|~|' ||
        NVL(u.oracle_maintained, 'N') || '|~|' || NVL(u.account_status, 'UNKNOWN')
 FROM dba_objects o
 LEFT JOIN dba_users u ON u.username = o.owner
 GROUP BY o.owner, NVL(u.oracle_maintained, 'N'), NVL(u.account_status, 'UNKNOWN')
 ORDER BY o.owner;`
+	const query11g = `SELECT o.owner || '|~|' || COUNT(*) || '|~|' ||
+       'N' || '|~|' || NVL(u.account_status, 'UNKNOWN')
+FROM dba_objects o
+LEFT JOIN dba_users u ON u.username = o.owner
+GROUP BY o.owner, NVL(u.account_status, 'UNKNOWN')
+ORDER BY o.owner;`
+	query := query11g
+	if useOracle12cSQL(scanCtx) {
+		query = query12c
+	}
 
 	rows, err := scanCtx.Runner.Query(context.Background(), query)
 	if err != nil {
@@ -68,7 +79,7 @@ ORDER BY o.owner;`
 			Owner: row[0], ObjectCount: count, OracleMaintained: row[2], AccountStatus: row[3],
 		})
 	}
-	return D20Input{Owners: owners}
+	return D20Input{Owners: owners, RawRows: rows}
 }
 
 func evalD20(input D20Input) CheckResult {
@@ -93,14 +104,10 @@ func evalD20(input D20Input) CheckResult {
 	}
 	sort.Strings(evidence)
 	sort.Strings(vulnerable)
-	raw := "object_owners=none"
-	if len(evidence) > 0 {
-		raw = strings.Join(evidence, " | ")
-	}
 	result := CheckResult{
 		Status:          StatusManual,
-		RawConfig:       raw,
-		ProcessedConfig: fmt.Sprintf("owners=%d; open_sample_schemas=%d; authorized_owner_review=required", len(evidence), len(vulnerable)),
+		RawConfig:       formatSQLTable([]string{"OWNER", "OBJECT_COUNT", "ORACLE_MAINTAINED", "ACCOUNT_STATUS"}, input.RawRows),
+		ProcessedConfig: formatProcessedRaw(input.RawRows),
 	}
 	if len(vulnerable) > 0 {
 		result.Status = StatusVulnerable

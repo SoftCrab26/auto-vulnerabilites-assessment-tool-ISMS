@@ -24,6 +24,7 @@ type D06Account struct {
 
 type D06Input struct {
 	Accounts []D06Account
+	RawRows  [][]string
 	LoadErr  error
 }
 
@@ -39,11 +40,21 @@ func loadD06Input(scanCtx ScanContext) D06Input {
 	if scanCtx.MetadataErr != nil {
 		return D06Input{LoadErr: scanCtx.MetadataErr}
 	}
-	const query = `SELECT username || '|~|' || account_status || '|~|' ||
+	// last_login exists from 12c only.
+	const query12c = `SELECT username || '|~|' || account_status || '|~|' ||
        NVL(TO_CHAR(last_login, 'YYYY-MM-DD"T"HH24:MI:SS TZH:TZM'), 'NEVER') || '|~|' ||
        profile || '|~|' || authentication_type
 FROM dba_users
 ORDER BY username;`
+	const query11g = `SELECT username || '|~|' || account_status || '|~|' ||
+       'UNAVAILABLE' || '|~|' ||
+       profile || '|~|' || authentication_type
+FROM dba_users
+ORDER BY username;`
+	query := query11g
+	if useOracle12cSQL(scanCtx) {
+		query = query12c
+	}
 	rows, err := scanCtx.Runner.Query(context.Background(), query)
 	if err != nil {
 		return D06Input{LoadErr: err}
@@ -66,7 +77,7 @@ ORDER BY username;`
 			AuthenticationType: sanitizeEvidence(row[4]),
 		})
 	}
-	return D06Input{Accounts: accounts}
+	return D06Input{Accounts: accounts, RawRows: rows}
 }
 
 func evalD06(input D06Input) CheckResult {
@@ -76,7 +87,6 @@ func evalD06(input D06Input) CheckResult {
 	if len(input.Accounts) == 0 {
 		return errorResult("D-06", d06Description, d06Mitre, errors.New("D-06 account inventory is missing"))
 	}
-	evidence := make([]string, 0, len(input.Accounts))
 	for _, account := range input.Accounts {
 		values := []string{account.Username, account.AccountStatus, account.LastLogin, account.Profile, account.AuthenticationType}
 		for _, value := range values {
@@ -84,15 +94,11 @@ func evalD06(input D06Input) CheckResult {
 				return errorResult("D-06", d06Description, d06Mitre, errors.New("D-06 account inventory contains an empty required value"))
 			}
 		}
-		evidence = append(evidence, "username="+sanitizeEvidence(account.Username)+
-			", account_status="+sanitizeEvidence(account.AccountStatus)+
-			", last_login="+sanitizeEvidence(account.LastLogin)+
-			", profile="+sanitizeEvidence(account.Profile)+
-			", authentication_type="+sanitizeEvidence(account.AuthenticationType))
 	}
+	rawConfig := formatSQLTable([]string{"USERNAME", "ACCOUNT_STATUS", "LAST_LOGIN", "PROFILE", "AUTHENTICATION_TYPE"}, input.RawRows)
 	return CheckResult{
 		Status:          StatusManual,
-		RawConfig:       strings.Join(evidence, "; "),
-		ProcessedConfig: "Human decision required: map each active account to one accountable individual and identify shared, generic, or unassigned accounts.",
+		RawConfig:       rawConfig,
+		ProcessedConfig: formatProcessedRaw(input.RawRows),
 	}
 }

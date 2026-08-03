@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sort"
 	"strings"
 )
@@ -23,6 +22,7 @@ type D08Account struct {
 
 type D08Input struct {
 	Accounts []D08Account
+	RawRows  [][]string
 	LoadErr  error
 }
 
@@ -59,7 +59,7 @@ ORDER BY username;`
 			PasswordVersions: sanitizeEvidence(strings.ToUpper(row[1])),
 		})
 	}
-	return D08Input{Accounts: accounts}
+	return D08Input{Accounts: accounts, RawRows: rows}
 }
 
 func evalD08(input D08Input) CheckResult {
@@ -70,14 +70,13 @@ func evalD08(input D08Input) CheckResult {
 		return errorResult("D-08", d08Description, d08Mitre, errors.New("password version evidence is empty"))
 	}
 
-	var evidence, legacy []string
+	var legacy []string
 	for _, account := range input.Accounts {
 		username := sanitizeEvidence(account.Username)
 		versions := sanitizeEvidence(strings.ToUpper(account.PasswordVersions))
 		if username == "" || versions == "" {
 			return errorResult("D-08", d08Description, d08Mitre, errors.New("account password version evidence is incomplete"))
 		}
-		evidence = append(evidence, fmt.Sprintf("%s=%s", username, versions))
 		for _, version := range strings.Fields(versions) {
 			if version == "10G" {
 				legacy = append(legacy, username+"=10G")
@@ -85,17 +84,17 @@ func evalD08(input D08Input) CheckResult {
 			}
 		}
 	}
-	sort.Strings(evidence)
 	sort.Strings(legacy)
+	rawConfig := formatSQLTable([]string{"USERNAME", "PASSWORD_VERSIONS"}, input.RawRows)
+	processed := formatProcessedRaw(input.RawRows)
 	result := CheckResult{
 		Status:          StatusGood,
-		RawConfig:       strings.Join(evidence, ", "),
-		ProcessedConfig: "legacy_10g_verifier_accounts=0",
+		RawConfig:       rawConfig,
+		ProcessedConfig: processed,
 	}
 	if len(legacy) > 0 {
 		result.Status = StatusVulnerable
 		result.VulnerableConfig = strings.Join(legacy, ", ")
-		result.ProcessedConfig = fmt.Sprintf("legacy_10g_verifier_accounts=%d", len(legacy))
 	}
 	return result
 }

@@ -35,9 +35,10 @@ func loadD24Input(_ ScanContext) D24Input {
 }
 
 func evalD24(input D24Input) CheckResult {
+	rawConfig := "engine=" + sanitizeEvidence(input.Engine) + "; criterion=" + sanitizeEvidence(input.Criterion)
 	return CheckResult{
 		Status:          StatusNotApplicable,
-		RawConfig:       "engine=" + sanitizeEvidence(input.Engine) + "; criterion=" + sanitizeEvidence(input.Criterion),
-		ProcessedConfig: "applicability=not_applicable; reason=SQL_Server_only",
+		RawConfig:       rawConfig,
+		ProcessedConfig: rawConfig,
 	}
 }

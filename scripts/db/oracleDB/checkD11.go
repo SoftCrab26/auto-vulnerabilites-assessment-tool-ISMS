@@ -25,6 +25,7 @@ type D11Grant struct {
 
 type D11Input struct {
 	Grants  []D11Grant
+	RawRows [][]string
 	LoadErr error
 }
 
@@ -40,12 +41,24 @@ func loadD11Input(scanCtx ScanContext) D11Input {
 	if scanCtx.MetadataErr != nil {
 		return D11Input{LoadErr: scanCtx.MetadataErr}
 	}
-	const query = `SELECT p.owner || '|~|' || p.table_name || '|~|' || p.grantee || '|~|' || p.privilege
+	const query12c = `SELECT p.owner || '|~|' || p.table_name || '|~|' || p.grantee || '|~|' || p.privilege
 FROM dba_tab_privs p
 LEFT JOIN dba_users u ON u.username = p.grantee
 WHERE p.owner IN ('SYS', 'SYSTEM')
   AND (p.grantee = 'PUBLIC' OR NVL(u.oracle_maintained, 'N') = 'N')
 ORDER BY p.owner, p.table_name, p.grantee, p.privilege;`
+	// 11g: treat every user/role grantee as reviewable (no oracle_maintained).
+	const query11g = `SELECT p.owner || '|~|' || p.table_name || '|~|' || p.grantee || '|~|' || p.privilege
+FROM dba_tab_privs p
+LEFT JOIN dba_users u ON u.username = p.grantee
+LEFT JOIN dba_roles r ON r.role = p.grantee
+WHERE p.owner IN ('SYS', 'SYSTEM')
+  AND (p.grantee = 'PUBLIC' OR u.username IS NOT NULL OR r.role IS NOT NULL)
+ORDER BY p.owner, p.table_name, p.grantee, p.privilege;`
+	query := query11g
+	if useOracle12cSQL(scanCtx) {
+		query = query12c
+	}
 
 	rows, err := scanCtx.Runner.Query(context.Background(), query)
 	if err != nil {
@@ -61,7 +74,7 @@ ORDER BY p.owner, p.table_name, p.grantee, p.privilege;`
 			Grantee: sanitizeEvidence(row[2]), Privilege: sanitizeEvidence(row[3]),
 		})
 	}
-	return D11Input{Grants: grants}
+	return D11Input{Grants: grants, RawRows: rows}
 }
 
 func evalD11(input D11Input) CheckResult {
@@ -71,8 +84,8 @@ func evalD11(input D11Input) CheckResult {
 	if len(input.Grants) == 0 {
 		return CheckResult{
 			Status:          StatusGood,
-			RawConfig:       "risky_sys_system_object_grants=0",
-			ProcessedConfig: "public_or_non_oracle_maintained_grants=none",
+			RawConfig:       formatSQLTable([]string{"OWNER", "TABLE_NAME", "GRANTEE", "PRIVILEGE"}, nil),
+			ProcessedConfig: formatProcessedRaw(nil),
 		}
 	}
 
@@ -88,8 +101,8 @@ func evalD11(input D11Input) CheckResult {
 	sort.Strings(evidence)
 	return CheckResult{
 		Status:           StatusVulnerable,
-		RawConfig:        strings.Join(evidence, ", "),
+		RawConfig:        formatSQLTable([]string{"OWNER", "TABLE_NAME", "GRANTEE", "PRIVILEGE"}, input.RawRows),
 		VulnerableConfig: strings.Join(evidence, ", "),
-		ProcessedConfig:  fmt.Sprintf("risky_sys_system_object_grants=%d", len(evidence)),
+		ProcessedConfig:  formatProcessedRaw(input.RawRows),
 	}
 }

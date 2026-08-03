@@ -26,6 +26,7 @@ type D21Grant struct {
 
 type D21Input struct {
 	Grants  []D21Grant
+	RawRows [][]string
 	LoadErr error
 }
 
@@ -41,7 +42,7 @@ func loadD21Input(scanCtx ScanContext) D21Input {
 	if scanCtx.MetadataErr != nil {
 		return D21Input{LoadErr: scanCtx.MetadataErr}
 	}
-	const query = `SELECT grant_kind || '|~|' || grantee || '|~|' ||
+	const query12c = `SELECT grant_kind || '|~|' || grantee || '|~|' ||
        owner_name || '|~|' || object_name || '|~|' || privilege_name
 FROM (
     SELECT 'OBJECT' grant_kind, p.grantee, p.owner owner_name,
@@ -62,6 +63,29 @@ FROM (
            OR NVL(u.oracle_maintained, NVL(r.oracle_maintained, 'N')) = 'N')
 )
 ORDER BY grant_kind, grantee, owner_name, object_name, privilege_name;`
+	const query11g = `SELECT grant_kind || '|~|' || grantee || '|~|' ||
+       owner_name || '|~|' || object_name || '|~|' || privilege_name
+FROM (
+    SELECT 'OBJECT' grant_kind, p.grantee, p.owner owner_name,
+           p.table_name object_name, p.privilege privilege_name
+    FROM dba_tab_privs p
+    LEFT JOIN dba_users u ON u.username = p.grantee
+    LEFT JOIN dba_roles r ON r.role = p.grantee
+    WHERE p.grantable = 'YES'
+      AND (p.grantee = 'PUBLIC' OR u.username IS NOT NULL OR r.role IS NOT NULL)
+    UNION ALL
+    SELECT 'SYSTEM', p.grantee, '-', '-', p.privilege
+    FROM dba_sys_privs p
+    LEFT JOIN dba_users u ON u.username = p.grantee
+    LEFT JOIN dba_roles r ON r.role = p.grantee
+    WHERE p.admin_option = 'YES'
+      AND (p.grantee = 'PUBLIC' OR u.username IS NOT NULL OR r.role IS NOT NULL)
+)
+ORDER BY grant_kind, grantee, owner_name, object_name, privilege_name;`
+	query := query11g
+	if useOracle12cSQL(scanCtx) {
+		query = query12c
+	}
 
 	rows, err := scanCtx.Runner.Query(context.Background(), query)
 	if err != nil {
@@ -79,7 +103,7 @@ ORDER BY grant_kind, grantee, owner_name, object_name, privilege_name;`
 			Kind: row[0], Grantee: row[1], Owner: row[2], Object: row[3], Privilege: row[4],
 		})
 	}
-	return D21Input{Grants: grants}
+	return D21Input{Grants: grants, RawRows: rows}
 }
 
 func evalD21(input D21Input) CheckResult {
@@ -89,8 +113,8 @@ func evalD21(input D21Input) CheckResult {
 	if len(input.Grants) == 0 {
 		return CheckResult{
 			Status:          StatusGood,
-			RawConfig:       "delegable_grants=none",
-			ProcessedConfig: "broad_delegations=0; review_delegations=0",
+			RawConfig:       formatSQLTable([]string{"GRANT_KIND", "GRANTEE", "OWNER_NAME", "OBJECT_NAME", "PRIVILEGE_NAME"}, nil),
+			ProcessedConfig: formatProcessedRaw(nil),
 		}
 	}
 
@@ -108,13 +132,10 @@ func evalD21(input D21Input) CheckResult {
 	}
 	sort.Strings(broad)
 	sort.Strings(review)
-	allEvidence := append(append([]string{}, broad...), review...)
-	sort.Strings(allEvidence)
 
 	result := CheckResult{
-		RawConfig: strings.Join(allEvidence, " | "),
-		ProcessedConfig: fmt.Sprintf("broad_delegations=%d; review_delegations=%d",
-			len(broad), len(review)),
+		RawConfig:       formatSQLTable([]string{"GRANT_KIND", "GRANTEE", "OWNER_NAME", "OBJECT_NAME", "PRIVILEGE_NAME"}, input.RawRows),
+		ProcessedConfig: formatProcessedRaw(input.RawRows),
 	}
 	if len(broad) > 0 {
 		result.Status = StatusVulnerable

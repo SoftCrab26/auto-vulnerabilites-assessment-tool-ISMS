@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 )
 
@@ -26,7 +24,8 @@ type D13FileEvidence struct {
 }
 
 type D13Input struct {
-	Files []D13FileEvidence
+	Files   []D13FileEvidence
+	RawRows [][]string
 }
 
 func checkD13(ctx ScanContext) CheckResult {
@@ -78,30 +77,26 @@ func loadD13Input() D13Input {
 		}
 		files = append(files, evidence)
 	}
-	return D13Input{Files: files}
+	return D13Input{Files: files, RawRows: d13RawRows(files)}
+}
+
+func d13RawRows(files []D13FileEvidence) [][]string {
+	rows := make([][]string, 0, len(files))
+	for _, file := range files {
+		rows = append(rows, []string{file.Path, file.Status})
+	}
+	return rows
 }
 
 func evalD13(input D13Input) CheckResult {
-	evidence := make([]string, 0, len(input.Files))
-	for _, file := range input.Files {
-		path := sanitizeEvidence(file.Path)
-		status := sanitizeEvidence(file.Status)
-		if path == "" || status == "" {
-			continue
-		}
-		item := path + "=" + status
-		if file.Status == "present_readable" {
-			item += fmt.Sprintf("(sections=%d)", file.Sections)
-		}
-		evidence = append(evidence, item)
+	rawRows := input.RawRows
+	if rawRows == nil {
+		rawRows = d13RawRows(input.Files)
 	}
-	sort.Strings(evidence)
-	if len(evidence) == 0 {
-		evidence = append(evidence, "checked_paths=none_available")
-	}
+	rawConfig := formatSQLTable([]string{"PATH", "STATUS"}, rawRows)
 	return CheckResult{
 		Status:          StatusManual,
-		RawConfig:       strings.Join(evidence, ", "),
-		ProcessedConfig: "review=validate each ODBC/OLE DB data source, driver, owner, and documented business purpose; file contents and credentials were not collected",
+		RawConfig:       rawConfig,
+		ProcessedConfig: formatProcessedRaw(rawRows),
 	}
 }

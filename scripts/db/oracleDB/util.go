@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 	"unicode"
@@ -69,6 +70,66 @@ func sanitizeEvidence(value string) string {
 		return r
 	}, value)
 	return strings.TrimSpace(strings.Join(strings.Fields(value), " "))
+}
+
+// rawTableCell keeps query cell text as close to sqlplus output as possible.
+// Only characters that would break a single-line TSV row are normalized.
+func rawTableCell(value string) string {
+	value = strings.ReplaceAll(value, "\x00", "")
+	value = strings.ReplaceAll(value, "\r", "")
+	value = strings.ReplaceAll(value, "\n", " ")
+	value = strings.ReplaceAll(value, "\t", " ")
+	return value
+}
+
+// formatSQLTable renders SELECT-style evidence as a header + tab-separated rows,
+// similar to looking at the raw command result rather than key=value summaries.
+func formatSQLTable(headers []string, rows [][]string) string {
+	var b strings.Builder
+	if len(headers) > 0 {
+		b.WriteString(strings.Join(headers, "\t"))
+		b.WriteByte('\n')
+	}
+	if len(rows) == 0 {
+		b.WriteString("(no rows selected)")
+		return b.String()
+	}
+	width := len(headers)
+	for i, row := range rows {
+		if width == 0 {
+			width = len(row)
+		}
+		cells := make([]string, width)
+		for j := 0; j < width; j++ {
+			if j < len(row) {
+				cells[j] = rawTableCell(row[j])
+			}
+		}
+		b.WriteString(strings.Join(cells, "\t"))
+		if i < len(rows)-1 {
+			b.WriteByte('\n')
+		}
+	}
+	return b.String()
+}
+
+// formatProcessedRaw is a one-line console preview of raw table evidence:
+// the first data row as TSV, optionally prefixed with the total row count.
+// It intentionally avoids key=value judgment summaries.
+func formatProcessedRaw(rows [][]string) string {
+	if len(rows) == 0 {
+		return "(no rows selected)"
+	}
+	width := len(rows[0])
+	cells := make([]string, width)
+	for j := 0; j < width; j++ {
+		cells[j] = rawTableCell(rows[0][j])
+	}
+	line := strings.Join(cells, "\t")
+	if len(rows) == 1 {
+		return line
+	}
+	return fmt.Sprintf("(%d rows)\t%s", len(rows), line)
 }
 
 func sanitizeFileComponent(value string) string {

@@ -22,6 +22,7 @@ type D04Grant struct {
 
 type D04Input struct {
 	Grants  []D04Grant
+	RawRows [][]string
 	LoadErr error
 }
 
@@ -37,7 +38,8 @@ func loadD04Input(scanCtx ScanContext) D04Input {
 	if scanCtx.MetadataErr != nil {
 		return D04Input{LoadErr: scanCtx.MetadataErr}
 	}
-	const query = `SELECT source_name || '|~|' || grantee || '|~|' || privilege_name
+	// SYSBACKUP/SYSDG/SYSKM columns exist from 12c only.
+	const query12c = `SELECT source_name || '|~|' || grantee || '|~|' || privilege_name
 FROM (
   SELECT 'DBA_ROLE_PRIVS' source_name, grantee, granted_role privilege_name
   FROM dba_role_privs
@@ -57,6 +59,27 @@ FROM (
 )
 WHERE privilege_name IS NOT NULL
 ORDER BY source_name, grantee, privilege_name;`
+	const query11g = `SELECT source_name || '|~|' || grantee || '|~|' || privilege_name
+FROM (
+  SELECT 'DBA_ROLE_PRIVS' source_name, grantee, granted_role privilege_name
+  FROM dba_role_privs
+  WHERE granted_role = 'DBA'
+  UNION ALL
+  SELECT 'V$PWFILE_USERS', username,
+         RTRIM(
+           CASE WHEN sysdba = 'TRUE' THEN 'SYSDBA,' END ||
+           CASE WHEN sysoper = 'TRUE' THEN 'SYSOPER,' END ||
+           CASE WHEN sysasm = 'TRUE' THEN 'SYSASM,' END,
+           ','
+         )
+  FROM v$pwfile_users
+)
+WHERE privilege_name IS NOT NULL
+ORDER BY source_name, grantee, privilege_name;`
+	query := query11g
+	if useOracle12cSQL(scanCtx) {
+		query = query12c
+	}
 	rows, err := scanCtx.Runner.Query(context.Background(), query)
 	if err != nil {
 		return D04Input{LoadErr: err}
@@ -70,7 +93,7 @@ ORDER BY source_name, grantee, privilege_name;`
 			Source: sanitizeEvidence(row[0]), Grantee: sanitizeEvidence(row[1]), Privilege: sanitizeEvidence(row[2]),
 		})
 	}
-	return D04Input{Grants: grants}
+	return D04Input{Grants: grants, RawRows: rows}
 }
 
 func evalD04(input D04Input) CheckResult {
@@ -80,17 +103,15 @@ func evalD04(input D04Input) CheckResult {
 	if len(input.Grants) == 0 {
 		return errorResult("D-04", d04Description, d04Mitre, errors.New("D-04 administrator privilege evidence is missing"))
 	}
-	evidence := make([]string, 0, len(input.Grants))
 	for _, grant := range input.Grants {
 		if strings.TrimSpace(grant.Source) == "" || strings.TrimSpace(grant.Grantee) == "" || strings.TrimSpace(grant.Privilege) == "" {
 			return errorResult("D-04", d04Description, d04Mitre, errors.New("D-04 administrator privilege evidence contains an empty required value"))
 		}
-		evidence = append(evidence, "source="+sanitizeEvidence(grant.Source)+", grantee="+sanitizeEvidence(grant.Grantee)+
-			", privilege="+sanitizeEvidence(grant.Privilege))
 	}
+	rawConfig := formatSQLTable([]string{"SOURCE_NAME", "GRANTEE", "PRIVILEGE_NAME"}, input.RawRows)
 	return CheckResult{
 		Status:          StatusManual,
-		RawConfig:       strings.Join(evidence, "; "),
-		ProcessedConfig: "Human decision required: compare each listed administrator grantee with the approved minimum administrator account list.",
+		RawConfig:       rawConfig,
+		ProcessedConfig: formatProcessedRaw(input.RawRows),
 	}
 }

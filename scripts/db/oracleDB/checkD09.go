@@ -25,6 +25,7 @@ type D09Profile struct {
 
 type D09Input struct {
 	Profiles []D09Profile
+	RawRows  [][]string
 	LoadErr  error
 }
 
@@ -69,7 +70,7 @@ ORDER BY p.profile;`
 			Resolved: sanitizeEvidence(strings.ToUpper(row[2])),
 		})
 	}
-	return D09Input{Profiles: profiles}
+	return D09Input{Profiles: profiles, RawRows: rows}
 }
 
 func evalD09(input D09Input) CheckResult {
@@ -80,7 +81,7 @@ func evalD09(input D09Input) CheckResult {
 		return errorResult("D-09", d09Description, d09Mitre, errors.New("FAILED_LOGIN_ATTEMPTS evidence is empty"))
 	}
 
-	var evidence, unlimited, unresolved []string
+	var unlimited, unresolved []string
 	for _, profile := range input.Profiles {
 		name := sanitizeEvidence(profile.Profile)
 		declared := strings.ToUpper(strings.TrimSpace(profile.Declared))
@@ -88,7 +89,6 @@ func evalD09(input D09Input) CheckResult {
 		if name == "" || declared == "" || resolved == "" {
 			return errorResult("D-09", d09Description, d09Mitre, errors.New("profile evidence is incomplete"))
 		}
-		evidence = append(evidence, fmt.Sprintf("%s:declared=%s,resolved=%s", name, declared, resolved))
 		switch resolved {
 		case "UNLIMITED":
 			unlimited = append(unlimited, name+"=UNLIMITED")
@@ -101,22 +101,21 @@ func evalD09(input D09Input) CheckResult {
 			}
 		}
 	}
-	sort.Strings(evidence)
 	sort.Strings(unlimited)
 	sort.Strings(unresolved)
-	result := CheckResult{RawConfig: strings.Join(evidence, "; ")}
+	rawRows := input.RawRows
+	rawConfig := formatSQLTable([]string{"PROFILE", "DECLARED_LIMIT", "RESOLVED_LIMIT"}, rawRows)
+	processed := formatProcessedRaw(rawRows)
+	result := CheckResult{RawConfig: rawConfig, ProcessedConfig: processed}
 	if len(unlimited) > 0 {
 		result.Status = StatusVulnerable
 		result.VulnerableConfig = strings.Join(unlimited, ", ")
-		result.ProcessedConfig = "review=FAILED_LOGIN_ATTEMPTS includes UNLIMITED profiles"
 		return result
 	}
 	if len(unresolved) > 0 {
 		result.Status = StatusManual
-		result.ProcessedConfig = "review=resolve DEFAULT inheritance and confirm a finite positive FAILED_LOGIN_ATTEMPTS value; unresolved=" + strings.Join(unresolved, ", ")
 		return result
 	}
 	result.Status = StatusGood
-	result.ProcessedConfig = "all_profiles_resolve_to_finite_positive_values=true"
 	return result
 }

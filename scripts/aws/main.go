@@ -75,7 +75,7 @@ func main() {
 		checkAWS10(ctx),
 		checkAWS11(ctx),
 		checkAWS12(ctx),
-		checkAWS13(ctx)
+		checkAWS13(ctx),
 	}
 
 	for _, result := range results {

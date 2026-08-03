@@ -23,6 +23,7 @@ type D05Profile struct {
 
 type D05Input struct {
 	Profiles []D05Profile
+	RawRows  [][]string
 	LoadErr  error
 }
 
@@ -59,7 +60,7 @@ ORDER BY profile;`
 			Name: sanitizeEvidence(row[0]), ReuseMax: sanitizeEvidence(row[1]), ReuseTime: sanitizeEvidence(row[2]),
 		})
 	}
-	return D05Input{Profiles: profiles}
+	return D05Input{Profiles: profiles, RawRows: rows}
 }
 
 func evalD05(input D05Input) CheckResult {
@@ -80,7 +81,7 @@ func evalD05(input D05Input) CheckResult {
 		}
 	}
 
-	var evidence, vulnerable []string
+	var vulnerable []string
 	unresolved := false
 	for _, profile := range input.Profiles {
 		name := sanitizeEvidence(profile.Name)
@@ -89,8 +90,6 @@ func evalD05(input D05Input) CheckResult {
 		if name == "" || reuseMax == "" || reuseTime == "" {
 			return errorResult("D-05", d05Description, d05Mitre, errors.New("D-05 password reuse evidence contains an empty required value"))
 		}
-		evidence = append(evidence, "profile="+name+", password_reuse_max="+sanitizeEvidence(reuseMax)+
-			", password_reuse_time="+sanitizeEvidence(reuseTime))
 
 		resolvedMax, okMax := resolveD05Limit(reuseMax, defaultProfile, true)
 		resolvedTime, okTime := resolveD05Limit(reuseTime, defaultProfile, false)
@@ -106,26 +105,27 @@ func evalD05(input D05Input) CheckResult {
 			vulnerable = append(vulnerable, "profile="+name+", effective_password_reuse_max=UNLIMITED, effective_password_reuse_time=UNLIMITED")
 		}
 	}
-	raw := strings.Join(evidence, "; ")
+	rawConfig := formatSQLTable([]string{"PROFILE", "PASSWORD_REUSE_MAX", "PASSWORD_REUSE_TIME"}, input.RawRows)
+	processed := formatProcessedRaw(input.RawRows)
 	if unresolved {
 		return CheckResult{
 			Status:          StatusManual,
-			RawConfig:       raw,
-			ProcessedConfig: "Human decision required: DEFAULT inheritance could not be resolved; verify the effective PASSWORD_REUSE_MAX and PASSWORD_REUSE_TIME for each affected profile.",
+			RawConfig:       rawConfig,
+			ProcessedConfig: processed,
 		}
 	}
 	if len(vulnerable) > 0 {
 		return CheckResult{
 			Status:           StatusVulnerable,
-			RawConfig:        raw,
+			RawConfig:        rawConfig,
 			VulnerableConfig: strings.Join(vulnerable, "; "),
-			ProcessedConfig:  "profiles_with_no_effective_password_reuse_restriction=true",
+			ProcessedConfig:  processed,
 		}
 	}
 	return CheckResult{
 		Status:          StatusGood,
-		RawConfig:       raw,
-		ProcessedConfig: "every_profile_has_at_least_one_finite_password_reuse_restriction=true",
+		RawConfig:       rawConfig,
+		ProcessedConfig: processed,
 	}
 }
 

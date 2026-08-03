@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"sort"
 	"strings"
 )
 
@@ -18,6 +17,7 @@ var d12Mitre = MitreAttack{
 type D12Input struct {
 	Version    string
 	Parameters map[string]bool
+	RawRows    [][]string
 	LoadErr    error
 }
 
@@ -67,6 +67,7 @@ ORDER BY 1;`
 			return D12Input{LoadErr: errors.New("D-12 query returned an unexpected evidence type")}
 		}
 	}
+	input.RawRows = rows
 	return input
 }
 
@@ -77,22 +78,14 @@ func evalD12(input D12Input) CheckResult {
 	if strings.TrimSpace(input.Version) == "" {
 		return errorResult("D-12", d12Description, d12Mitre, errors.New("listener version or parameter evidence is missing"))
 	}
-	evidence := []string{"database_version=" + sanitizeEvidence(input.Version)}
 	for _, name := range []string{"listener_networks", "local_listener", "remote_listener"} {
-		configured, ok := input.Parameters[name]
-		if !ok {
+		if _, ok := input.Parameters[name]; !ok {
 			return errorResult("D-12", d12Description, d12Mitre, errors.New("listener version or parameter evidence is missing"))
 		}
-		state := "unset"
-		if configured {
-			state = "configured"
-		}
-		evidence = append(evidence, sanitizeEvidence(name)+"="+state)
 	}
-	sort.Strings(evidence)
 	return CheckResult{
 		Status:          StatusManual,
-		RawConfig:       strings.Join(evidence, ", "),
-		ProcessedConfig: "review=listener password criterion is legacy/version-dependent; inspect listener.ora and confirm current listener administration uses OS authentication with appropriately restricted file and service ownership",
+		RawConfig:       formatSQLTable([]string{"KIND", "NAME", "VALUE"}, input.RawRows),
+		ProcessedConfig: formatProcessedRaw(input.RawRows),
 	}
 }

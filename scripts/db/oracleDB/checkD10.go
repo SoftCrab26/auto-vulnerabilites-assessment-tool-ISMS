@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"sort"
 	"strings"
 )
 
@@ -17,6 +16,7 @@ var d10Mitre = MitreAttack{
 
 type D10Input struct {
 	Parameters map[string]bool
+	RawRows    [][]string
 	LoadErr    error
 }
 
@@ -54,7 +54,7 @@ ORDER BY name;`
 		}
 		parameters[name] = state == "CONFIGURED"
 	}
-	return D10Input{Parameters: parameters}
+	return D10Input{Parameters: parameters, RawRows: rows}
 }
 
 func evalD10(input D10Input) CheckResult {
@@ -62,22 +62,14 @@ func evalD10(input D10Input) CheckResult {
 		return errorResult("D-10", d10Description, d10Mitre, input.LoadErr)
 	}
 	required := []string{"listener_networks", "local_listener", "remote_listener"}
-	var evidence []string
 	for _, name := range required {
-		configured, ok := input.Parameters[name]
-		if !ok {
+		if _, ok := input.Parameters[name]; !ok {
 			return errorResult("D-10", d10Description, d10Mitre, errors.New("required listener parameter evidence is missing"))
 		}
-		state := "unset"
-		if configured {
-			state = "configured"
-		}
-		evidence = append(evidence, name+"="+state)
 	}
-	sort.Strings(evidence)
 	return CheckResult{
 		Status:          StatusManual,
-		RawConfig:       strings.Join(evidence, ", "),
-		ProcessedConfig: "review=database parameters do not establish effective remote access restrictions; inspect listener endpoints, valid-node checking, firewall rules, and approved client networks",
+		RawConfig:       formatSQLTable([]string{"NAME", "STATE"}, input.RawRows),
+		ProcessedConfig: formatProcessedRaw(input.RawRows),
 	}
 }

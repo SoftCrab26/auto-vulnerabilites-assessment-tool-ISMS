@@ -21,6 +21,7 @@ type D07Process struct {
 
 type D07Input struct {
 	Processes []D07Process
+	RawRows   [][]string
 	LoadErr   error
 }
 
@@ -50,7 +51,7 @@ ORDER BY username, program;`
 		}
 		processes = append(processes, D07Process{OSUser: sanitizeEvidence(row[0]), Program: sanitizeEvidence(row[1])})
 	}
-	return D07Input{Processes: processes}
+	return D07Input{Processes: processes, RawRows: rows}
 }
 
 func evalD07(input D07Input) CheckResult {
@@ -60,7 +61,7 @@ func evalD07(input D07Input) CheckResult {
 	if len(input.Processes) == 0 {
 		return errorResult("D-07", d07Description, d07Mitre, errors.New("D-07 process evidence is missing"))
 	}
-	var evidence, vulnerable []string
+	var vulnerable []string
 	for _, process := range input.Processes {
 		osUser := strings.TrimSpace(process.OSUser)
 		program := strings.TrimSpace(process.Program)
@@ -68,23 +69,23 @@ func evalD07(input D07Input) CheckResult {
 			return errorResult("D-07", d07Description, d07Mitre, errors.New("D-07 process evidence contains an empty required value"))
 		}
 		item := "os_username=" + sanitizeEvidence(osUser) + ", program=" + sanitizeEvidence(program)
-		evidence = append(evidence, item)
 		if strings.EqualFold(osUser, "root") {
 			vulnerable = append(vulnerable, item)
 		}
 	}
-	raw := strings.Join(evidence, "; ")
+	rawConfig := formatSQLTable([]string{"USERNAME", "PROGRAM"}, input.RawRows)
+	processed := formatProcessedRaw(input.RawRows)
 	if len(vulnerable) > 0 {
 		return CheckResult{
 			Status:           StatusVulnerable,
-			RawConfig:        raw,
+			RawConfig:        rawConfig,
 			VulnerableConfig: strings.Join(vulnerable, "; "),
-			ProcessedConfig:  "database_process_reported_root_os_user=true",
+			ProcessedConfig:  processed,
 		}
 	}
 	return CheckResult{
 		Status:          StatusManual,
-		RawConfig:       raw,
-		ProcessedConfig: "Human decision required: corroborate the listed Oracle process users with host process ownership and service configuration.",
+		RawConfig:       rawConfig,
+		ProcessedConfig: processed,
 	}
 }

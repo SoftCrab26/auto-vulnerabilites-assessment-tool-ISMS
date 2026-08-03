@@ -18,6 +18,7 @@ var d19Mitre = MitreAttack{
 
 type D19Input struct {
 	Parameters map[string]string
+	RawRows    [][]string
 	LoadErr    error
 }
 
@@ -54,7 +55,7 @@ ORDER BY name;`
 		}
 		parameters[name] = strings.ToUpper(strings.TrimSpace(row[1]))
 	}
-	return D19Input{Parameters: parameters}
+	return D19Input{Parameters: parameters, RawRows: rows}
 }
 
 func evalD19(input D19Input) CheckResult {
@@ -63,7 +64,7 @@ func evalD19(input D19Input) CheckResult {
 	}
 
 	required := []string{"os_roles", "remote_os_authent", "remote_os_roles"}
-	var evidence, vulnerable []string
+	var vulnerable []string
 	for _, name := range required {
 		value, ok := input.Parameters[name]
 		if !ok || value == "" {
@@ -73,23 +74,20 @@ func evalD19(input D19Input) CheckResult {
 		if value != "TRUE" && value != "FALSE" {
 			return errorResult("D-19", d19Description, d19Mitre, fmt.Errorf("parameter %s returned an unsupported boolean value", name))
 		}
-		evidence = append(evidence, name+"="+value)
 		if value == "TRUE" {
 			vulnerable = append(vulnerable, name+"=TRUE")
 		}
 	}
-	sort.Strings(evidence)
 	sort.Strings(vulnerable)
 
 	result := CheckResult{
 		Status:          StatusGood,
-		RawConfig:       strings.Join(evidence, ", "),
-		ProcessedConfig: "all_required_parameters_present=true; all_false=true",
+		RawConfig:       formatSQLTable([]string{"NAME", "VALUE"}, input.RawRows),
+		ProcessedConfig: formatProcessedRaw(input.RawRows),
 	}
 	if len(vulnerable) > 0 {
 		result.Status = StatusVulnerable
 		result.VulnerableConfig = strings.Join(vulnerable, ", ")
-		result.ProcessedConfig = "all_required_parameters_present=true; all_false=false"
 	}
 	return result
 }

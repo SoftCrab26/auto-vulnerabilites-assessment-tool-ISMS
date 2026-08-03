@@ -30,6 +30,7 @@ type D15Input struct {
 	OracleBase string
 	OracleHome string
 	Paths      []D15PathEvidence
+	RawRows    [][]string
 	Truncated  bool
 }
 
@@ -67,7 +68,16 @@ func loadD15Input() D15Input {
 			scanD15Directory(root, 0, &visited, &input)
 		}
 	}
+	input.RawRows = d15RawRows(input.Paths)
 	return input
+}
+
+func d15RawRows(paths []D15PathEvidence) [][]string {
+	rows := make([][]string, 0, len(paths))
+	for _, path := range paths {
+		rows = append(rows, []string{path.Path, path.Status, pathModeCell(path.Status, path.Mode)})
+	}
+	return rows
 }
 
 func statD15Path(path string) D15PathEvidence {
@@ -110,56 +120,43 @@ func scanD15Directory(path string, depth int, visited *int, input *D15Input) {
 }
 
 func evalD15(input D15Input) CheckResult {
-	var evidence, writable []string
+	rawRows := input.RawRows
+	if rawRows == nil {
+		rawRows = d15RawRows(input.Paths)
+	}
+	headers := []string{"PATH", "STATUS", "MODE"}
+	var writable []string
 	found := 0
 	for _, path := range input.Paths {
-		item := sanitizeEvidence(path.Path) + "=" + sanitizeEvidence(path.Status)
 		if path.Status == "present" {
 			found++
 			mode := path.Mode.Perm()
-			item += fmt.Sprintf("(mode=%04o)", mode)
 			if mode&0o022 != 0 {
 				writable = append(writable, fmt.Sprintf("%s mode=%04o", sanitizeEvidence(path.Path), mode))
 			}
 		}
-		evidence = append(evidence, item)
 	}
-	sort.Strings(evidence)
 	sort.Strings(writable)
-	env := fmt.Sprintf("ORACLE_BASE=%s; ORACLE_HOME=%s",
-		envStatus(input.OracleBase), envStatus(input.OracleHome))
-	raw := env
-	if len(evidence) > 0 {
-		raw += "; " + strings.Join(evidence, ", ")
-	}
-	if input.Truncated {
-		raw += "; bounded_scan=truncated"
-	}
+	rawConfig := formatSQLTable(headers, rawRows)
+	processed := formatProcessedRaw(rawRows)
 	if len(writable) > 0 {
 		return CheckResult{
 			Status:           StatusVulnerable,
-			RawConfig:        raw,
+			RawConfig:        rawConfig,
 			VulnerableConfig: strings.Join(writable, ", "),
-			ProcessedConfig:  "listener_log_or_trace_path_group_or_other_writable=true",
+			ProcessedConfig:  processed,
 		}
 	}
 	if found == 0 {
 		return CheckResult{
 			Status:          StatusManual,
-			RawConfig:       raw,
-			ProcessedConfig: "review=listener log and trace locations were unavailable; identify active listener diagnostics paths and verify ownership and permissions",
+			RawConfig:       rawConfig,
+			ProcessedConfig: processed,
 		}
 	}
 	return CheckResult{
 		Status:          StatusGood,
-		RawConfig:       raw,
-		ProcessedConfig: "inspected_listener_log_and_trace_paths_group_or_other_writable=false",
+		RawConfig:       rawConfig,
+		ProcessedConfig: processed,
 	}
-}
-
-func envStatus(value string) string {
-	if strings.TrimSpace(value) == "" {
-		return "unset"
-	}
-	return sanitizeEvidence(value)
 }

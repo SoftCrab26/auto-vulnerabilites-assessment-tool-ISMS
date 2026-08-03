@@ -49,6 +49,11 @@ func run() error {
 	} else {
 		fmt.Fprintf(out, "Database: %s (%s), version %s, role %s, open mode %s\n",
 			metadata.Name, metadata.UniqueName, metadata.Version, metadata.DatabaseRole, metadata.OpenMode)
+		if isOracle12cOrNewer(metadata.Version) {
+			fmt.Fprintln(out, "SQL compatibility mode: 12c+")
+		} else {
+			fmt.Fprintln(out, "SQL compatibility mode: 11g")
+		}
 	}
 
 	results := runChecks(scanCtx)

@@ -20,10 +20,16 @@ func (r *focusedRunner) Query(_ context.Context, query string) ([][]string, erro
 
 func TestD08ThroughD15Evaluations(t *testing.T) {
 	t.Run("D08 legacy verifier", func(t *testing.T) {
-		got := evalD08(D08Input{Accounts: []D08Account{
-			{Username: "APP", PasswordVersions: "11G 12C"},
-			{Username: "LEGACY", PasswordVersions: "10G 11G"},
-		}})
+		got := evalD08(D08Input{
+			Accounts: []D08Account{
+				{Username: "APP", PasswordVersions: "11G 12C"},
+				{Username: "LEGACY", PasswordVersions: "10G 11G"},
+			},
+			RawRows: [][]string{
+				{"APP", "11G 12C"},
+				{"LEGACY", "10G 11G"},
+			},
+		})
 		if got.Status != StatusVulnerable || !strings.Contains(got.VulnerableConfig, "LEGACY=10G") {
 			t.Fatalf("unexpected D-08 result: %+v", got)
 		}
@@ -37,8 +43,11 @@ func TestD08ThroughD15Evaluations(t *testing.T) {
 		if good.Status != StatusGood {
 			t.Fatalf("finite D-09 value should be Good: %+v", good)
 		}
-		manual := evalD09(D09Input{Profiles: []D09Profile{{Profile: "APP", Declared: "DEFAULT", Resolved: "DEFAULT"}}})
-		if manual.Status != StatusManual || manual.RawConfig == "" || !strings.Contains(manual.ProcessedConfig, "resolve DEFAULT") {
+		manual := evalD09(D09Input{
+			Profiles: []D09Profile{{Profile: "APP", Declared: "DEFAULT", Resolved: "DEFAULT"}},
+			RawRows:  [][]string{{"APP", "DEFAULT", "DEFAULT"}},
+		})
+		if manual.Status != StatusManual || manual.RawConfig == "" || !strings.Contains(manual.ProcessedConfig, "APP") {
 			t.Fatalf("unresolved D-09 DEFAULT should be Manual with evidence: %+v", manual)
 		}
 		vulnerable := evalD09(D09Input{Profiles: []D09Profile{{Profile: "APP", Declared: "UNLIMITED", Resolved: "UNLIMITED"}}})
@@ -48,10 +57,17 @@ func TestD08ThroughD15Evaluations(t *testing.T) {
 	})
 
 	t.Run("D10 manual review", func(t *testing.T) {
-		got := evalD10(D10Input{Parameters: map[string]bool{
-			"local_listener": true, "remote_listener": false, "listener_networks": true,
-		}})
-		if got.Status != StatusManual || got.RawConfig == "" || !strings.Contains(got.ProcessedConfig, "firewall") {
+		got := evalD10(D10Input{
+			Parameters: map[string]bool{
+				"local_listener": true, "remote_listener": false, "listener_networks": true,
+			},
+			RawRows: [][]string{
+				{"local_listener", "CONFIGURED"},
+				{"remote_listener", "UNSET"},
+				{"listener_networks", "CONFIGURED"},
+			},
+		})
+		if got.Status != StatusManual || got.RawConfig == "" || !strings.Contains(got.ProcessedConfig, "local_listener") {
 			t.Fatalf("D-10 should require manual review with evidence: %+v", got)
 		}
 		if strings.Contains(got.RawConfig, "(") || strings.Contains(got.RawConfig, "HOST=") {
@@ -63,9 +79,12 @@ func TestD08ThroughD15Evaluations(t *testing.T) {
 		if evalD11(D11Input{}).Status != StatusGood {
 			t.Fatal("no D-11 grants should be Good")
 		}
-		got := evalD11(D11Input{Grants: []D11Grant{{
-			Owner: "SYS", Object: "SENSITIVE_VIEW", Grantee: "PUBLIC", Privilege: "SELECT",
-		}}})
+		got := evalD11(D11Input{
+			Grants: []D11Grant{{
+				Owner: "SYS", Object: "SENSITIVE_VIEW", Grantee: "PUBLIC", Privilege: "SELECT",
+			}},
+			RawRows: [][]string{{"SYS", "SENSITIVE_VIEW", "PUBLIC", "SELECT"}},
+		})
 		if got.Status != StatusVulnerable || got.VulnerableConfig == "" {
 			t.Fatalf("risky D-11 grant should be Vulnerable: %+v", got)
 		}
@@ -77,35 +96,55 @@ func TestD08ThroughD15Evaluations(t *testing.T) {
 			Parameters: map[string]bool{
 				"local_listener": true, "remote_listener": false, "listener_networks": false,
 			},
+			RawRows: [][]string{
+				{"VERSION", "19.0.0.0.0", "AVAILABLE"},
+				{"PARAMETER", "local_listener", "CONFIGURED"},
+				{"PARAMETER", "remote_listener", "UNSET"},
+				{"PARAMETER", "listener_networks", "UNSET"},
+			},
 		})
 		if got.Status != StatusManual || got.RawConfig == "" ||
-			!strings.Contains(got.ProcessedConfig, "listener.ora") ||
-			!strings.Contains(got.ProcessedConfig, "OS authentication") {
+			!strings.Contains(got.ProcessedConfig, "19.0.0.0.0") {
 			t.Fatalf("D-12 should provide manual-review evidence: %+v", got)
 		}
 	})
 
 	t.Run("D13 inventory purpose review", func(t *testing.T) {
-		got := evalD13(D13Input{Files: []D13FileEvidence{
-			{Path: "/etc/odbc.ini", Status: "present_readable", Sections: 2},
-			{Path: "/etc/odbcinst.ini", Status: "absent"},
-		}})
-		if got.Status != StatusManual || !strings.Contains(got.RawConfig, "sections=2") ||
-			!strings.Contains(got.ProcessedConfig, "business purpose") {
+		got := evalD13(D13Input{
+			Files: []D13FileEvidence{
+				{Path: "/etc/odbc.ini", Status: "present_readable", Sections: 2},
+				{Path: "/etc/odbcinst.ini", Status: "absent"},
+			},
+			RawRows: [][]string{
+				{"/etc/odbc.ini", "present_readable"},
+				{"/etc/odbcinst.ini", "absent"},
+			},
+		})
+		if got.Status != StatusManual || !strings.Contains(got.RawConfig, "PATH\tSTATUS") ||
+			!strings.Contains(got.RawConfig, "present_readable") ||
+			!strings.Contains(got.ProcessedConfig, "/etc/odbc.ini") {
 			t.Fatalf("D-13 should be Manual with inventory evidence: %+v", got)
 		}
 	})
 
 	t.Run("D14 fixed path permissions", func(t *testing.T) {
-		vulnerable := evalD14(D14Input{OracleHome: "/oracle", Paths: []D14PathEvidence{
-			{Path: "/oracle/network/admin/sqlnet.ora", Status: "present", Mode: 0o664},
-		}})
+		vulnerable := evalD14(D14Input{
+			OracleHome: "/oracle",
+			Paths: []D14PathEvidence{
+				{Path: "/oracle/network/admin/sqlnet.ora", Status: "present", Mode: 0o664},
+			},
+			RawRows: [][]string{{"/oracle/network/admin/sqlnet.ora", "present", "0664"}},
+		})
 		if vulnerable.Status != StatusVulnerable {
 			t.Fatalf("writable D-14 path should be Vulnerable: %+v", vulnerable)
 		}
-		good := evalD14(D14Input{OracleHome: "/oracle", Paths: []D14PathEvidence{
-			{Path: "/oracle/network/admin/sqlnet.ora", Status: "present", Mode: 0o640},
-		}})
+		good := evalD14(D14Input{
+			OracleHome: "/oracle",
+			Paths: []D14PathEvidence{
+				{Path: "/oracle/network/admin/sqlnet.ora", Status: "present", Mode: 0o640},
+			},
+			RawRows: [][]string{{"/oracle/network/admin/sqlnet.ora", "present", "0640"}},
+		})
 		if good.Status != StatusGood {
 			t.Fatalf("secure D-14 evidence should be Good: %+v", good)
 		}
@@ -115,15 +154,23 @@ func TestD08ThroughD15Evaluations(t *testing.T) {
 	})
 
 	t.Run("D15 listener diagnostics permissions", func(t *testing.T) {
-		vulnerable := evalD15(D15Input{OracleBase: "/oracle/base", Paths: []D15PathEvidence{
-			{Path: "/oracle/base/diag/tnslsnr/host/listener/trace/listener.log", Status: "present", Mode: 0o666},
-		}})
+		vulnerable := evalD15(D15Input{
+			OracleBase: "/oracle/base",
+			Paths: []D15PathEvidence{
+				{Path: "/oracle/base/diag/tnslsnr/host/listener/trace/listener.log", Status: "present", Mode: 0o666},
+			},
+			RawRows: [][]string{{"/oracle/base/diag/tnslsnr/host/listener/trace/listener.log", "present", "0666"}},
+		})
 		if vulnerable.Status != StatusVulnerable {
 			t.Fatalf("writable D-15 path should be Vulnerable: %+v", vulnerable)
 		}
-		good := evalD15(D15Input{OracleHome: "/oracle", Paths: []D15PathEvidence{
-			{Path: "/oracle/network/log/listener.log", Status: "present", Mode: 0o640},
-		}})
+		good := evalD15(D15Input{
+			OracleHome: "/oracle",
+			Paths: []D15PathEvidence{
+				{Path: "/oracle/network/log/listener.log", Status: "present", Mode: 0o640},
+			},
+			RawRows: [][]string{{"/oracle/network/log/listener.log", "present", "0640"}},
+		})
 		if good.Status != StatusGood {
 			t.Fatalf("secure D-15 evidence should be Good: %+v", good)
 		}

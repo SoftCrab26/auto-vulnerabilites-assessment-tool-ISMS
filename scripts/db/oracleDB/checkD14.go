@@ -25,6 +25,7 @@ type D14PathEvidence struct {
 type D14Input struct {
 	OracleHome string
 	Paths      []D14PathEvidence
+	RawRows    [][]string
 }
 
 func checkD14(ctx ScanContext) CheckResult {
@@ -61,53 +62,70 @@ func loadD14Input() D14Input {
 		}
 		input.Paths = append(input.Paths, evidence)
 	}
+	input.RawRows = d14RawRows(input.Paths)
 	return input
 }
 
+func d14RawRows(paths []D14PathEvidence) [][]string {
+	rows := make([][]string, 0, len(paths))
+	for _, path := range paths {
+		rows = append(rows, []string{path.Path, path.Status, pathModeCell(path.Status, path.Mode)})
+	}
+	return rows
+}
+
+func pathModeCell(status string, mode os.FileMode) string {
+	if status == "present" {
+		return fmt.Sprintf("%04o", mode.Perm())
+	}
+	return "-"
+}
+
 func evalD14(input D14Input) CheckResult {
-	home := sanitizeEvidence(input.OracleHome)
-	if home == "" {
+	rawRows := input.RawRows
+	if rawRows == nil {
+		rawRows = d14RawRows(input.Paths)
+	}
+	headers := []string{"PATH", "STATUS", "MODE"}
+	if sanitizeEvidence(input.OracleHome) == "" {
 		return CheckResult{
 			Status:          StatusManual,
-			RawConfig:       "ORACLE_HOME=unset; checked_paths=not_resolved",
-			ProcessedConfig: "review=set or identify ORACLE_HOME and inspect sqlnet.ora, listener.ora, tnsnames.ora, and the password-file directory permissions",
+			RawConfig:       formatSQLTable(headers, nil),
+			ProcessedConfig: formatProcessedRaw(nil),
 		}
 	}
-	var evidence, writable []string
+	var writable []string
 	found := 0
 	for _, path := range input.Paths {
-		item := sanitizeEvidence(path.Path) + "=" + sanitizeEvidence(path.Status)
 		if path.Status == "present" {
 			found++
 			mode := path.Mode.Perm()
-			item += fmt.Sprintf("(mode=%04o)", mode)
 			if mode&0o022 != 0 {
 				writable = append(writable, fmt.Sprintf("%s mode=%04o", sanitizeEvidence(path.Path), mode))
 			}
 		}
-		evidence = append(evidence, item)
 	}
-	sort.Strings(evidence)
 	sort.Strings(writable)
-	raw := "ORACLE_HOME=" + home + "; " + strings.Join(evidence, ", ")
+	rawConfig := formatSQLTable(headers, rawRows)
+	processed := formatProcessedRaw(rawRows)
 	if len(writable) > 0 {
 		return CheckResult{
 			Status:           StatusVulnerable,
-			RawConfig:        raw,
+			RawConfig:        rawConfig,
 			VulnerableConfig: strings.Join(writable, ", "),
-			ProcessedConfig:  "group_or_other_writable_paths=true",
+			ProcessedConfig:  processed,
 		}
 	}
 	if found == 0 {
 		return CheckResult{
 			Status:          StatusManual,
-			RawConfig:       raw,
-			ProcessedConfig: "review=ORACLE_HOME was available but no fixed configuration or password-directory path could be inspected",
+			RawConfig:       rawConfig,
+			ProcessedConfig: processed,
 		}
 	}
 	return CheckResult{
 		Status:          StatusGood,
-		RawConfig:       raw,
-		ProcessedConfig: "inspected_paths_group_or_other_writable=false",
+		RawConfig:       rawConfig,
+		ProcessedConfig: processed,
 	}
 }

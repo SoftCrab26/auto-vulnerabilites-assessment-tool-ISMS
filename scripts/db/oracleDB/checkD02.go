@@ -22,6 +22,7 @@ type D02Account struct {
 
 type D02Input struct {
 	Accounts []D02Account
+	RawRows  [][]string
 	LoadErr  error
 }
 
@@ -47,9 +48,17 @@ func loadD02Input(scanCtx ScanContext) D02Input {
 	if scanCtx.MetadataErr != nil {
 		return D02Input{LoadErr: scanCtx.MetadataErr}
 	}
-	const query = `SELECT username || '|~|' || account_status || '|~|' || oracle_maintained
+	// oracle_maintained exists only from 12c; 11g emits literal N.
+	const query12c = `SELECT username || '|~|' || account_status || '|~|' || oracle_maintained
 FROM dba_users
 ORDER BY username;`
+	const query11g = `SELECT username || '|~|' || account_status || '|~|' || 'N'
+FROM dba_users
+ORDER BY username;`
+	query := query11g
+	if useOracle12cSQL(scanCtx) {
+		query = query12c
+	}
 	rows, err := scanCtx.Runner.Query(context.Background(), query)
 	if err != nil {
 		return D02Input{LoadErr: err}
@@ -65,7 +74,7 @@ ORDER BY username;`
 			OracleMaintained: sanitizeEvidence(row[2]),
 		})
 	}
-	return D02Input{Accounts: accounts}
+	return D02Input{Accounts: accounts, RawRows: rows}
 }
 
 func evalD02(input D02Input) CheckResult {
@@ -76,7 +85,7 @@ func evalD02(input D02Input) CheckResult {
 		return errorResult("D-02", d02Description, d02Mitre, errors.New("D-02 account inventory is missing"))
 	}
 
-	var evidence, vulnerable []string
+	var vulnerable []string
 	for _, account := range input.Accounts {
 		username := strings.ToUpper(strings.TrimSpace(account.Username))
 		status := strings.ToUpper(strings.TrimSpace(account.AccountStatus))
@@ -86,23 +95,23 @@ func evalD02(input D02Input) CheckResult {
 		}
 		item := "username=" + sanitizeEvidence(username) + ", account_status=" + sanitizeEvidence(status) +
 			", oracle_maintained=" + sanitizeEvidence(maintained)
-		evidence = append(evidence, item)
 		if _, known := d02KnownDefaultAccounts[username]; known && status == "OPEN" {
 			vulnerable = append(vulnerable, item)
 		}
 	}
-	raw := strings.Join(evidence, "; ")
+	rawConfig := formatSQLTable([]string{"USERNAME", "ACCOUNT_STATUS", "ORACLE_MAINTAINED"}, input.RawRows)
+	processed := formatProcessedRaw(input.RawRows)
 	if len(vulnerable) > 0 {
 		return CheckResult{
 			Status:           StatusVulnerable,
-			RawConfig:        raw,
+			RawConfig:        rawConfig,
 			VulnerableConfig: strings.Join(vulnerable, "; "),
-			ProcessedConfig:  "known_default_or_sample_account_open=true",
+			ProcessedConfig:  processed,
 		}
 	}
 	return CheckResult{
 		Status:          StatusManual,
-		RawConfig:       raw,
-		ProcessedConfig: "Human decision required: confirm each listed account has a documented business purpose or is removed/locked.",
+		RawConfig:       rawConfig,
+		ProcessedConfig: processed,
 	}
 }

@@ -25,6 +25,7 @@ type D17Grant struct {
 
 type D17Input struct {
 	Grants  []D17Grant
+	RawRows [][]string
 	LoadErr error
 }
 
@@ -40,7 +41,7 @@ func loadD17Input(scanCtx ScanContext) D17Input {
 	if scanCtx.MetadataErr != nil {
 		return D17Input{LoadErr: scanCtx.MetadataErr}
 	}
-	const query = `SELECT p.grantee || '|~|' || p.owner || '|~|' ||
+	const query12c = `SELECT p.grantee || '|~|' || p.owner || '|~|' ||
        p.table_name || '|~|' || p.privilege
 FROM dba_tab_privs p
 LEFT JOIN dba_users u ON u.username = p.grantee
@@ -51,6 +52,19 @@ WHERE ((p.owner = 'SYS' AND p.table_name IN
   AND (p.grantee = 'PUBLIC'
        OR NVL(u.oracle_maintained, NVL(r.oracle_maintained, 'N')) = 'N')
 ORDER BY p.grantee, p.owner, p.table_name, p.privilege;`
+	// 11g has no unified audit trail / AUDSYS / oracle_maintained.
+	const query11g = `SELECT p.grantee || '|~|' || p.owner || '|~|' ||
+       p.table_name || '|~|' || p.privilege
+FROM dba_tab_privs p
+LEFT JOIN dba_users u ON u.username = p.grantee
+LEFT JOIN dba_roles r ON r.role = p.grantee
+WHERE p.owner = 'SYS' AND p.table_name IN ('AUD$', 'FGA_LOG$')
+  AND (p.grantee = 'PUBLIC' OR u.username IS NOT NULL OR r.role IS NOT NULL)
+ORDER BY p.grantee, p.owner, p.table_name, p.privilege;`
+	query := query11g
+	if useOracle12cSQL(scanCtx) {
+		query = query12c
+	}
 
 	rows, err := scanCtx.Runner.Query(context.Background(), query)
 	if err != nil {
@@ -71,7 +85,7 @@ ORDER BY p.grantee, p.owner, p.table_name, p.privilege;`
 			Privilege: row[3],
 		})
 	}
-	return D17Input{Grants: grants}
+	return D17Input{Grants: grants, RawRows: rows}
 }
 
 func hasBlankD17Row(row []string) bool {
@@ -90,8 +104,8 @@ func evalD17(input D17Input) CheckResult {
 	if len(input.Grants) == 0 {
 		return CheckResult{
 			Status:          StatusGood,
-			RawConfig:       "audit_object_grants=none",
-			ProcessedConfig: "risky_grants=0; review_grants=0",
+			RawConfig:       formatSQLTable([]string{"GRANTEE", "OWNER", "TABLE_NAME", "PRIVILEGE"}, nil),
+			ProcessedConfig: formatProcessedRaw(nil),
 		}
 	}
 
@@ -113,12 +127,9 @@ func evalD17(input D17Input) CheckResult {
 	sort.Strings(risky)
 	sort.Strings(review)
 
-	allEvidence := append(append([]string{}, risky...), review...)
-	sort.Strings(allEvidence)
 	result := CheckResult{
-		RawConfig: strings.Join(allEvidence, " | "),
-		ProcessedConfig: fmt.Sprintf("risky_grants=%d; review_grants=%d",
-			len(risky), len(review)),
+		RawConfig:       formatSQLTable([]string{"GRANTEE", "OWNER", "TABLE_NAME", "PRIVILEGE"}, input.RawRows),
+		ProcessedConfig: formatProcessedRaw(input.RawRows),
 	}
 	if len(risky) > 0 {
 		result.Status = StatusVulnerable
