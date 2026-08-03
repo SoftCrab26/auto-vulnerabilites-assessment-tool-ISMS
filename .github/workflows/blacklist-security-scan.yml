@@ -1,0 +1,56 @@
+name: Secure DevOps - Practical Blacklist Security Scan (Go/Linux/Windows)
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # -------------------------------------------------
+  # [1] Linux 쉘 스크립트 위험 명령어 점검
+  # -------------------------------------------------
+  linux-blacklist-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Linux 위험 명령어 블랙리스트 점검
+        run: |
+          chmod +x ./scan/linux-inspection.sh
+          ./scan/linux-inspection.sh
+
+  # -------------------------------------------------
+  # [2] Go 코드 내 DB 취약점(블랙리스트 패턴) 점검
+  # -------------------------------------------------
+  go-db-vuln-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Go DB 취약점 블랙리스트 점검
+        run: |
+          chmod +x ./scan/go-db-vuln-scan.sh
+          ./scan/go-db-vuln-scan.sh
+
+      # 참고: 블랙리스트(패턴 매칭) 점검은 빠른 1차 필터일 뿐입니다.
+      # 정밀 점검을 위해 gosec 같은 정적분석 도구 병행을 권장합니다.
+      - name: (권장) gosec 정적분석 병행 실행
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          gosec ./... || true   # 참고용, 실패시 빌드를 막지 않으려면 || true 유지
+
+  # -------------------------------------------------
+  # [3] Windows 스크립트(.ps1/.bat/.cmd) 위험 명령어 점검
+  # -------------------------------------------------
+  windows-blacklist-scan:
+    runs-on: windows-latest
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Windows 위험 명령어 블랙리스트 점검
+        shell: pwsh
+        run: |
+          ./scan/windows-inspection.ps1

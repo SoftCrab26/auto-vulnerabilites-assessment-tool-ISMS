@@ -3,12 +3,13 @@ package main
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("ORACLE_CONNECT", "/@wallet_alias")
 	t.Setenv("ORACLE_SQLPLUS", "")
-	t.Setenv("ORACLE_QUERY_TIMEOUT", "")
+	t.Setenv("ORACLE_QUERY_TIMEOUT", "5s") // ignored; timeout is fixed
 	t.Setenv("ORACLE_OUTPUT_DIR", t.TempDir())
 
 	cfg, err := loadConfigFromEnv()
@@ -18,8 +19,8 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	if cfg.SQLPlusPath != "sqlplus" {
 		t.Fatalf("SQLPlusPath = %q, want sqlplus", cfg.SQLPlusPath)
 	}
-	if cfg.QueryTimeout != defaultQueryTimeout {
-		t.Fatalf("QueryTimeout = %v, want %v", cfg.QueryTimeout, defaultQueryTimeout)
+	if cfg.QueryTimeout != 180*time.Second {
+		t.Fatalf("QueryTimeout = %v, want fixed 180s", cfg.QueryTimeout)
 	}
 }
 

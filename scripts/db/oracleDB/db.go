@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os/exec"
 	"strings"
 	"time"
@@ -22,6 +23,7 @@ type SQLPlusRunner struct {
 	path        string
 	connectSpec string
 	timeout     time.Duration
+	log         io.Writer
 }
 
 func newSQLPlusRunner(cfg Config) *SQLPlusRunner {
@@ -32,9 +34,18 @@ func newSQLPlusRunner(cfg Config) *SQLPlusRunner {
 	}
 }
 
+func (r *SQLPlusRunner) setLog(w io.Writer) {
+	r.log = w
+}
+
 func (r *SQLPlusRunner) Query(parent context.Context, query string) ([][]string, error) {
 	ctx, cancel := context.WithTimeout(parent, r.timeout)
 	defer cancel()
+
+	execLabel := r.path + " -L -S /nolog"
+	if r.log != nil {
+		fmt.Fprintln(r.log, "[EXEC]", execLabel)
+	}
 
 	// The argv is deliberately fixed. Authentication data is provided only over
 	// stdin and must never be included in command arguments.
@@ -63,10 +74,20 @@ func (r *SQLPlusRunner) Query(parent context.Context, query string) ([][]string,
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if ctx.Err() != nil {
+		if r.log != nil {
+			fmt.Fprintln(r.log, "[ERROR] sqlplus query timed out")
+		}
 		return nil, errors.New("sqlplus query timed out")
 	}
 	if err != nil {
 		detail := redactOracleError(stdout.String()+"\n"+stderr.String(), r.connectSpec)
+		if r.log != nil {
+			if detail == "" {
+				fmt.Fprintln(r.log, "[ERROR] sqlplus query failed")
+			} else {
+				fmt.Fprintln(r.log, "[ERROR]", detail)
+			}
+		}
 		if detail == "" {
 			return nil, errors.New("sqlplus query failed")
 		}
@@ -75,7 +96,14 @@ func (r *SQLPlusRunner) Query(parent context.Context, query string) ([][]string,
 
 	rows, err := parseSQLPlusRows(stdout.String())
 	if err != nil {
-		return nil, errors.New(redactOracleError(err.Error(), r.connectSpec))
+		msg := redactOracleError(err.Error(), r.connectSpec)
+		if r.log != nil {
+			fmt.Fprintln(r.log, "[ERROR]", msg)
+		}
+		return nil, errors.New(msg)
+	}
+	if r.log != nil {
+		fmt.Fprintln(r.log, "[DONE]", execLabel)
 	}
 	return rows, nil
 }

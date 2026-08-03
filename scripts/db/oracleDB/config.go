@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,9 +9,8 @@ import (
 )
 
 const (
-	defaultQueryTimeout = 45 * time.Second // D-18 PUBLIC privilege inventory can be slow on large catalogs
-	minQueryTimeout     = time.Second
-	maxQueryTimeout     = 5 * time.Minute
+	// Fixed per-query timeout. Users do not need to set ORACLE_QUERY_TIMEOUT.
+	defaultQueryTimeout = 180 * time.Second
 )
 
 type Config struct {
@@ -23,18 +21,9 @@ type Config struct {
 }
 
 func loadConfigFromEnv() (Config, error) {
-	timeout := defaultQueryTimeout
-	if raw := strings.TrimSpace(os.Getenv("ORACLE_QUERY_TIMEOUT")); raw != "" {
-		parsed, err := time.ParseDuration(raw)
-		if err != nil {
-			return Config{}, errors.New("ORACLE_QUERY_TIMEOUT must be a valid duration")
-		}
-		timeout = parsed
-	}
-
 	cfg := Config{
 		SQLPlusPath:  strings.TrimSpace(os.Getenv("ORACLE_SQLPLUS")),
-		QueryTimeout: timeout,
+		QueryTimeout: defaultQueryTimeout,
 		OutputDir:    strings.TrimSpace(os.Getenv("ORACLE_OUTPUT_DIR")),
 		connectSpec:  os.Getenv("ORACLE_CONNECT"),
 	}
@@ -53,9 +42,6 @@ func (cfg Config) validate() error {
 	}
 	if strings.ContainsAny(cfg.connectSpec, "\r\n\x00") {
 		return errors.New("ORACLE_CONNECT must be a single-line connection specification")
-	}
-	if cfg.QueryTimeout < minQueryTimeout || cfg.QueryTimeout > maxQueryTimeout {
-		return fmt.Errorf("ORACLE_QUERY_TIMEOUT must be between %s and %s", minQueryTimeout, maxQueryTimeout)
 	}
 	if strings.TrimSpace(cfg.SQLPlusPath) == "" {
 		return errors.New("ORACLE_SQLPLUS must not be empty")

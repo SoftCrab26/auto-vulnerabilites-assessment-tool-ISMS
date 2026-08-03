@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -24,14 +25,40 @@ func run() error {
 		return err
 	}
 
-	runner := newSQLPlusRunner(cfg)
-	metadata, metadataErr := collectDBMetadata(context.Background(), runner)
-	scanCtx := ScanContext{Runner: runner, Metadata: metadata, MetadataErr: metadataErr}
-
 	generatedAt := time.Now().UTC()
+	runner := newSQLPlusRunner(cfg)
+
+	// Buffer early progress until the final output basename (DB unique name) is known.
+	var bootBuf bytes.Buffer
+	runner.setLog(&bootBuf)
+
+	fmt.Fprintln(&bootBuf)
+	fmt.Fprintln(&bootBuf, "================================")
+	fmt.Fprintln(&bootBuf, "[*] Collecting database metadata...")
+	fmt.Fprintln(&bootBuf, "================================")
+	metadata, metadataErr := collectDBMetadata(context.Background(), runner)
+	if metadataErr != nil {
+		fmt.Fprintln(&bootBuf, "[ERROR] metadata:", redactOracleError(metadataErr.Error(), ""))
+	} else {
+		fmt.Fprintln(&bootBuf, "[OK] Metadata collection complete")
+		fmt.Fprintf(&bootBuf, "  NAME: %s\n", metadata.Name)
+		fmt.Fprintf(&bootBuf, "  UNIQUE_NAME: %s\n", metadata.UniqueName)
+		fmt.Fprintf(&bootBuf, "  VERSION: %s\n", metadata.Version)
+		fmt.Fprintf(&bootBuf, "  ROLE: %s\n", metadata.DatabaseRole)
+		fmt.Fprintf(&bootBuf, "  OPEN_MODE: %s\n", metadata.OpenMode)
+		if isOracle12cOrNewer(metadata.Version) {
+			fmt.Fprintln(&bootBuf, "  SQL_MODE: 12c+")
+		} else {
+			fmt.Fprintln(&bootBuf, "  SQL_MODE: 11g")
+		}
+	}
+
 	nameSource := metadata.UniqueName
 	if nameSource == "" {
 		nameSource, _ = os.Hostname()
+	}
+	if nameSource == "" {
+		nameSource = "unknown"
 	}
 	baseName := fmt.Sprintf("oracle_%s_%s", sanitizeFileComponent(nameSource), generatedAt.Format("20060102T150405.000000000Z"))
 
@@ -42,27 +69,24 @@ func run() error {
 	}
 	defer logFile.Close()
 	out := io.MultiWriter(os.Stdout, logFile)
-
-	fmt.Fprintln(out, "Oracle vulnerability scanner: running checks D-01 through D-26.")
-	if metadataErr != nil {
-		fmt.Fprintln(out, "Metadata collection: Error -", redactOracleError(metadataErr.Error(), ""))
-	} else {
-		fmt.Fprintf(out, "Database: %s (%s), version %s, role %s, open mode %s\n",
-			metadata.Name, metadata.UniqueName, metadata.Version, metadata.DatabaseRole, metadata.OpenMode)
-		if isOracle12cOrNewer(metadata.Version) {
-			fmt.Fprintln(out, "SQL compatibility mode: 12c+")
-		} else {
-			fmt.Fprintln(out, "SQL compatibility mode: 11g")
-		}
+	if _, err := io.Copy(out, &bootBuf); err != nil {
+		return err
 	}
+	runner.setLog(out)
 
-	results := runChecks(scanCtx)
-	for _, result := range results {
-		fmt.Fprintf(out, "%s: %s - %s\n", result.Code, result.Status, result.ProcessedConfig)
-		if result.ErrMsg != "" {
-			fmt.Fprintln(out, "  Error:", result.ErrMsg)
-		}
-	}
+	scanCtx := ScanContext{Runner: runner, Metadata: metadata, MetadataErr: metadataErr}
+
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, "================================")
+	fmt.Fprintln(out, "[*] Running checks D-01 through D-26...")
+	fmt.Fprintln(out, "================================")
+	results := runChecks(scanCtx, out)
+
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, "================================")
+	fmt.Fprintln(out, "[FINAL RESULT]")
+	fmt.Fprintln(out, "================================")
+	printFinalResults(out, results)
 
 	report := ScanReport{
 		Engine:      "ORACLE",
@@ -80,35 +104,70 @@ func run() error {
 	return nil
 }
 
-func runChecks(ctx ScanContext) []CheckResult {
-	return []CheckResult{
-		checkD01(ctx),
-		checkD02(ctx),
-		checkD03(ctx),
-		checkD04(ctx),
-		checkD05(ctx),
-		checkD06(ctx),
-		checkD07(ctx),
-		checkD08(ctx),
-		checkD09(ctx),
-		checkD10(ctx),
-		checkD11(ctx),
-		checkD12(ctx),
-		checkD13(ctx),
-		checkD14(ctx),
-		checkD15(ctx),
-		checkD16(ctx),
-		checkD17(ctx),
-		checkD18(ctx),
-		checkD19(ctx),
-		checkD20(ctx),
-		checkD21(ctx),
-		checkD22(ctx),
-		checkD23(ctx),
-		checkD24(ctx),
-		checkD25(ctx),
-		checkD26(ctx),
+func printFinalResults(out io.Writer, results []CheckResult) {
+	for _, result := range results {
+		fmt.Fprintln(out, "--------------------------------")
+		fmt.Fprintln(out, "CODE:", result.Code)
+		fmt.Fprintln(out, "STATUS:", result.Status)
+		fmt.Fprintln(out, "DESCRIPTION:", result.Description)
+		fmt.Fprintln(out, "PROCESSED:", result.ProcessedConfig)
+
+		if result.VulnerableConfig != "" {
+			fmt.Fprintln(out, "VULNERABLE CONFIG:")
+			fmt.Fprintln(out, result.VulnerableConfig)
+		}
+		if result.RawConfig != "" {
+			fmt.Fprintln(out, "RAW CONFIG:")
+			fmt.Fprintln(out, result.RawConfig)
+		}
+		if result.ErrMsg != "" {
+			fmt.Fprintln(out, "ERROR:", result.ErrMsg)
+		}
 	}
+}
+
+func runChecks(ctx ScanContext, out io.Writer) []CheckResult {
+	checks := []struct {
+		code string
+		fn   func(ScanContext) CheckResult
+	}{
+		{"D-01", checkD01},
+		{"D-02", checkD02},
+		{"D-03", checkD03},
+		{"D-04", checkD04},
+		{"D-05", checkD05},
+		{"D-06", checkD06},
+		{"D-07", checkD07},
+		{"D-08", checkD08},
+		{"D-09", checkD09},
+		{"D-10", checkD10},
+		{"D-11", checkD11},
+		{"D-12", checkD12},
+		{"D-13", checkD13},
+		{"D-14", checkD14},
+		{"D-15", checkD15},
+		{"D-16", checkD16},
+		{"D-17", checkD17},
+		{"D-18", checkD18},
+		{"D-19", checkD19},
+		{"D-20", checkD20},
+		{"D-21", checkD21},
+		{"D-22", checkD22},
+		{"D-23", checkD23},
+		{"D-24", checkD24},
+		{"D-25", checkD25},
+		{"D-26", checkD26},
+	}
+
+	results := make([]CheckResult, 0, len(checks))
+	for _, check := range checks {
+		fmt.Fprintln(out, "--------------------------------")
+		fmt.Fprintln(out, "[CHECK]", check.code)
+		result := check.fn(ctx)
+		results = append(results, result)
+		fmt.Fprintln(out, "[DONE]", check.code)
+	}
+	return results
 }
 
 func openOutputFile(path string) (*os.File, error) {

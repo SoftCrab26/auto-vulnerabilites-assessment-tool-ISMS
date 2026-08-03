@@ -174,16 +174,17 @@ Oracle DB 취약점 점검 실행 방법
 실행 예 (AIX / ksh)
   ORACLE_HOME=/oracle/app/oracle/product/11g \\
   ORACLE_SQLPLUS=/oracle/app/oracle/product/11g/bin/sqlplus \\
-  ORACLE_QUERY_TIMEOUT=20s \\
   ORACLE_OUTPUT_DIR=/tmp \\
   ORACLE_CONNECT='/ as sysdba' \\
   ./${bin}
 
 선택 환경 변수
   ORACLE_SQLPLUS=/oracle/app/oracle/product/.../bin/sqlplus
-  ORACLE_QUERY_TIMEOUT=20s
   ORACLE_OUTPUT_DIR=/tmp
   ORACLE_HOME / ORACLE_BASE   (D-13~D-15 호스트 파일 점검용)
+
+참고
+  - 쿼리 타임아웃은 180초 고정 (ORACLE_QUERY_TIMEOUT 불필요)
 
 결과 파일 (ORACLE_OUTPUT_DIR 또는 실행 디렉터리, 권한 0600)
   oracle_<DB_UNIQUE_NAME또는호스트>_<UTC타임스탬프>.json

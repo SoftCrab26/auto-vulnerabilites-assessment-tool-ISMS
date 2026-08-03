@@ -65,14 +65,14 @@ GRANT SELECT ON V_$PARAMETER TO audit_user;
 |---|---:|---|---|
 | `ORACLE_CONNECT` | 예 | 없음 | SQL*Plus `connect` 뒤에 사용할 단일 행 연결 명세 |
 | `ORACLE_SQLPLUS` | 아니요 | `sqlplus` | SQL*Plus 실행 파일 경로 |
-| `ORACLE_QUERY_TIMEOUT` | 아니요 | `15s` | 쿼리 제한 시간(1초~5분) |
 | `ORACLE_OUTPUT_DIR` | 아니요 | 현재 디렉터리 | JSON 및 stdout 로그 디렉터리 |
+
+쿼리 제한 시간은 **180초 고정**이며 `ORACLE_QUERY_TIMEOUT` 환경 변수는 사용하지 않습니다.
 
 지갑 또는 외부 인증을 우선 사용합니다. 리터럴 비밀번호를 명령 이력에 넣지 마십시오.
 
 ```sh
 ORACLE_CONNECT='/@wallet_alias' go run .
-ORACLE_CONNECT='/' ORACLE_QUERY_TIMEOUT='20s' go run .
 # 로컬 관리 작업에서만 필요한 경우:
 ORACLE_CONNECT='/ as sysdba' go run .
 ```
