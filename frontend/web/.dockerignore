@@ -1,0 +1,14 @@
+.venv
+__pycache__
+**/__pycache__
+*.pyc
+data/app.db
+data/uploads/*
+data/exports/*
+!data/uploads/.gitkeep
+!data/exports/.gitkeep
+.git
+.gitignore
+README.md
+*.md
+.DS_Store
