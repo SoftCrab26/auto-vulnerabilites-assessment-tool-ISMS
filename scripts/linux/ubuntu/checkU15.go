@@ -12,9 +12,9 @@ func checkU15(ctx ScanContext) CheckResult {
 	const code = "U-15"
 	const description = "No files or directories should exist without an owner (orphaned files)."
 	mitreAttack := MitreAttack{
-		tactic:      "Credential Access",
-		techniques:  []string{"T1003"},
-		mitigations: []string{"M1026"},
+		Tactic:      "Credential Access",
+		Techniques:  []string{"T1003"},
+		Mitigations: []string{"M1026"},
 	}
 
 	input, errs := loadU15Input()

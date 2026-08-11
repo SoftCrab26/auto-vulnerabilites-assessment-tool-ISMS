@@ -12,9 +12,9 @@ func checkU57(ctx ScanContext) CheckResult {
 	const code = "U-57"
 	const description = "root account should be blocked from FTP login (ftpusers file)."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1078"},
-		mitigations: []string{"M1026"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1078"},
+		Mitigations: []string{"M1026"},
 	}
 
 	input, errs := loadU57Input()

@@ -14,9 +14,9 @@ func checkU37(ctx ScanContext) CheckResult {
 	const code = "U-37"
 	const description = "crontab and at related files should have permission 640 or less and no general user execute permission."
 	mitreAttack := MitreAttack{
-		tactic:      "Persistence",
-		techniques:  []string{"T1053"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Persistence",
+		Techniques:  []string{"T1053"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU37Input()

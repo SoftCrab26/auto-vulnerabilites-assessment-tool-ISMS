@@ -12,9 +12,9 @@ func checkU66(ctx ScanContext) CheckResult {
 	const code = "U-66"
 	const description = "System logging should be configured according to security policy."
 	mitreAttack := MitreAttack{
-		tactic:      "Defense Evasion",
-		techniques:  []string{"T1562"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Defense Evasion",
+		Techniques:  []string{"T1562"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU66Input()

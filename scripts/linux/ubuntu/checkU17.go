@@ -13,9 +13,9 @@ func checkU17(ctx ScanContext) CheckResult {
 	const code = "U-17"
 	const description = "System startup scripts should be owned by root and not writable by general users."
 	mitreAttack := MitreAttack{
-		tactic:      "Persistence",
-		techniques:  []string{"T1037"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Persistence",
+		Techniques:  []string{"T1037"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU17Input()

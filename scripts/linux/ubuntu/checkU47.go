@@ -12,9 +12,9 @@ func checkU47(ctx ScanContext) CheckResult {
 	const code = "U-47"
 	const description = "스팸 메일 릴레이를 제한해야 합니다."
 	mitreAttack := MitreAttack{
-		tactic:      "Impact",
-		techniques:  []string{"T1566"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Impact",
+		Techniques:  []string{"T1566"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU47Input()

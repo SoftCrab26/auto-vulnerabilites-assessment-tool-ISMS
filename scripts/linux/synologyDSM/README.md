@@ -18,7 +18,7 @@ DSM 메타데이터, 프로세스, 수신 포트, 패키지 정보를 한 번 �
 - 모델: `/proc/sys/kernel/syno_hw_version`
 
 `/etc` 파일을 `/etc.defaults`보다 먼저 사용합니다. DSM이 아니거나 DSM 6.2.x가
-아니어도 보고서는 생성하지만, 콘솔과 보고서 `warnings`에 비지원 경고를 기록합니다.
+아니어도 보고서는 생성하지만, 콘솔과 `.stdout.log`에 비지원 경고를 기록합니다.
 메타데이터가 누락된 시스템을 지원 대상으로 판단하지 않습니다.
 
 ## 권한과 안전한 실행
@@ -59,11 +59,15 @@ DSM_OUTPUT_DIR=/volume1/security DSM_COMMAND_TIMEOUT=10s ./synologyDSM
 
 ## 출력
 
-파일명에는 호스트명, 로컬 IPv4 주소, UTC 타임스탬프가 포함됩니다.
+파일명은 Ubuntu 스캐너·웹 UI `frontend/ui/test_data/*.json`과 동일하게
+`<hostname>_<ip>.json` 형식입니다.
 
-- `synology_dsm_<host>_<ip>_<timestamp>.json`: OS 식별자, DSM 메타데이터,
-  생성 시각, 경고, U-01~U-67 점검 결과
-- `synology_dsm_<host>_<ip>_<timestamp>.stdout.log`: 콘솔에 표시한 비민감 실행 요약
+- `<hostname>_<ip>.json`: U-01~U-67 `CheckResult` 배열
+  (`RawConfig`, `VulnerableConfig`, `ErrMsg`, `Description`, `Status`,
+  `ProcessedConfig`, `MitreAttack`, `Code`)
+- `<hostname>_<ip>.stdout.log`: 콘솔에 표시한 비민감 실행 요약·경고
+
+`Status`는 정수입니다: 0 Good, 1 Vulnerable, 2 Interview, 3 Manual, 4 N/A, 5 Error.
 
 프로세스 목록, 포트 목록, 패키지 목록은 서비스 탐지에만 사용하며 보고서나 로그에
 원문 그대로 노출하지 않습니다.

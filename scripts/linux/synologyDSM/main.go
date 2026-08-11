@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 type ScanContext struct {
@@ -119,24 +118,17 @@ func execute(ctx context.Context, stdout io.Writer) error {
 		warnings = append(warnings, "지원 대상은 Synology DSM 6.2.x뿐입니다. 현재 버전은 지원되지 않습니다.")
 	}
 
-	generatedAt := time.Now().UTC()
-	report := ScanReport{
-		OS:          "SYNOLOGY_DSM",
-		DSM:         metadata,
-		GeneratedAt: generatedAt,
-		Results:     runChecks(scanContext),
-		Warnings:    warnings,
-	}
+	results := runChecks(scanContext)
 
 	hostname, err := os.Hostname()
 	if err != nil {
-		hostname = "unknown"
+		hostname = "unknown_host"
 	}
+	// Match Ubuntu / web UI test_data naming: {hostname}_{ip}.json
 	baseName := fmt.Sprintf(
-		"synology_dsm_%s_%s_%s",
+		"%s_%s",
 		sanitizedFilename(hostname),
 		sanitizedFilename(localIP()),
-		generatedAt.Format("20060102T150405.000000000Z"),
 	)
 
 	logLines := summaryLines(scanContext, warnings)
@@ -149,7 +141,8 @@ func execute(ctx context.Context, stdout io.Writer) error {
 		return err
 	}
 
-	reportData, err := json.MarshalIndent(report, "", "  ")
+	// JSON array of CheckResult — same schema as frontend/ui/test_data/*.json
+	reportData, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {
 		return fmt.Errorf("encode scan report: %w", err)
 	}

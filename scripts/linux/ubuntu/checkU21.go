@@ -14,9 +14,9 @@ func checkU21(ctx ScanContext) CheckResult {
 	const code = "U-21"
 	const description = "syslog/rsyslog config should be owned by root/bin/sys with permission 640 or less."
 	mitreAttack := MitreAttack{
-		tactic:      "Defense Evasion",
-		techniques:  []string{"T1562"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Defense Evasion",
+		Techniques:  []string{"T1562"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU21Input()

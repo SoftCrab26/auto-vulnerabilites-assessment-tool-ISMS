@@ -8,9 +8,9 @@ func checkU52(ctx ScanContext) CheckResult {
 	const code = "U-52"
 	const description = "Telnet service should be disabled (use SSH instead)."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1021"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1021"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU52Input(ctx)

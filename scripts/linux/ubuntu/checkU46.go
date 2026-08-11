@@ -12,9 +12,9 @@ func checkU46(ctx ScanContext) CheckResult {
 	const code = "U-46"
 	const description = "일반 사용자의 메일 서비스 실행을 제한해야 합니다."
 	mitreAttack := MitreAttack{
-		tactic:      "Privilege Escalation",
-		techniques:  []string{"T1548"},
-		mitigations: []string{"M1026"},
+		Tactic:      "Privilege Escalation",
+		Techniques:  []string{"T1548"},
+		Mitigations: []string{"M1026"},
 	}
 
 	input, errs := loadU46Input()

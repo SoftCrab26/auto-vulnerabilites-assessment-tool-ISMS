@@ -132,6 +132,11 @@ sudo ./aix-check
 <hostname>_<ip>.stdout.log
 ```
 
+JSON은 웹 UI `frontend/ui/test_data/*.json`과 동일한 `CheckResult` 배열입니다
+(`RawConfig`, `VulnerableConfig`, `ErrMsg`, `Description`, `Status`,
+`ProcessedConfig`, `MitreAttack`, `Code`). `Status`는 정수
+(0 Good … 5 Error)입니다. `OS`/`Item` 필드는 출력하지 않습니다.
+
 두 파일 모두 민감한 진단 결과 보호를 위해 `0600`으로 생성됩니다.
 
 ## 개발 검증

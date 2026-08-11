@@ -13,9 +13,9 @@ func checkU14(ctx ScanContext) CheckResult {
 	const code = "U-14"
 	const description = "PATH environment variable should not contain '.' at the beginning or middle."
 	mitreAttack := MitreAttack{
-		tactic:      "Execution",
-		techniques:  []string{"T1059"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Execution",
+		Techniques:  []string{"T1059"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU14Input()

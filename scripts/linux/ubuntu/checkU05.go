@@ -12,9 +12,9 @@ func checkU05(ctx ScanContext) CheckResult {
 	const code = "U-05"
 	const description = "No accounts other than root should have UID 0."
 	mitreAttack := MitreAttack{
-		tactic:      "Credential Access",
-		techniques:  []string{"T1078"},
-		mitigations: []string{"M1026"},
+		Tactic:      "Credential Access",
+		Techniques:  []string{"T1078"},
+		Mitigations: []string{"M1026"},
 	}
 
 	input, errs := loadU05Input()

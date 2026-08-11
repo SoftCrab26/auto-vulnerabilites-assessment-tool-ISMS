@@ -13,9 +13,9 @@ func checkU28(ctx ScanContext) CheckResult {
 	const code = "U-28"
 	const description = "Specific IP and port access restrictions should be configured (hosts.allow/deny)."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1021"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1021"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU28Input()

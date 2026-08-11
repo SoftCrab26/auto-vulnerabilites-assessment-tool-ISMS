@@ -25,6 +25,9 @@ Linux(U-01~U-67)와 AWS(AWS-01~AWS-63)는 Go 단일 바이너리로 자동 점�
 ```text
 auto-vulnerabilites-assessment-tool-ISMS/
 ├── README.md                          # 프로젝트 개요 (이 문서)
+├── frontend/
+│   ├── ui/                            # (레거시) WPF 데스크톱 분석 UI
+│   └── web/                           # Python FastAPI 셀프호스트 SaaS UI
 │
 ├── guide/                             # 점검 기준 원문·참고 문서
 │   ├── 주통기/

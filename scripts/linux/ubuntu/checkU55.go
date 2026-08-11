@@ -12,9 +12,9 @@ func checkU55(ctx ScanContext) CheckResult {
 	const code = "U-55"
 	const description = "FTP accounts should have nologin or false shell."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1078"},
-		mitigations: []string{"M1026"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1078"},
+		Mitigations: []string{"M1026"},
 	}
 
 	input, errs := loadU55Input()

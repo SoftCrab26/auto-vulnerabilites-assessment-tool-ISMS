@@ -13,9 +13,9 @@ func checkU11(ctx ScanContext) CheckResult {
 	const code = "U-11"
 	const description = "Accounts that do not require login should have /bin/false or /sbin/nologin shell."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1078"},
-		mitigations: []string{"M1026"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1078"},
+		Mitigations: []string{"M1026"},
 	}
 
 	input, errs := loadU11Input()

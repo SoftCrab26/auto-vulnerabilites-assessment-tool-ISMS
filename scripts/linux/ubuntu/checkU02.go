@@ -14,9 +14,9 @@ func checkU02(ctx ScanContext) CheckResult {
 	const code = "U-02"
 	const description = "Password complexity must be enforced through PAM and password quality settings."
 	mitreAttack := MitreAttack{
-		tactic:      "Credential Access",
-		techniques:  []string{"T1110"}, // Brute Force
-		mitigations: []string{"M1027"}, // Password Policies
+		Tactic:      "Credential Access",
+		Techniques:  []string{"T1110"}, // Brute Force
+		Mitigations: []string{"M1027"}, // Password Policies
 	}
 
 	input, errs := loadU02Input()

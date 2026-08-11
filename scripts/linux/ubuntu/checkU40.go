@@ -12,9 +12,9 @@ func checkU40(ctx ScanContext) CheckResult {
 	const code = "U-40"
 	const description = "NFS access control should be properly configured."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1021"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1021"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU40Input()

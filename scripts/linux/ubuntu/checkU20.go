@@ -14,9 +14,9 @@ func checkU20(ctx ScanContext) CheckResult {
 	const code = "U-20"
 	const description = "/etc/(x)inetd.conf should be owned by root with permission 600 or less."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1021"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1021"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU20Input()

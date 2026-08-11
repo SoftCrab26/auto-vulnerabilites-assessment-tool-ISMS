@@ -14,9 +14,9 @@ func checkU16(ctx ScanContext) CheckResult {
 	const code = "U-16"
 	const description = "/etc/passwd should be owned by root with permission 644 or less."
 	mitreAttack := MitreAttack{
-		tactic:      "Credential Access",
-		techniques:  []string{"T1003.008"},
-		mitigations: []string{"M1026"},
+		Tactic:      "Credential Access",
+		Techniques:  []string{"T1003.008"},
+		Mitigations: []string{"M1026"},
 	}
 
 	input, errs := loadU16Input()

@@ -6,21 +6,8 @@ import (
 	"io"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 )
-
-type JSONCheckResult struct {
-	OS               string
-	Item             int
-	Description      string
-	Status           Status
-	RawConfig        string
-	VulnerableConfig string
-	ProcessedConfig  string
-	ErrMsg           string
-	MitreAttack      MitreAttack
-}
 
 func getLocalIP() string {
 	addrs, err := net.InterfaceAddrs()
@@ -174,55 +161,21 @@ func main() {
 		}
 	}
 
-	// =========================
-	// JSON FILE OUTPUT
-	// =========================
+	// JSON array of CheckResult — same schema as frontend/ui/test_data/*.json
 	fileName := baseName + ".json"
-
-	jsonData, err := json.MarshalIndent(toJSONCheckResults(results), "", "  ")
+	jsonData, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {
 		fmt.Println("JSON marshal error:", err)
 		return
 	}
 
-	err = os.WriteFile(fileName, jsonData, 0644)
-	if err != nil {
+	if err := os.WriteFile(fileName, jsonData, 0644); err != nil {
 		fmt.Println("file write error:", err)
 		return
 	}
 
 	fmt.Println("JSON saved to:", fileName)
 	fmt.Println("STDOUT saved to:", baseName+".stdout.log")
-}
-
-func toJSONCheckResults(results []CheckResult) []JSONCheckResult {
-	jsonResults := make([]JSONCheckResult, 0, len(results))
-	for _, result := range results {
-		jsonResults = append(jsonResults, JSONCheckResult{
-			OS:               "LINUX",
-			Item:             parseCheckItem(result.Code),
-			Description:      result.Description,
-			Status:           result.Status,
-			RawConfig:        result.RawConfig,
-			VulnerableConfig: result.VulnerableConfig,
-			ProcessedConfig:  result.ProcessedConfig,
-			ErrMsg:           result.ErrMsg,
-			MitreAttack:      result.MitreAttack,
-		})
-	}
-	return jsonResults
-}
-
-func parseCheckItem(code string) int {
-	parts := strings.Split(code, "-")
-	if len(parts) != 2 {
-		return 0
-	}
-	item, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return 0
-	}
-	return item
 }
 
 func setupStdoutLogging(path string) func() {

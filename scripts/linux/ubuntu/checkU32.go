@@ -13,9 +13,9 @@ func checkU32(ctx ScanContext) CheckResult {
 	const code = "U-32"
 	const description = "Home directory specified in /etc/passwd must actually exist."
 	mitreAttack := MitreAttack{
-		tactic:      "Credential Access",
-		techniques:  []string{"T1078"},
-		mitigations: []string{"M1026"},
+		Tactic:      "Credential Access",
+		Techniques:  []string{"T1078"},
+		Mitigations: []string{"M1026"},
 	}
 
 	input, errs := loadU32Input()

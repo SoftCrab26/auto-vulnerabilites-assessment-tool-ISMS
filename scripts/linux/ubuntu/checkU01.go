@@ -13,9 +13,9 @@ func checkU01(ctx ScanContext) CheckResult {
 	const code = "U-01"
 	const description = "SSH root login should be disabled to prevent unauthorized access."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1078.002", "T1133"}, // Valid Accounts, External Remote Services
-		mitigations: []string{"M1042"},              // Disable or Remove Accounts
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1078.002", "T1133"}, // Valid Accounts, External Remote Services
+		Mitigations: []string{"M1042"},              // Disable or Remove Accounts
 	}
 
 	input, errs := loadU01Input(ctx)

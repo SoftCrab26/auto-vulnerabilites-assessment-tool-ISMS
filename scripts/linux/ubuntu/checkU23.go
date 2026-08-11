@@ -10,9 +10,9 @@ func checkU23(ctx ScanContext) CheckResult {
 	const code = "U-23"
 	const description = "Major executables should not have SUID or SGID bit set unnecessarily."
 	mitreAttack := MitreAttack{
-		tactic:      "Privilege Escalation",
-		techniques:  []string{"T1548.001"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Privilege Escalation",
+		Techniques:  []string{"T1548.001"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU23Input()

@@ -12,9 +12,9 @@ func checkU51(ctx ScanContext) CheckResult {
 	const code = "U-51"
 	const description = "DNS 동적 업데이트는 비활성화하거나 적절히 통제해야 합니다."
 	mitreAttack := MitreAttack{
-		tactic:      "Impact",
-		techniques:  []string{"T1565"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Impact",
+		Techniques:  []string{"T1565"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU51Input()

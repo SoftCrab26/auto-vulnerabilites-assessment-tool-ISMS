@@ -13,9 +13,9 @@ func checkU06(ctx ScanContext) CheckResult {
 	const code = "U-06"
 	const description = "su command should be restricted to specific group (e.g. wheel group)."
 	mitreAttack := MitreAttack{
-		tactic:      "Privilege Escalation",
-		techniques:  []string{"T1548.003"},
-		mitigations: []string{"M1026"},
+		Tactic:      "Privilege Escalation",
+		Techniques:  []string{"T1548.003"},
+		Mitigations: []string{"M1026"},
 	}
 
 	input, errs := loadU06Input()

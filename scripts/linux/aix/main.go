@@ -6,21 +6,8 @@ import (
 	"io"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 )
-
-type JSONCheckResult struct {
-	OS               string
-	Item             int
-	Description      string
-	Status           Status
-	RawConfig        string
-	VulnerableConfig string
-	ProcessedConfig  string
-	ErrMsg           string
-	MitreAttack      MitreAttack
-}
 
 func main() {
 	hostname, err := os.Hostname()
@@ -41,7 +28,8 @@ func main() {
 	results := runChecks(ctx)
 	printCheckResults(results)
 
-	jsonData, err := json.MarshalIndent(toJSONCheckResults(results), "", "  ")
+	// JSON array of CheckResult — same schema as frontend/ui/test_data/*.json
+	jsonData, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {
 		fmt.Println("JSON marshal error:", err)
 		return
@@ -173,36 +161,6 @@ func printCheckResults(results []CheckResult) {
 			fmt.Println("ERROR:", result.ErrMsg)
 		}
 	}
-}
-
-func toJSONCheckResults(results []CheckResult) []JSONCheckResult {
-	jsonResults := make([]JSONCheckResult, 0, len(results))
-	for _, result := range results {
-		jsonResults = append(jsonResults, JSONCheckResult{
-			OS:               "AIX",
-			Item:             parseCheckItem(result.Code),
-			Description:      result.Description,
-			Status:           result.Status,
-			RawConfig:        result.RawConfig,
-			VulnerableConfig: result.VulnerableConfig,
-			ProcessedConfig:  result.ProcessedConfig,
-			ErrMsg:           result.ErrMsg,
-			MitreAttack:      result.MitreAttack,
-		})
-	}
-	return jsonResults
-}
-
-func parseCheckItem(code string) int {
-	parts := strings.Split(code, "-")
-	if len(parts) != 2 {
-		return 0
-	}
-	item, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return 0
-	}
-	return item
 }
 
 func getLocalIP() string {

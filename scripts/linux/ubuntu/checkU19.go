@@ -14,9 +14,9 @@ func checkU19(ctx ScanContext) CheckResult {
 	const code = "U-19"
 	const description = "/etc/hosts should be owned by root with permission 644 or less."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1078"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1078"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU19Input()

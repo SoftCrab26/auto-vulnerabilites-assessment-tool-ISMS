@@ -13,9 +13,9 @@ func checkU12(ctx ScanContext) CheckResult {
 	const code = "U-12"
 	const description = "Session timeout should be set to 600 seconds (10 minutes) or less."
 	mitreAttack := MitreAttack{
-		tactic:      "Credential Access",
-		techniques:  []string{"T1078"},
-		mitigations: []string{"M1028"},
+		Tactic:      "Credential Access",
+		Techniques:  []string{"T1078"},
+		Mitigations: []string{"M1028"},
 	}
 
 	input, errs := loadU12Input()

@@ -8,9 +8,9 @@ func checkU58(ctx ScanContext) CheckResult {
 	const code = "U-58"
 	const description = "SNMP service should not be running if not necessary."
 	mitreAttack := MitreAttack{
-		tactic:      "Discovery",
-		techniques:  []string{"T1082"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Discovery",
+		Techniques:  []string{"T1082"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU58Input(ctx)

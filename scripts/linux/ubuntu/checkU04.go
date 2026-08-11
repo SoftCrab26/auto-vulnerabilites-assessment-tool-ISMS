@@ -14,9 +14,9 @@ func checkU04(ctx ScanContext) CheckResult {
 	const code = "U-04"
 	const description = "The permissions of /etc/passwd and /etc/shadow should be set to prevent unauthorized access to password information."
 	mitreAttack := MitreAttack{
-		tactic:      "Credential Access",
-		techniques:  []string{"T1003.008"}, // OS Credential Dumping: /etc/passwd and /etc/shadow
-		mitigations: []string{"M1026"},     // Privileged Account Management
+		Tactic:      "Credential Access",
+		Techniques:  []string{"T1003.008"}, // OS Credential Dumping: /etc/passwd and /etc/shadow
+		Mitigations: []string{"M1026"},     // Privileged Account Management
 	}
 
 	input, errs := loadU04Input()

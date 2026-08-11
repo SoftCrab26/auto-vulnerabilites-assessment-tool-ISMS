@@ -6,9 +6,9 @@ func checkU64(ctx ScanContext) CheckResult {
 	const code = "U-64"
 	const description = "Periodic security patches and vendor recommendations should be applied."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1190"},
-		mitigations: []string{"M1051"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1190"},
+		Mitigations: []string{"M1051"},
 	}
 
 	input, errs := loadU64Input()

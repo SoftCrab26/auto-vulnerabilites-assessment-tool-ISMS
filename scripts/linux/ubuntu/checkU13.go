@@ -13,9 +13,9 @@ func checkU13(ctx ScanContext) CheckResult {
 	const code = "U-13"
 	const description = "Safe password encryption algorithm (SHA-2 or stronger) should be used."
 	mitreAttack := MitreAttack{
-		tactic:      "Credential Access",
-		techniques:  []string{"T1110"},
-		mitigations: []string{"M1027"},
+		Tactic:      "Credential Access",
+		Techniques:  []string{"T1110"},
+		Mitigations: []string{"M1027"},
 	}
 
 	input, errs := loadU13Input()

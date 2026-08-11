@@ -14,9 +14,9 @@ func checkU22(ctx ScanContext) CheckResult {
 	const code = "U-22"
 	const description = "/etc/services should be owned by root/bin/sys with permission 644 or less."
 	mitreAttack := MitreAttack{
-		tactic:      "Discovery",
-		techniques:  []string{"T1082"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Discovery",
+		Techniques:  []string{"T1082"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU22Input()

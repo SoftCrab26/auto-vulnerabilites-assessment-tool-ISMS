@@ -14,9 +14,9 @@ func checkU63(ctx ScanContext) CheckResult {
 	const code = "U-63"
 	const description = "/etc/sudoers should be owned by root with permission exactly 640."
 	mitreAttack := MitreAttack{
-		tactic:      "Privilege Escalation",
-		techniques:  []string{"T1548.003"},
-		mitigations: []string{"M1026"},
+		Tactic:      "Privilege Escalation",
+		Techniques:  []string{"T1548.003"},
+		Mitigations: []string{"M1026"},
 	}
 
 	input, errs := loadU63Input()

@@ -12,9 +12,9 @@ func checkU48(ctx ScanContext) CheckResult {
 	const code = "U-48"
 	const description = "expn, vrfy 명령어를 제한해야 합니다."
 	mitreAttack := MitreAttack{
-		tactic:      "Discovery",
-		techniques:  []string{"T1082"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Discovery",
+		Techniques:  []string{"T1082"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU48Input()

@@ -10,9 +10,9 @@ func checkU26(ctx ScanContext) CheckResult {
 	const code = "U-26"
 	const description = "No non-device files should exist in /dev directory."
 	mitreAttack := MitreAttack{
-		tactic:      "Defense Evasion",
-		techniques:  []string{"T1036"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Defense Evasion",
+		Techniques:  []string{"T1036"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU26Input()

@@ -14,9 +14,9 @@ func checkU31(ctx ScanContext) CheckResult {
 	const code = "U-31"
 	const description = "Home directories should be owned by the corresponding user and not writable by others."
 	mitreAttack := MitreAttack{
-		tactic:      "Credential Access",
-		techniques:  []string{"T1552"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Credential Access",
+		Techniques:  []string{"T1552"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU31Input()

@@ -12,9 +12,9 @@ func checkU60(ctx ScanContext) CheckResult {
 	const code = "U-60"
 	const description = "SNMP Community String should be complex (not public/private)."
 	mitreAttack := MitreAttack{
-		tactic:      "Discovery",
-		techniques:  []string{"T1082"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Discovery",
+		Techniques:  []string{"T1082"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU60Input()

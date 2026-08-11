@@ -10,9 +10,9 @@ func checkU33(ctx ScanContext) CheckResult {
 	const code = "U-33"
 	const description = "Unnecessary or suspicious hidden files and directories should be removed."
 	mitreAttack := MitreAttack{
-		tactic:      "Defense Evasion",
-		techniques:  []string{"T1036"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Defense Evasion",
+		Techniques:  []string{"T1036"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU33Input()

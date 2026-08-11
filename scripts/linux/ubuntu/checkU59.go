@@ -12,9 +12,9 @@ func checkU59(ctx ScanContext) CheckResult {
 	const code = "U-59"
 	const description = "SNMP should use v3 or higher if enabled."
 	mitreAttack := MitreAttack{
-		tactic:      "Discovery",
-		techniques:  []string{"T1082"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Discovery",
+		Techniques:  []string{"T1082"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU59Input()

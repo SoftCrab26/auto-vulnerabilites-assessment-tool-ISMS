@@ -12,9 +12,9 @@ func checkU65(ctx ScanContext) CheckResult {
 	const code = "U-65"
 	const description = "NTP time synchronization should be properly configured."
 	mitreAttack := MitreAttack{
-		tactic:      "Defense Evasion",
-		techniques:  []string{"T1070"},
-		mitigations: []string{"M1029"},
+		Tactic:      "Defense Evasion",
+		Techniques:  []string{"T1070"},
+		Mitigations: []string{"M1029"},
 	}
 
 	input, errs := loadU65Input()

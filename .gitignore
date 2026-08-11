@@ -81,3 +81,15 @@ docker-compose.override.yml
 scratch/
 # Cross-compiled scanner binaries
 build/
+
+# ==============================
+# Python web SaaS (frontend/web)
+# ==============================
+frontend/web/.venv/
+frontend/web/data/uploads/
+frontend/web/data/exports/
+frontend/web/data/app.db
+frontend/web/__pycache__/
+frontend/web/**/__pycache__/
+*.pyc
+.pytest_cache/

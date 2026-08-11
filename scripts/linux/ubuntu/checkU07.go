@@ -13,9 +13,9 @@ func checkU07(ctx ScanContext) CheckResult {
 	const code = "U-07"
 	const description = "Unnecessary default accounts should be removed or have nologin shell."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1078"},
-		mitigations: []string{"M1026"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1078"},
+		Mitigations: []string{"M1026"},
 	}
 
 	input, errs := loadU07Input()

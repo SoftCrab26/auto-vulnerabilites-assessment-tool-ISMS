@@ -8,9 +8,9 @@ func checkU49(ctx ScanContext) CheckResult {
 	const code = "U-49"
 	const description = "DNS 보안 버전 패치를 주기적으로 적용해야 합니다."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1078"},
-		mitigations: []string{"M1051"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1078"},
+		Mitigations: []string{"M1051"},
 	}
 
 	input, errs := loadU49Input(ctx)

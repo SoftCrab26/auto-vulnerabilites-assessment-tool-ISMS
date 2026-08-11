@@ -14,9 +14,9 @@ func checkU29(ctx ScanContext) CheckResult {
 	const code = "U-29"
 	const description = "/etc/hosts.lpd should not exist or be owned by root with permission 600 or less if used."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1021"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1021"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU29Input()

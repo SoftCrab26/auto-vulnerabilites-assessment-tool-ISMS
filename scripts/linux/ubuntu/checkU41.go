@@ -8,9 +8,9 @@ func checkU41(ctx ScanContext) CheckResult {
 	const code = "U-41"
 	const description = "Unnecessary automountd service should be disabled."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1021"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1021"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU41Input(ctx)

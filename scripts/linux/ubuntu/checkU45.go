@@ -8,9 +8,9 @@ func checkU45(ctx ScanContext) CheckResult {
 	const code = "U-45"
 	const description = "Mail service version should be up to date."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1021"},
-		mitigations: []string{"M1051"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1021"},
+		Mitigations: []string{"M1051"},
 	}
 
 	input, errs := loadU45Input(ctx)

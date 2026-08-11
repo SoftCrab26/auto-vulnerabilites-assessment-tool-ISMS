@@ -12,9 +12,9 @@ func checkU53(ctx ScanContext) CheckResult {
 	const code = "U-53"
 	const description = "FTP banner should not expose unnecessary information."
 	mitreAttack := MitreAttack{
-		tactic:      "Discovery",
-		techniques:  []string{"T1082"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Discovery",
+		Techniques:  []string{"T1082"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU53Input()

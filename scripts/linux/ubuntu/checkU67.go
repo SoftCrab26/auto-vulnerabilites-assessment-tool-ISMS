@@ -14,9 +14,9 @@ func checkU67(ctx ScanContext) CheckResult {
 	const code = "U-67"
 	const description = "Log directory and files should be owned by root with permission 644 or less."
 	mitreAttack := MitreAttack{
-		tactic:      "Defense Evasion",
-		techniques:  []string{"T1562"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Defense Evasion",
+		Techniques:  []string{"T1562"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU67Input()

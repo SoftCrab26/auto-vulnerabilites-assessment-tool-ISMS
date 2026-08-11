@@ -8,9 +8,9 @@ func checkU43(ctx ScanContext) CheckResult {
 	const code = "U-43"
 	const description = "NIS/NIS+ service should be disabled or NIS+ should be used if necessary."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1021"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1021"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU43Input(ctx)

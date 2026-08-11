@@ -13,9 +13,9 @@ func checkU09(ctx ScanContext) CheckResult {
 	const code = "U-09"
 	const description = "No unnecessary groups should exist that are not used by any account."
 	mitreAttack := MitreAttack{
-		tactic:      "Defense Evasion",
-		techniques:  []string{"T1036"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Defense Evasion",
+		Techniques:  []string{"T1036"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU09Input()

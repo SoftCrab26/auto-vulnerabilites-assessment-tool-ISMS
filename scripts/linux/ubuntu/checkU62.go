@@ -12,9 +12,9 @@ func checkU62(ctx ScanContext) CheckResult {
 	const code = "U-62"
 	const description = "Login warning banner should be set for SSH, Telnet, FTP, etc."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1078"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1078"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU62Input()

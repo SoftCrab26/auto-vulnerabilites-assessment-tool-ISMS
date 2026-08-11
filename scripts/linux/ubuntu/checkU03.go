@@ -12,9 +12,9 @@ func checkU03(ctx ScanContext) CheckResult {
 	const code = "U-03"
 	const description = "Account lockout thresholds should be configured to limit brute-force sign-in attempts."
 	mitreAttack := MitreAttack{
-		tactic:      "Credential Access",
-		techniques:  []string{"T1110"}, // Brute Force
-		mitigations: []string{"M1036"}, // Account Use Policies
+		Tactic:      "Credential Access",
+		Techniques:  []string{"T1110"}, // Brute Force
+		Mitigations: []string{"M1036"}, // Account Use Policies
 	}
 
 	input, errs := loadU03Input()

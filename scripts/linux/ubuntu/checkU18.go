@@ -14,9 +14,9 @@ func checkU18(ctx ScanContext) CheckResult {
 	const code = "U-18"
 	const description = "/etc/shadow should be owned by root with permission 400 or less."
 	mitreAttack := MitreAttack{
-		tactic:      "Credential Access",
-		techniques:  []string{"T1003.008"},
-		mitigations: []string{"M1026"},
+		Tactic:      "Credential Access",
+		Techniques:  []string{"T1003.008"},
+		Mitigations: []string{"M1026"},
 	}
 
 	input, errs := loadU18Input()

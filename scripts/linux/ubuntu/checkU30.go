@@ -13,9 +13,9 @@ func checkU30(ctx ScanContext) CheckResult {
 	const code = "U-30"
 	const description = "UMASK should be set to 022 or greater (more restrictive)."
 	mitreAttack := MitreAttack{
-		tactic:      "Defense Evasion",
-		techniques:  []string{"T1222"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Defense Evasion",
+		Techniques:  []string{"T1222"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU30Input()

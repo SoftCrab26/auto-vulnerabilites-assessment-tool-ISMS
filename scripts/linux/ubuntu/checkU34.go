@@ -8,9 +8,9 @@ func checkU34(ctx ScanContext) CheckResult {
 	const code = "U-34"
 	const description = "Finger service should be disabled."
 	mitreAttack := MitreAttack{
-		tactic:      "Discovery",
-		techniques:  []string{"T1082"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Discovery",
+		Techniques:  []string{"T1082"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU34Input(ctx)

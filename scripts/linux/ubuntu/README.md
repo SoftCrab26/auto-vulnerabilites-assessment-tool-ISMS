@@ -201,16 +201,20 @@ run("ss -lntup | grep :21")
 
 ### CheckResult 필드 작성 기준
 
-| 필드 | 작성 기준 |
-|------|-----------|
-| `Code` | `U-01` 형식 |
-| `Description` | 점검 목적을 한 문장으로 설명 |
-| `Status` | `Good`, `Vulnerable`, `Interview`, `Manual`, `NotApplicable`, `Error` |
-| `RawConfig` | 읽은 원본 설정 또는 명령 결과 |
-| `ProcessedConfig` | 판정에 사용한 핵심 값 요약 |
-| `VulnerableConfig` | 취약일 때 근거와 문제점 |
-| `ErrMsg` | 읽기 실패, 명령 실패 등 stderr성 정보 |
-| `MitreAttack` | 관련 tactic/technique/mitigation |
+JSON 파일은 `[{...}, ...]` 배열이며, 웹 UI `frontend/ui/test_data/*.json`과 동일한 스키마입니다.
+
+| 필드 | JSON 키 | 작성 기준 |
+|------|---------|-----------|
+| `RawConfig` | `RawConfig` | 읽은 원본 설정 또는 명령 결과 |
+| `VulnerableConfig` | `VulnerableConfig` | 취약일 때 근거와 문제점 |
+| `ErrMsg` | `ErrMsg` | 읽기 실패, 명령 실패 등 stderr성 정보 |
+| `Description` | `Description` | 점검 목적을 한 문장으로 설명 |
+| `Status` | `Status` | 정수: 0 Good, 1 Vulnerable, 2 Interview, 3 Manual, 4 N/A, 5 Error |
+| `ProcessedConfig` | `ProcessedConfig` | 판정에 사용한 핵심 값 요약 |
+| `MitreAttack` | `MitreAttack` | `{ "tactic", "techniques", "mitigations" }` |
+| `Code` | `Code` | `U-01` 형식 |
+
+파일명: `{hostname}_{ip}.json` (예: `dns_srv_192.168.1.15.json`)
 
 ### Status 판단 기준
 

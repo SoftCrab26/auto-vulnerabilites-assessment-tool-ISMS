@@ -13,9 +13,9 @@ func checkU38(ctx ScanContext) CheckResult {
 	const code = "U-38"
 	const description = "DoS-vulnerable services (echo, discard, daytime, chargen) should be disabled."
 	mitreAttack := MitreAttack{
-		tactic:      "Impact",
-		techniques:  []string{"T1499"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Impact",
+		Techniques:  []string{"T1499"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU38Input(ctx)

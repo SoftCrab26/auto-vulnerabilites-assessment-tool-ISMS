@@ -12,9 +12,9 @@ func checkU56(ctx ScanContext) CheckResult {
 	const code = "U-56"
 	const description = "FTP access control should be configured (e.g. tcp_wrappers or vsftpd config)."
 	mitreAttack := MitreAttack{
-		tactic:      "Initial Access",
-		techniques:  []string{"T1021"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Initial Access",
+		Techniques:  []string{"T1021"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU56Input()

@@ -14,9 +14,9 @@ func checkU24(ctx ScanContext) CheckResult {
 	const code = "U-24"
 	const description = "User/system environment variable files (.bash_profile, .bashrc, .profile) should be owned by root or the user with no other write permission."
 	mitreAttack := MitreAttack{
-		tactic:      "Credential Access",
-		techniques:  []string{"T1552"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Credential Access",
+		Techniques:  []string{"T1552"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU24Input()

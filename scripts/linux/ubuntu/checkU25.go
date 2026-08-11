@@ -10,9 +10,9 @@ func checkU25(ctx ScanContext) CheckResult {
 	const code = "U-25"
 	const description = "World writable files should not exist or their reason should be known."
 	mitreAttack := MitreAttack{
-		tactic:      "Privilege Escalation",
-		techniques:  []string{"T1222.002"},
-		mitigations: []string{"M1022"},
+		Tactic:      "Privilege Escalation",
+		Techniques:  []string{"T1222.002"},
+		Mitigations: []string{"M1022"},
 	}
 
 	input, errs := loadU25Input()
