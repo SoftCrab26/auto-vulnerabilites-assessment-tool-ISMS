@@ -56,14 +56,14 @@
          · {{ selected_item.severity }} · {{ selected_item.category }}</p>
       <h4>설명</h4>
       <div class="pre">{{ selected_item.description }}</div>
-      <h4>증적</h4>
-      <div class="pre">{{ selected_item.evidence }}</div>
-      <h4>조치 가이드</h4>
-      <div class="pre">{{ selected_item.remediation }}</div>
       {% if selected_item.processed_config %}
       <h4>ProcessedConfig</h4>
       <div class="pre">{{ selected_item.processed_config }}</div>
       {% endif %}
+      <h4>증적</h4>
+      <div class="pre">{{ selected_item.evidence }}</div>
+      <h4>조치 가이드</h4>
+      <div class="pre">{{ selected_item.remediation }}</div>
       {% if selected_item.err_msg %}
       <h4>오류</h4>
       <div class="pre">{{ selected_item.err_msg }}</div>

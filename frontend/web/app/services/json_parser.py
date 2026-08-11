@@ -13,6 +13,8 @@ HIGH_ITEMS = {
 }
 LOW_ITEMS = {16, 42, 43, 59}
 
+RAW_PREVIEW_LIMIT = 1500
+
 FALLBACK_REMEDIATION = (
     "[ISMS-P 조치 가이드]\n"
     "주요정보통신기반시설 기술적 취약점 가이드라인을 참조하여 "
@@ -77,7 +79,51 @@ def linux_severity(code: str) -> str:
 
 
 def map_go_status(status: int) -> str:
-    return {0: "Pass", 1: "Fail", 2: "N/A", 3: "N/A", 4: "N/A", 5: "Fail"}.get(status, "N/A")
+    # Go Status iota: Good, Vulnerable, Interview, Manual, NotApplicable, Error
+    return {
+        0: "Pass",
+        1: "Fail",
+        2: "Interview",
+        3: "Manual",
+        4: "N/A",
+        5: "Error",
+    }.get(status, "N/A")
+
+
+def normalize_status(value: Any) -> str:
+    if isinstance(value, bool):
+        return "Fail" if value else "Pass"
+    if isinstance(value, int):
+        return map_go_status(value)
+    text = str(value or "").strip().lower()
+    if text in {"0", "pass", "good"}:
+        return "Pass"
+    if text in {"1", "fail", "vulnerable"}:
+        return "Fail"
+    if text in {"2", "interview", "인터뷰"}:
+        return "Interview"
+    if text in {"3", "manual", "수동점검", "수동"}:
+        return "Manual"
+    if text in {"4", "n/a", "na", "notapplicable", "not applicable", "not_applicable"}:
+        return "N/A"
+    if text in {"5", "error", "err"}:
+        return "Error"
+    if text in {"pass", "fail", "interview", "manual", "error"}:
+        return text[:1].upper() + text[1:]
+    if text == "n/a":
+        return "N/A"
+    return "N/A"
+
+
+def looks_like_ip(value: str) -> bool:
+    return bool(re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", value or ""))
+
+
+def truncate_text(value: str, limit: int = RAW_PREVIEW_LIMIT) -> str:
+    text = value or ""
+    if len(text) <= limit:
+        return text
+    return text[:limit] + f"\n... (truncated, total {len(text)} chars)"
 
 
 def parse_filename_meta(filename: str) -> tuple[str, str, str]:
@@ -87,33 +133,80 @@ def parse_filename_meta(filename: str) -> tuple[str, str, str]:
     ip_address = "0.0.0.0"
     target_os = "Linux"
 
-    known = {"windowsserver", "unix", "dbms", "linux", "windows", "pc"}
+    known = {
+        "windowsserver": "Windows Server",
+        "unix": "Linux",
+        "linux": "Linux",
+        "dbms": "DBMS",
+        "windows": "Windows",
+        "pc": "Windows",
+        "aix": "AIX",
+        "centos": "Linux",
+        "rhel": "Linux",
+        "ubuntu": "Linux",
+        "synology": "Linux",
+        "synologydsm": "Linux",
+        "dsm": "Linux",
+    }
+    lower_base = base.lower()
+    if lower_base.startswith("aix_") or "_aix_" in f"_{lower_base}_":
+        target_os = "AIX"
+
     if len(parts) >= 3:
         first = parts[0].strip()
-        if first.lower() in known:
-            key = first.lower()
-            if key == "windowsserver":
-                target_os = "Windows Server"
-            elif key in {"unix", "linux"}:
-                target_os = "Linux"
-            elif key == "dbms":
-                target_os = "DBMS"
-            elif key in {"pc", "windows"}:
-                target_os = "Windows"
-            else:
-                target_os = first
+        key = first.lower()
+        if key in known:
+            target_os = known[key]
             ip_address = parts[-1]
             hostname = "_".join(parts[1:-1]) or "UNKNOWN"
         else:
             ip_address = parts[-1]
             hostname = "_".join(parts[:-1]) or "UNKNOWN"
-            target_os = "Linux"
     elif len(parts) == 2:
         hostname, ip_address = parts[0], parts[1]
-        target_os = "Linux"
     else:
         hostname = base
+
+    if looks_like_ip(ip_address) is False and looks_like_ip(hostname):
+        hostname, ip_address = ip_address, hostname
     return hostname, ip_address, target_os
+
+
+def infer_os_from_items(items: list[dict[str, Any]], fallback: str) -> str:
+    # Scan enough of RawConfig — AIX markers often sit past the first few KB
+    # (e.g. sendmail.cf headers with src/bos/...).
+    chunks: list[str] = []
+    for item in items[:40]:
+        raw = str(
+            item.get("RawConfig")
+            or item.get("rawConfig")
+            or item.get("raw_config")
+            or ""
+        )
+        chunks.append(raw[:8000])
+        processed = str(
+            item.get("ProcessedConfig")
+            or item.get("processedConfig")
+            or item.get("processed_config")
+            or ""
+        )
+        chunks.append(processed[:500])
+    blob = " ".join(chunks).lower()
+    if "synology" in blob or "synoinfo" in blob or "/etc.defaults/" in blob:
+        return "Linux"
+    if (
+        "/etc/security/user" in blob
+        or "/etc/objrepos" in blob
+        or "src/bos/" in blob
+        or "/bos/usr/" in blob
+        or "/bos/etc/" in blob
+        or "bos71" in blob
+        or "aix5.m4" in blob
+        or "component_name: cmdsend" in blob
+        or "ibm aix" in blob
+    ):
+        return "AIX"
+    return fallback
 
 
 def _guideline_lookup(guidelines: list[dict[str, Any]], os_type: str, code: str) -> dict[str, Any] | None:
@@ -124,12 +217,97 @@ def _guideline_lookup(guidelines: list[dict[str, Any]], os_type: str, code: str)
     return None
 
 
-def convert_go_results(
-    go_results: list[dict[str, Any]],
+def _build_remediation(
+    *,
+    mitre: Any,
+    vulnerable: str,
+    guidelines: list[dict[str, Any]],
+    target_os: str,
+    code: str,
+) -> str:
+    guide = _guideline_lookup(guidelines, target_os, code)
+    base_remediation = (guide or {}).get("remediation") or FALLBACK_REMEDIATION
+    remediation = ""
+    if isinstance(mitre, dict) and mitre.get("tactic"):
+        techniques = ", ".join(mitre.get("techniques") or [])
+        mitigations = ", ".join(mitre.get("mitigations") or [])
+        remediation += (
+            f"[MITRE ATTACK 정보]\n- Tactic (전술): {mitre.get('tactic')}\n"
+            f"- Techniques (기술): {techniques}\n"
+            f"- Mitigations (완화조치): {mitigations}\n\n"
+        )
+    if vulnerable:
+        remediation += f"[취약한 설정 분석 내용]\n{vulnerable}\n\n"
+    remediation += base_remediation
+    return remediation
+
+
+def _build_evidence(
+    *,
+    status_str: str,
+    processed: str,
+    raw: str,
+    vulnerable: str,
+    err_msg: str,
+    existing_evidence: str,
+    synthesize_comments: bool,
+    guidelines: list[dict[str, Any]],
+    target_os: str,
+    code: str,
+) -> str:
+    if existing_evidence.strip():
+        return truncate_text(existing_evidence, limit=8000)
+
+    parts: list[str] = []
+    if synthesize_comments:
+        guide = _guideline_lookup(guidelines, target_os, code)
+        pass_comm = (guide or {}).get("pass_comment") or "설정이 기준에 부합하여 안전합니다."
+        fail_comm = (guide or {}).get("fail_comment") or "설정이 기준에 미달하여 취약합니다."
+        if status_str == "Pass":
+            parts.append(pass_comm)
+        elif status_str == "Fail":
+            parts.append(fail_comm)
+        else:
+            parts.append("N/A")
+
+    if vulnerable.strip():
+        parts.append(f"[취약 근거]\n{vulnerable.strip()}")
+    if processed.strip():
+        parts.append(f"[검출된 설정값 (ProcessedConfig)]\n{processed.strip()}")
+    if raw.strip():
+        parts.append(f"[진단 로그 / 설정 원본 (RawConfig)]\n{truncate_text(raw)}")
+    if err_msg.strip():
+        parts.append(f"[오류 메시지]\n{err_msg.strip()}")
+    return "\n\n".join(parts) if parts else ""
+
+
+def _item_get(item: dict[str, Any], *names: str, default: str = "") -> str:
+    for name in names:
+        if name in item and item[name] is not None:
+            return str(item[name])
+    return default
+
+
+def looks_like_complete_check_result(item: dict[str, Any]) -> bool:
+    """Scanner output already has PascalCase CheckResult fields (not only Code/Status)."""
+    keys = set(item.keys())
+    return (
+        ("Code" in keys or "code" in keys)
+        and ("Status" in keys or "status" in keys)
+        and ("RawConfig" in keys or "rawConfig" in keys or "ProcessedConfig" in keys or "processedConfig" in keys)
+        and ("VulnerableConfig" in keys or "vulnerableConfig" in keys or "ErrMsg" in keys or "errMsg" in keys)
+    )
+
+
+def convert_check_results(
+    items: list[dict[str, Any]],
     filename: str,
     guidelines: list[dict[str, Any]],
+    *,
+    synthesize_comments: bool,
 ) -> ParsedReport:
     hostname, ip_address, target_os = parse_filename_meta(filename)
+    target_os = infer_os_from_items(items, target_os)
     report = ParsedReport(
         hostname=hostname,
         ip_address=ip_address,
@@ -138,50 +316,16 @@ def convert_go_results(
         source_filename=Path(filename).name,
     )
 
-    for go in go_results:
-        status_int = int(go.get("Status", go.get("status", 4)))
-        status_str = map_go_status(status_int)
-        code = str(go.get("Code") or go.get("code") or "")
-        description = str(go.get("Description") or go.get("description") or "")
-        raw = str(go.get("RawConfig") or go.get("raw_config") or "")
-        vulnerable = str(go.get("VulnerableConfig") or go.get("vulnerable_config") or "")
-        processed = str(go.get("ProcessedConfig") or go.get("processed_config") or "")
-        err_msg = str(go.get("ErrMsg") or go.get("err_msg") or "")
-        mitre = go.get("MitreAttack") or go.get("mitre_attack") or {}
-
-        guide = _guideline_lookup(guidelines, target_os, code)
-        pass_comm = (guide or {}).get("pass_comment") or "설정이 기준에 부합하여 안전합니다."
-        fail_comm = (guide or {}).get("fail_comment") or "설정이 기준에 미달하여 취약합니다."
-        base_remediation = (guide or {}).get("remediation") or FALLBACK_REMEDIATION
-
-        remediation = ""
-        if isinstance(mitre, dict) and mitre.get("tactic"):
-            techniques = ", ".join(mitre.get("techniques") or [])
-            mitigations = ", ".join(mitre.get("mitigations") or [])
-            remediation += (
-                f"[MITRE ATTACK 정보]\n- Tactic (전술): {mitre.get('tactic')}\n"
-                f"- Techniques (기술): {techniques}\n"
-                f"- Mitigations (완화조치): {mitigations}\n\n"
-            )
-        if vulnerable:
-            remediation += f"[취약한 설정 분석 내용]\n{vulnerable}\n\n"
-        remediation += base_remediation
-
-        if status_str == "Pass":
-            status_section = pass_comm
-        elif status_str == "Fail":
-            status_section = fail_comm
-        elif status_int == 2:
-            status_section = "인터뷰"
-        else:
-            status_section = "N/A"
-
-        evidence = (
-            f"{status_section}\n\n[검출된 설정값 (ProcessedConfig)]\n{processed}\n\n"
-            f"[진단 로그 / 설정 원본 (RawConfig)]\n{raw}"
-        )
-        if err_msg:
-            evidence += f"\n\n[오류 메시지]\n{err_msg}"
+    for item in items:
+        code = _item_get(item, "Code", "code")
+        description = _item_get(item, "Description", "description")
+        raw = _item_get(item, "RawConfig", "rawConfig", "raw_config")
+        vulnerable = _item_get(item, "VulnerableConfig", "vulnerableConfig", "vulnerable_config")
+        processed = _item_get(item, "ProcessedConfig", "processedConfig", "processed_config")
+        err_msg = _item_get(item, "ErrMsg", "errMsg", "err_msg")
+        existing_evidence = _item_get(item, "Evidence", "evidence")
+        mitre = item.get("MitreAttack") or item.get("mitreAttack") or item.get("mitre_attack") or {}
+        status_str = normalize_status(item.get("Status", item.get("status", 4)))
 
         report.diagnostics.append(
             ParsedDiagnostic(
@@ -191,13 +335,44 @@ def convert_go_results(
                 status=status_str,
                 severity=linux_severity(code),
                 description=description,
-                evidence=evidence,
-                remediation=remediation,
+                evidence=_build_evidence(
+                    status_str=status_str,
+                    processed=processed,
+                    raw=raw,
+                    vulnerable=vulnerable,
+                    err_msg=err_msg,
+                    existing_evidence=existing_evidence,
+                    synthesize_comments=synthesize_comments,
+                    guidelines=guidelines,
+                    target_os=target_os,
+                    code=code,
+                ),
+                remediation=_build_remediation(
+                    mitre=mitre,
+                    vulnerable=vulnerable,
+                    guidelines=guidelines,
+                    target_os=target_os,
+                    code=code,
+                ),
                 processed_config=processed,
                 err_msg=err_msg,
             )
         )
     return report
+
+
+def convert_go_results(
+    go_results: list[dict[str, Any]],
+    filename: str,
+    guidelines: list[dict[str, Any]],
+) -> ParsedReport:
+    # Legacy path: synthesize pass/fail comments into evidence.
+    return convert_check_results(
+        go_results,
+        filename,
+        guidelines,
+        synthesize_comments=True,
+    )
 
 
 def parse_json_report(
@@ -232,15 +407,34 @@ def parse_json_report(
             for item in diagnostics:
                 if not isinstance(item, dict):
                     continue
+                status_raw = item.get("status", item.get("Status", "N/A"))
+                status = normalize_status(status_raw) if not isinstance(status_raw, str) or status_raw.strip().lower() in {
+                    "0", "1", "2", "3", "4", "5", "good", "vulnerable", "pass", "fail"
+                } else str(status_raw)
+                # Keep explicit status strings from enriched format.
+                if isinstance(status_raw, str) and status_raw.strip() in {
+                    "Pass", "Fail", "N/A", "Interview", "Manual", "Error",
+                    "양호", "취약", "인터뷰", "수동점검", "ERROR",
+                }:
+                    status = status_raw.strip()
+                    if status in {"양호", "취약", "인터뷰", "수동점검", "ERROR", "N/A"}:
+                        status = {
+                            "양호": "Pass",
+                            "취약": "Fail",
+                            "인터뷰": "Interview",
+                            "수동점검": "Manual",
+                            "ERROR": "Error",
+                            "N/A": "N/A",
+                        }[status]
                 report.diagnostics.append(
                     ParsedDiagnostic(
                         code=str(item.get("code") or item.get("Code") or ""),
                         category=str(item.get("category") or item.get("Category") or ""),
                         title=str(item.get("title") or item.get("Title") or item.get("description") or ""),
-                        status=str(item.get("status") or item.get("Status") or "N/A"),
+                        status=status,
                         severity=str(item.get("severity") or item.get("Severity") or "Medium"),
                         description=str(item.get("description") or item.get("Description") or ""),
-                        evidence=str(item.get("evidence") or item.get("Evidence") or ""),
+                        evidence=truncate_text(str(item.get("evidence") or item.get("Evidence") or ""), limit=8000),
                         remediation=str(item.get("remediation") or item.get("Remediation") or ""),
                         processed_config=str(item.get("processed_config") or item.get("ProcessedConfig") or ""),
                         err_msg=str(item.get("err_msg") or item.get("ErrMsg") or ""),
@@ -248,18 +442,24 @@ def parse_json_report(
                 )
             return report if report.diagnostics else None
 
+        results = data.get("Results") or data.get("results")
+        if isinstance(results, list) and results and isinstance(results[0], dict):
+            complete = looks_like_complete_check_result(results[0])
+            return convert_check_results(
+                results,
+                filename,
+                guidelines,
+                synthesize_comments=not complete,
+            )
+
     if isinstance(data, list) and data and isinstance(data[0], dict):
         if any(k in data[0] for k in ("Code", "code", "Status", "status")):
-            return convert_go_results(data, filename, guidelines)
-
-    # Oracle-style wrapped report: { Results: [...], ... }
-    if isinstance(data, dict):
-        results = data.get("Results") or data.get("results")
-        if isinstance(results, list) and results:
-            return convert_go_results(results, filename, guidelines)
+            complete = looks_like_complete_check_result(data[0])
+            return convert_check_results(
+                data,
+                filename,
+                guidelines,
+                synthesize_comments=not complete,
+            )
 
     return None
-
-
-def looks_like_ip(value: str) -> bool:
-    return bool(re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", value or ""))
