@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}진단결과 상세 · ISMS-P Analyzer{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h2>진단결과 상세분석</h2>
+  {% if selected %}
+  <div class="muted">{{ selected.hostname }} · {{ selected.ip_address }} · {{ selected.target_os }}</div>
+  {% endif %}
+</div>
+
+{% if not selected %}
+  <section class="panel"><p class="muted">업로드된 진단 결과가 없습니다.</p></section>
+{% else %}
+<form class="toolbar" method="get" action="/details">
+  <input type="hidden" name="report_id" value="{{ selected.id }}" />
+  <select name="status">
+    {% for s in statuses %}
+      <option value="{{ s }}" {% if s == status %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <input type="search" name="q" value="{{ q }}" placeholder="코드/제목 검색" />
+  <button type="submit">필터</button>
+</form>
+
+<div class="split">
+  <section class="panel">
+    <table>
+      <thead>
+        <tr><th>코드</th><th>상태</th><th>심각도</th><th>제목</th></tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>
+            <a href="/details?report_id={{ selected.id }}&status={{ status }}&q={{ q }}&item_id={{ item.id }}">
+              {{ item.code }}
+            </a>
+          </td>
+          <td>
+            <span class="badge {{ item.status|lower }}">{{ item.status }}</span>
+          </td>
+          <td>{{ item.severity }}</td>
+          <td>{{ item.title }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="muted">표시할 항목이 없습니다.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    {% if selected_item %}
+      <h3 style="margin-top:0">{{ selected_item.code }} · {{ selected_item.title }}</h3>
+      <p><span class="badge {{ selected_item.status|lower }}">{{ selected_item.status }}</span>
+         · {{ selected_item.severity }} · {{ selected_item.category }}</p>
+      <h4>설명</h4>
+      <div class="pre">{{ selected_item.description }}</div>
+      <h4>증적</h4>
+      <div class="pre">{{ selected_item.evidence }}</div>
+      <h4>조치 가이드</h4>
+      <div class="pre">{{ selected_item.remediation }}</div>
+      {% if selected_item.processed_config %}
+      <h4>ProcessedConfig</h4>
+      <div class="pre">{{ selected_item.processed_config }}</div>
+      {% endif %}
+      {% if selected_item.err_msg %}
+      <h4>오류</h4>
+      <div class="pre">{{ selected_item.err_msg }}</div>
+      {% endif %}
+    {% else %}
+      <p class="muted">항목을 선택하세요.</p>
+    {% endif %}
+  </section>
+</div>
+{% endif %}
+{% endblock %}

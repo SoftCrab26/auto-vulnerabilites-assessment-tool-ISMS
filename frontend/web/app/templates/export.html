@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}보고서 생성 · ISMS-P Analyzer{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h2>보고서 생성</h2>
+  <div class="muted">호스트 {{ reports|length }}개</div>
+</div>
+
+<section class="panel">
+  <form method="post" action="/export/run">
+    <h3 style="margin-top:0">보고서 양식</h3>
+    <div class="checks">
+      <label><input type="checkbox" name="detail" {% if not options or options.detail %}checked{% endif %} /> 상세결과보고서 (.xlsx)</label>
+      <label><input type="checkbox" name="summary" {% if options and options.summary %}checked{% endif %} /> 위험관리 계획서 (.xlsm)</label>
+      <label><input type="checkbox" name="action_plan" {% if options and options.action_plan %}checked{% endif %} /> 위험 분석 평가표 (.xlsm)</label>
+    </div>
+    <h3>자산 유형</h3>
+    <div class="checks">
+      <label><input type="checkbox" name="unix" {% if not options or options.unix %}checked{% endif %} /> UNIX/Linux</label>
+      <label><input type="checkbox" name="win_server" {% if not options or options.win_server %}checked{% endif %} /> Windows Server</label>
+      <label><input type="checkbox" name="pc" {% if not options or options.pc %}checked{% endif %} /> 개인 PC</label>
+    </div>
+    <div style="margin-top:16px">
+      <button type="submit" {% if not reports %}disabled{% endif %}>보고서 생성</button>
+    </div>
+  </form>
+</section>
+
+{% if error %}
+  <div class="error" style="margin-top:12px">{{ error }}</div>
+{% endif %}
+
+{% if logs %}
+<section class="panel" style="margin-top:14px">
+  <h3 style="margin-top:0">진행 로그</h3>
+  <div class="pre">{{ logs|join('\n') }}</div>
+  {% if files %}
+  <h3>다운로드</h3>
+  <ul>
+    {% for f in files %}
+      <li><a href="/export/download/{{ f }}">{{ f }}</a></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

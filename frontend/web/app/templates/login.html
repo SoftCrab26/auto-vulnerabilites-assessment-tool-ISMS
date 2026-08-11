@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>로그인 · ISMS-P Analyzer</title>
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <div class="login-wrap">
+    <form class="login-box" method="post" action="/login">
+      <h1>ISMS-P Analyzer</h1>
+      <p>셀프호스트 SaaS 로그인</p>
+      <label for="username">사용자</label>
+      <input id="username" name="username" autocomplete="username" required />
+      <label for="password">비밀번호</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required />
+      <button type="submit">로그인</button>
+      {% if error %}<div class="error">{{ error }}</div>{% endif %}
+      <p class="muted" style="margin-top:16px;font-size:12px">기본 계정은 환경변수 WEB_ADMIN_USER / WEB_ADMIN_PASSWORD 로 변경하세요.</p>
+    </form>
+  </div>
+</body>
+</html>

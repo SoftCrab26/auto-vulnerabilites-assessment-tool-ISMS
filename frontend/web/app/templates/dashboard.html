@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}대시보드 · ISMS-P Analyzer{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h2>대시보드</h2>
+  <form method="get" class="toolbar">
+    <label class="muted">호스트 유형</label>
+    <select name="host_type" onchange="this.form.submit()">
+      {% for t in host_types %}
+        <option value="{{ t }}" {% if t == host_type %}selected{% endif %}>{{ t }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+{% if flash %}
+  <div class="flash">작업 완료: {{ flash }}</div>
+{% endif %}
+
+<section class="stats">
+  <div class="stat"><div class="label">호스트</div><div class="value">{{ stats.total_hosts }}</div></div>
+  <div class="stat"><div class="label">점검 항목</div><div class="value">{{ stats.total_items }}</div></div>
+  <div class="stat pass"><div class="label">양호</div><div class="value">{{ stats.total_pass }}</div></div>
+  <div class="stat fail"><div class="label">취약</div><div class="value">{{ stats.total_fail }}</div></div>
+  <div class="stat na"><div class="label">N/A</div><div class="value">{{ stats.total_na }}</div></div>
+  <div class="stat"><div class="label">양호율</div><div class="value">{{ stats.pass_rate }}%</div></div>
+</section>
+
+<section class="panel">
+  <h3 style="margin-top:0">호스트 목록</h3>
+  {% if reports %}
+  <table>
+    <thead>
+      <tr>
+        <th>호스트</th>
+        <th>IP</th>
+        <th>OS</th>
+        <th>점검일</th>
+        <th>파일</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in reports %}
+      <tr>
+        <td><a href="/details?report_id={{ r.id }}">{{ r.hostname }}</a></td>
+        <td>{{ r.ip_address }}</td>
+        <td>{{ r.target_os }}</td>
+        <td>{{ r.inspection_date }}</td>
+        <td class="muted">{{ r.source_filename }}</td>
+        <td>
+          <form method="post" action="/hosts/{{ r.id }}/delete" onsubmit="return confirm('삭제할까요?')">
+            <button class="danger" type="submit">삭제</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="muted">왼쪽에서 진단 JSON을 업로드하세요. (예: frontend/ui/test_data/*.json)</p>
+  {% endif %}
+</section>
+{% endblock %}

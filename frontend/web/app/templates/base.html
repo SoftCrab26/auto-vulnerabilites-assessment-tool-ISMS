@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}ISMS-P Analyzer{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="shield" aria-hidden="true"></div>
+        <div>
+          <h1>ISMS-P Analyzer</h1>
+          <p>취약점 분석 및 보고서 생성</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="/" class="{% if active == 'dashboard' %}active{% endif %}">대시보드</a>
+        <a href="/guidelines" class="{% if active == 'guidelines' %}active{% endif %}">조치 가이드 관리</a>
+        <a href="/details" class="{% if active == 'details' %}active{% endif %}">진단결과 상세분석</a>
+        <a href="/export" class="{% if active == 'export' %}active{% endif %}">보고서 생성</a>
+      </nav>
+      <div class="sidebar-hosts">
+        <h3>대상 호스트</h3>
+        {% for r in reports|default([]) %}
+          <a class="host-item {% if selected and selected.id == r.id %}active{% endif %}" href="/details?report_id={{ r.id }}">
+            <span>
+              {{ r.hostname }}
+              <small>{{ r.ip_address }} · {{ r.target_os }}</small>
+            </span>
+          </a>
+        {% else %}
+          <p class="muted" style="padding:0 10px">업로드된 호스트 없음</p>
+        {% endfor %}
+      </div>
+      <form class="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="files" accept=".json,application/json" multiple required />
+        <button type="submit">JSON 업로드</button>
+      </form>
+      <div style="padding:8px; font-size:12px; color:var(--muted)">
+        {{ user }} · <a href="/logout">로그아웃</a>
+      </div>
+    </aside>
+    <main class="main">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

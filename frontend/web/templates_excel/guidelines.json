@@ -1,0 +1,50 @@
+[
+  {
+    "os_type": "Linux",
+    "code": "U-01",
+    "title": "root 계정 원격 접속 제한",
+    "remediation": "[ISMS-P 조치 가이드]\n/etc/ssh/sshd_config 파일 내 'PermitRootLogin' 설정을 'no'로 명시하고 SSH 서비스를 재시작하십시오.",
+    "pass_comment": "root 계정의 원격 접속 제한 설정(PermitRootLogin no)이 안전하게 적용되어 있어 양호합니다.",
+    "fail_comment": "root 계정의 원격 접속 허용(PermitRootLogin yes) 설정이 적용되어 있어 비인가 접속 위험으로 취약합니다."
+  },
+  {
+    "os_type": "Linux",
+    "code": "U-02",
+    "title": "패스워드 복잡성 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n/etc/security/pwquality.conf 및 /etc/pam.d/system-auth 파일에서 최소 길이(10자 이상) 및 문자 혼용(영문 대소문자, 숫자, 특수문자) 규칙을 강제 적용하십시오.",
+    "pass_comment": "패스워드 복잡성 규칙(pwquality.conf 최소 길이 및 복잡성 강제)이 만족하여 양호합니다.",
+    "fail_comment": "패스워드 복잡성 설정 정책이 완화되어 있거나 규칙이 강제 적용되지 않아 취약합니다."
+  },
+  {
+    "os_type": "Linux",
+    "code": "U-03",
+    "title": "계정 잠금 임계값 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n/etc/pam.d/system-auth 파일 내 pam_faillock.so 또는 pam_tally2.so 모듈을 설정하여 비밀번호 오입력 시(예: 5회) 계정이 임시 잠금되도록 조치하십시오.",
+    "pass_comment": "계정 잠금 임계값 설정(pam_faillock.so 5회 오류 시 잠금 정책)이 적절히 작동하여 양호합니다.",
+    "fail_comment": "패스워드 반복 오류 발생 시 계정 잠금 정책이 설정되어 있지 않아 무작위 대입 공격(Brute Force) 위험으로 취약합니다."
+  },
+  {
+    "os_type": "Linux",
+    "code": "U-04",
+    "title": "패스워드 파일 보호",
+    "remediation": "[ISMS-P 조치 가이드]\n섀도우 패스워드 방식을 사용하여 암호화된 비밀번호를 /etc/shadow에 분리 보관하고 해당 파일의 권한을 400 또는 000으로 제한하십시오.",
+    "pass_comment": "섀도우 패스워드 방식을 사용하고 /etc/shadow 파일의 읽기 권한이 엄격히 통제되어 양호합니다.",
+    "fail_comment": "/etc/shadow 파일 권한이 비인가 사용자에게 노출되어 있거나 섀도우 패스워드 미사용 상태로 취약합니다."
+  },
+  {
+    "os_type": "Linux",
+    "code": "U-05",
+    "title": "패스 경로 설정",
+    "remediation": "[ISMS-P 조치 가이드]\nPATH 환경변수 내에 '.'(현재 디렉터리)이나 공백이 포함되어 있지 않은지 profile 및 bashrc 파일을 검사하십시오.",
+    "pass_comment": "PATH 환경변수에 현재 디렉터리('.') 또는 공백이 맨 앞이나 중간에 위치하지 않아 양호합니다.",
+    "fail_comment": "PATH 환경변수에 현재 디렉터리('.')가 맨 앞 또는 중간에 포함되어 있어 트로이 목마 공격 위험으로 취약합니다."
+  },
+  {
+    "os_type": "Windows",
+    "code": "W-01",
+    "title": "Administrator 계정 이름 변경",
+    "remediation": "[ISMS-P 조치 가이드]\n로컬 보안 정책에서 Administrator 계정 이름을 다른 이름으로 변경하여 무작위 접속 시도를 방어하십시오.",
+    "pass_comment": "Administrator 기본 관리자 계정 이름이 안전하게 변경되어 있어 양호합니다.",
+    "fail_comment": "기본 관리자 계정 이름(Administrator)이 그대로 유지되어 있어 계정 탈취 위험으로 취약합니다."
+  }
+]
