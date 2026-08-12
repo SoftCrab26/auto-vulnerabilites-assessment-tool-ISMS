@@ -11,6 +11,7 @@ from app.config import EXPORT_DIR
 from app.db import get_db
 from app.deps import require_user
 from app.services.excel_export import ExportOptions, export_reports
+from app.services.guidelines import guidelines_as_dicts
 from app.services.stats import load_reports
 
 router = APIRouter(tags=["export"])
@@ -45,7 +46,7 @@ async def export_run(
     logs: list[str] = []
     files: list[str] = []
     try:
-        result = export_reports(reports, options)
+        result = export_reports(reports, options, guidelines=guidelines_as_dicts(db))
         logs = result.logs
         files = result.files
     except Exception as exc:  # noqa: BLE001 — surface to UI

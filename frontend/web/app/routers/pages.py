@@ -238,6 +238,8 @@ async def upload_reports(
                     evidence=d.evidence,
                     remediation=d.remediation,
                     processed_config=d.processed_config,
+                    raw_config=getattr(d, "raw_config", "") or "",
+                    vulnerable_config=getattr(d, "vulnerable_config", "") or "",
                     err_msg=d.err_msg,
                 )
             )

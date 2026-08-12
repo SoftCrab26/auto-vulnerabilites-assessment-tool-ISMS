@@ -48,6 +48,8 @@ class DiagnosticItem(Base):
     evidence: Mapped[str] = mapped_column(Text, default="")
     remediation: Mapped[str] = mapped_column(Text, default="")
     processed_config: Mapped[str] = mapped_column(Text, default="")
+    raw_config: Mapped[str] = mapped_column(Text, default="")
+    vulnerable_config: Mapped[str] = mapped_column(Text, default="")
     err_msg: Mapped[str] = mapped_column(Text, default="")
 
     report: Mapped[HostReport] = relationship("HostReport", back_populates="diagnostics")

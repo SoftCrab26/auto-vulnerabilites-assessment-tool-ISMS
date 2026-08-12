@@ -33,6 +33,8 @@ class ParsedDiagnostic:
     evidence: str = ""
     remediation: str = ""
     processed_config: str = ""
+    raw_config: str = ""
+    vulnerable_config: str = ""
     err_msg: str = ""
 
 
@@ -355,6 +357,8 @@ def convert_check_results(
                     code=code,
                 ),
                 processed_config=processed,
+                raw_config=raw,
+                vulnerable_config=vulnerable,
                 err_msg=err_msg,
             )
         )
@@ -437,6 +441,10 @@ def parse_json_report(
                         evidence=truncate_text(str(item.get("evidence") or item.get("Evidence") or ""), limit=8000),
                         remediation=str(item.get("remediation") or item.get("Remediation") or ""),
                         processed_config=str(item.get("processed_config") or item.get("ProcessedConfig") or ""),
+                        raw_config=str(item.get("raw_config") or item.get("RawConfig") or ""),
+                        vulnerable_config=str(
+                            item.get("vulnerable_config") or item.get("VulnerableConfig") or ""
+                        ),
                         err_msg=str(item.get("err_msg") or item.get("ErrMsg") or ""),
                     )
                 )

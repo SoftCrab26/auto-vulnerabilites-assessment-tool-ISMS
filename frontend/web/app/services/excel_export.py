@@ -9,6 +9,8 @@ from datetime import datetime
 from pathlib import Path
 
 from openpyxl import load_workbook
+from openpyxl.cell.rich_text import CellRichText, TextBlock
+from openpyxl.cell.text import InlineFont
 from openpyxl.chart import BarChart, RadarChart, Reference
 from openpyxl.chart.data_source import AxDataSource, StrRef
 from openpyxl.chart.label import DataLabelList
@@ -31,6 +33,7 @@ from openpyxl.drawing.text import (
 from openpyxl.formatting.rule import CellIsRule
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.datavalidation import DataValidation
 
 # Chart palette (corporate blue — live cell-linked series)
 CHART_FILL = "2E75B6"
@@ -68,6 +71,7 @@ NA_FONT = Font(bold=True, color="FF000000")
 
 _CENTER = Alignment(horizontal="center", vertical="center")
 _WARN_LABELS = {"인터뷰", "수동점검", "ERROR", "부분만족"}
+RESULT_ENUM_VALUES = ("취약", "N/A", "수동점검", "양호")
 
 
 @dataclass
@@ -96,20 +100,17 @@ def _unique_path(directory: Path, base: str, ext: str) -> Path:
 
 
 def _status_ko_detail(status: str) -> str:
+    """Map scanner status to O-column enum: 취약 / N/A / 수동점검 / 양호."""
     raw = (status or "").strip()
-    if raw in {"양호", "취약", "인터뷰", "수동점검", "ERROR", "N/A"}:
+    if raw in RESULT_ENUM_VALUES:
         return raw
     s = raw.lower()
     if s in {"pass", "good"}:
         return "양호"
     if s in {"fail", "vulnerable"}:
         return "취약"
-    if s in {"interview"}:
-        return "인터뷰"
-    if s in {"manual"}:
+    if s in {"interview", "manual", "error", "인터뷰"}:
         return "수동점검"
-    if s in {"error"}:
-        return "ERROR"
     if s in {"n/a", "na", "notapplicable", "not applicable", "not_applicable"}:
         return "N/A"
     return "N/A"
@@ -251,6 +252,122 @@ def _fill_targets_sheet(ws, reports: list[HostReport], sheet_names: list[str]) -
         ws.cell(row, 4).value = report.ip_address
 
 
+def _extract_evidence_section(evidence: str, header: str) -> str:
+    text = evidence or ""
+    if header not in text:
+        return ""
+    after = text.split(header, 1)[1]
+    # Stop at the next [섹션] header if present.
+    chunks = after.split("\n[")
+    return chunks[0].strip()
+
+
+def _lookup_guide_comment(
+    guidelines: list[dict],
+    target_os: str,
+    code: str,
+    *,
+    kind: str,
+) -> str:
+    guide_os = "Windows" if "windows" in (target_os or "").lower() else "Linux"
+    for g in guidelines or []:
+        if (
+            str(g.get("os_type", "")).lower() == guide_os.lower()
+            and str(g.get("code", "")).lower() == (code or "").lower()
+        ):
+            return str(g.get(kind) or "").strip()
+    return ""
+
+
+def _to_ham_status_comment(text: str, *, ending: str) -> str:
+    """Normalize guideline comments to …양호함 / …취약함 endings."""
+    t = (text or "").strip().rstrip(".")
+    replacements = (
+        ("양호합니다", "양호함"),
+        ("취약합니다", "취약함"),
+        ("안전합니다", "양호함"),
+    )
+    for old, new in replacements:
+        if t.endswith(old):
+            t = t[: -len(old)] + new
+            break
+    if ending == "양호함" and not t.endswith("양호함"):
+        if not t:
+            return "설정이 기준에 부합하여 양호함"
+    if ending == "취약함" and not t.endswith("취약함"):
+        if not t:
+            return "설정이 기준에 미달하여 취약함"
+    return t
+
+
+def _inspection_status_comment(
+    diag,
+    *,
+    guidelines: list[dict],
+    target_os: str,
+) -> str:
+    """점검현황(U열): Pass/Fail short sentence only — nothing else."""
+    status = (getattr(diag, "status", "") or "").strip().lower()
+    code = getattr(diag, "code", "") or ""
+    if status in {"pass", "good"}:
+        raw = _lookup_guide_comment(guidelines, target_os, code, kind="pass_comment")
+        return _to_ham_status_comment(raw, ending="양호함")
+    if status in {"fail", "vulnerable"}:
+        raw = _lookup_guide_comment(guidelines, target_os, code, kind="fail_comment")
+        return _to_ham_status_comment(raw, ending="취약함")
+    return ""
+
+
+_OP_FONT_RED = InlineFont(b=True, color="FFFF0000")
+_OP_FONT_NORMAL = InlineFont(color="FF000000")
+
+
+def _operation_status_text(diag) -> str | CellRichText:
+    """운영현황(Q열): [취약점 현황](red) → [설정값 현황] → [설정값 상세]."""
+    evidence = getattr(diag, "evidence", None) or ""
+    processed = (getattr(diag, "processed_config", None) or "").strip()
+    vulnerable = (getattr(diag, "vulnerable_config", None) or "").strip()
+    raw = (getattr(diag, "raw_config", None) or "").strip()
+
+    # Legacy rows (uploaded before raw/vulnerable columns): recover from evidence.
+    if not processed:
+        processed = _extract_evidence_section(evidence, "[검출된 설정값 (ProcessedConfig)]")
+    if not vulnerable:
+        vulnerable = _extract_evidence_section(evidence, "[취약 근거]")
+    if not raw:
+        raw = _extract_evidence_section(evidence, "[진단 로그 / 설정 원본 (RawConfig)]")
+
+    # Keep Excel cells usable — Synology RawConfig can be large.
+    if len(raw) > 8000:
+        raw = raw[:8000] + f"\n... (truncated, total {len(raw)} chars)"
+
+    blocks: list[TextBlock] = []
+
+    def _append(font: InlineFont, header: str, body: str) -> None:
+        if not body:
+            return
+        prefix = "\n\n" if blocks else ""
+        blocks.append(TextBlock(font, f"{prefix}[{header}]\n{body}"))
+
+    _append(_OP_FONT_RED, "취약점 현황", vulnerable)
+    _append(_OP_FONT_NORMAL, "설정값 현황", processed)
+    _append(_OP_FONT_NORMAL, "설정값 상세", raw)
+
+    if not blocks:
+        return ""
+    return CellRichText(*blocks)
+
+
+def _scale_item_row_heights(ws, start_row: int, end_row: int, code_col: int, factor: float = 1.5) -> None:
+    default_h = ws.sheet_format.defaultRowHeight or 15.0
+    for row in range(start_row, end_row + 1):
+        if not str(ws.cell(row, code_col).value or "").strip():
+            continue
+        current = ws.row_dimensions[row].height
+        base = float(current) if current else float(default_h)
+        ws.row_dimensions[row].height = base * factor
+
+
 def _fill_host_detail_sheet(
     ws,
     report: HostReport,
@@ -262,8 +379,11 @@ def _fill_host_detail_sheet(
     op_col: int | None,
     start_row: int,
     end_row: int,
+    guidelines: list[dict] | None = None,
+    short_inspection_status: bool = False,
 ) -> None:
     mapping = _diag_map(report)
+    guides = guidelines or []
     for row in range(start_row, end_row + 1):
         code = str(ws.cell(row, code_col).value or "").strip()
         if not code:
@@ -282,34 +402,89 @@ def _fill_host_detail_sheet(
         result_cell.value = result_text
         _apply_result_style(result_cell, result_text)
         if evidence_col:
-            ws.cell(row, evidence_col).value = diag.evidence or ""
+            if short_inspection_status:
+                ws.cell(row, evidence_col).value = _inspection_status_comment(
+                    diag,
+                    guidelines=guides,
+                    target_os=report.target_os,
+                )
+            else:
+                ws.cell(row, evidence_col).value = diag.evidence or ""
+            ws.cell(row, evidence_col).alignment = Alignment(wrap_text=True, vertical="top")
         if op_col:
-            ws.cell(row, op_col).value = diag.processed_config or diag.err_msg or ""
+            if short_inspection_status:
+                ws.cell(row, op_col).value = _operation_status_text(diag)
+            else:
+                ws.cell(row, op_col).value = diag.processed_config or diag.err_msg or ""
+            ws.cell(row, op_col).alignment = Alignment(wrap_text=True, vertical="top")
 
+    _scale_item_row_heights(ws, start_row, end_row, code_col, factor=1.5)
 
 def _reapply_detail_conditional_formatting(ws) -> None:
-    # copy_worksheet drops CF; restore rules for 점검결과(O).
+    """O열 값 변경 시 색이 따라가도록 CF만 사용 (드롭다운과 연동)."""
     try:
         ws.conditional_formatting._cf_rules.clear()
     except Exception:
         pass
+
+    # Priority: first match wins (stopIfTrue).
     ws.conditional_formatting.add(
         "O28:O94",
-        CellIsRule(operator="equal", formula=['"취약"'], fill=FAIL_FILL, font=FAIL_FONT),
-    )
-    for label in ("인터뷰", "수동점검", "ERROR", "부분만족"):
-        ws.conditional_formatting.add(
-            "O28:O94",
-            CellIsRule(operator="equal", formula=[f'"{label}"'], fill=WARN_FILL, font=WARN_FONT),
-        )
-    ws.conditional_formatting.add(
-        "O28:O94",
-        CellIsRule(operator="equal", formula=['"양호"'], fill=PASS_FILL, font=PASS_FONT),
+        CellIsRule(
+            operator="equal",
+            formula=['"취약"'],
+            fill=FAIL_FILL,
+            font=FAIL_FONT,
+            stopIfTrue=True,
+        ),
     )
     ws.conditional_formatting.add(
         "O28:O94",
-        CellIsRule(operator="equal", formula=['"N/A"'], fill=NA_FILL, font=NA_FONT),
+        CellIsRule(
+            operator="equal",
+            formula=['"수동점검"'],
+            fill=WARN_FILL,
+            font=WARN_FONT,
+            stopIfTrue=True,
+        ),
     )
+    ws.conditional_formatting.add(
+        "O28:O94",
+        CellIsRule(
+            operator="equal",
+            formula=['"양호"'],
+            fill=PASS_FILL,
+            font=PASS_FONT,
+            stopIfTrue=True,
+        ),
+    )
+    ws.conditional_formatting.add(
+        "O28:O94",
+        CellIsRule(
+            operator="equal",
+            formula=['"N/A"'],
+            fill=NA_FILL,
+            font=NA_FONT,
+            stopIfTrue=True,
+        ),
+    )
+
+
+def _add_result_enum_dropdown(ws, start_row: int = 28, end_row: int = 94) -> None:
+    """O열 점검결과를 취약/N/A/수동점검/양호 중 선택하도록 제한."""
+    dv = DataValidation(
+        type="list",
+        formula1='"' + ",".join(RESULT_ENUM_VALUES) + '"',
+        allow_blank=True,
+        showDropDown=False,  # False = show dropdown arrow in Excel
+        showErrorMessage=True,
+        errorTitle="점검결과",
+        error="취약, N/A, 수동점검, 양호 중에서 선택하세요.",
+        promptTitle="점검결과",
+        prompt="취약 / N/A / 수동점검 / 양호",
+    )
+    dv.add(f"O{start_row}:O{end_row}")
+    ws.add_data_validation(dv)
 
 
 def _fix_host_stat_formulas(ws) -> None:
@@ -743,7 +918,11 @@ def _move_sheets_before(wb, sheet_names: list[str], before_title: str) -> None:
             wb.move_sheet(name, offset=offset)
 
 
-def generate_detailed_report(reports: list[HostReport], os_type: str) -> Path:
+def generate_detailed_report(
+    reports: list[HostReport],
+    os_type: str,
+    guidelines: list[dict] | None = None,
+) -> Path:
     template = EXCEL_TEMPLATE_DIR / "UNIX_서버_취약점진단_상세결과보고서.xlsx"
     if not template.exists():
         raise FileNotFoundError(f"상세결과 템플릿 없음: {template.name}")
@@ -809,9 +988,12 @@ def generate_detailed_report(reports: list[HostReport], os_type: str) -> Path:
                 op_col=17,
                 start_row=28,
                 end_row=94,
+                guidelines=guidelines,
+                short_inspection_status=True,
             )
             _fix_host_stat_formulas(ws)
             _reapply_detail_conditional_formatting(ws)
+            _add_result_enum_dropdown(ws)
             _add_host_area_charts(ws)
 
         try:
@@ -914,7 +1096,11 @@ def generate_risk_workbook(reports: list[HostReport], os_type: str, template_nam
     return out
 
 
-def export_reports(reports: list[HostReport], options: ExportOptions) -> ExportResult:
+def export_reports(
+    reports: list[HostReport],
+    options: ExportOptions,
+    guidelines: list[dict] | None = None,
+) -> ExportResult:
     logs: list[str] = []
     files: list[str] = []
     now = datetime.now().strftime("%H:%M:%S")
@@ -931,11 +1117,12 @@ def export_reports(reports: list[HostReport], options: ExportOptions) -> ExportR
 
     EXPORT_DIR.mkdir(parents=True, exist_ok=True)
     groups = _group_by_os(target)
+    guides = guidelines or []
 
     if options.detail:
         for os_type, group in groups.items():
             logs.append(f"[{datetime.now():%H:%M:%S}] {os_type} 상세결과보고서 생성 중... ({len(group)} hosts)")
-            path = generate_detailed_report(group, os_type)
+            path = generate_detailed_report(group, os_type, guidelines=guides)
             files.append(path.name)
             logs.append(f"[{datetime.now():%H:%M:%S}]   - 완료: {path.name}")
 
