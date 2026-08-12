@@ -7,11 +7,12 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.config import EXPORT_DIR
+from app.config import EXPORT_DIR, UPLOAD_DIR
 from app.db import get_db
 from app.deps import require_user
 from app.services.excel_export import ExportOptions, export_reports
 from app.services.guidelines import guidelines_as_dicts
+from app.services.json_parser import enrich_reports_from_uploads
 from app.services.stats import load_reports
 
 router = APIRouter(tags=["export"])
@@ -34,6 +35,11 @@ async def export_run(
         return user
 
     reports = load_reports(db)
+    guides = guidelines_as_dicts(db)
+    # Restore Manual/Interview/Error + VulnerableConfig lost on older uploads.
+    if enrich_reports_from_uploads(reports, UPLOAD_DIR, guides):
+        db.commit()
+
     options = ExportOptions(
         detail=detail is not None,
         summary=summary is not None,
@@ -46,7 +52,7 @@ async def export_run(
     logs: list[str] = []
     files: list[str] = []
     try:
-        result = export_reports(reports, options, guidelines=guidelines_as_dicts(db))
+        result = export_reports(reports, options, guidelines=guides)
         logs = result.logs
         files = result.files
     except Exception as exc:  # noqa: BLE001 — surface to UI

@@ -105,11 +105,11 @@ def _status_ko_detail(status: str) -> str:
     if raw in RESULT_ENUM_VALUES:
         return raw
     s = raw.lower()
-    if s in {"pass", "good"}:
+    if s in {"pass", "good", "y"}:
         return "양호"
-    if s in {"fail", "vulnerable"}:
+    if s in {"fail", "vulnerable", "n"}:
         return "취약"
-    if s in {"interview", "manual", "error", "인터뷰"}:
+    if s in {"interview", "manual", "error", "인터뷰", "수동점검", "err"}:
         return "수동점검"
     if s in {"n/a", "na", "notapplicable", "not applicable", "not_applicable"}:
         return "N/A"
@@ -319,11 +319,27 @@ def _inspection_status_comment(
 
 
 _OP_FONT_RED = InlineFont(b=True, color="FFFF0000")
+_OP_FONT_RED_BODY = InlineFont(color="FFFF0000")
 _OP_FONT_NORMAL = InlineFont(color="FF000000")
 
 
+def _evidence_preamble(evidence: str) -> str:
+    """Text before the first [섹션] header — often the fail/pass banner."""
+    text = (evidence or "").strip()
+    if not text:
+        return ""
+    if "\n[" in text:
+        return text.split("\n[", 1)[0].strip()
+    if text.startswith("["):
+        return ""
+    return text
+
+
 def _operation_status_text(diag) -> str | CellRichText:
-    """운영현황(Q열): [취약점 현황](red) → [설정값 현황] → [설정값 상세]."""
+    """운영현황(Q열): 양호→설정값 현황까지 / 취약·수동점검→설정값 상세까지.
+
+    [취약점 현황] 헤더+본문은 전부 빨간색.
+    """
     evidence = getattr(diag, "evidence", None) or ""
     processed = (getattr(diag, "processed_config", None) or "").strip()
     vulnerable = (getattr(diag, "vulnerable_config", None) or "").strip()
@@ -334,8 +350,23 @@ def _operation_status_text(diag) -> str | CellRichText:
         processed = _extract_evidence_section(evidence, "[검출된 설정값 (ProcessedConfig)]")
     if not vulnerable:
         vulnerable = _extract_evidence_section(evidence, "[취약 근거]")
+    if not vulnerable:
+        vulnerable = _extract_evidence_section(evidence, "[취약한 설정 분석 내용]")
     if not raw:
         raw = _extract_evidence_section(evidence, "[진단 로그 / 설정 원본 (RawConfig)]")
+
+    status = (getattr(diag, "status", "") or "").strip().lower()
+    result_ko = _status_ko_detail(getattr(diag, "status", "") or "")
+
+    # Fail with empty VulnerableConfig: use leading evidence sentence as 취약점 현황.
+    if not vulnerable and status in {"fail", "vulnerable"}:
+        preamble = _evidence_preamble(evidence)
+        if preamble and preamble.upper() != "N/A" and "양호" not in preamble:
+            vulnerable = preamble
+
+    include_raw = result_ko in {"취약", "수동점검"}
+    if not include_raw:
+        raw = ""
 
     # Keep Excel cells usable — Synology RawConfig can be large.
     if len(raw) > 8000:
@@ -343,15 +374,39 @@ def _operation_status_text(diag) -> str | CellRichText:
 
     blocks: list[TextBlock] = []
 
-    def _append(font: InlineFont, header: str, body: str) -> None:
+    def _append_section(
+        *,
+        header_font: InlineFont,
+        body_font: InlineFont,
+        header: str,
+        body: str,
+    ) -> None:
         if not body:
             return
         prefix = "\n\n" if blocks else ""
-        blocks.append(TextBlock(font, f"{prefix}[{header}]\n{body}"))
+        blocks.append(TextBlock(header_font, f"{prefix}[{header}]"))
+        blocks.append(TextBlock(body_font, f"\n{body}"))
 
-    _append(_OP_FONT_RED, "취약점 현황", vulnerable)
-    _append(_OP_FONT_NORMAL, "설정값 현황", processed)
-    _append(_OP_FONT_NORMAL, "설정값 상세", raw)
+    # 취약점 현황: header + body all red
+    _append_section(
+        header_font=_OP_FONT_RED,
+        body_font=_OP_FONT_RED_BODY,
+        header="취약점 현황",
+        body=vulnerable,
+    )
+    _append_section(
+        header_font=_OP_FONT_NORMAL,
+        body_font=_OP_FONT_NORMAL,
+        header="설정값 현황",
+        body=processed,
+    )
+    if include_raw:
+        _append_section(
+            header_font=_OP_FONT_NORMAL,
+            body_font=_OP_FONT_NORMAL,
+            header="설정값 상세",
+            body=raw,
+        )
 
     if not blocks:
         return ""
@@ -1115,9 +1170,21 @@ def export_reports(
     if not target:
         raise ValueError("선택한 자산 유형에 해당하는 진단 결과 호스트가 존재하지 않습니다.")
 
+    guides = guidelines or []
+
+    # Safety net if caller did not persist enrichment yet.
+    try:
+        from app.config import UPLOAD_DIR
+        from app.services.json_parser import enrich_reports_from_uploads
+
+        n = enrich_reports_from_uploads(target, UPLOAD_DIR, guides)
+        if n:
+            logs.append(f"[{datetime.now():%H:%M:%S}] 원본 JSON에서 점검결과/설정값을 복구했습니다. ({n} items)")
+    except Exception:
+        pass
+
     EXPORT_DIR.mkdir(parents=True, exist_ok=True)
     groups = _group_by_os(target)
-    guides = guidelines or []
 
     if options.detail:
         for os_type, group in groups.items():

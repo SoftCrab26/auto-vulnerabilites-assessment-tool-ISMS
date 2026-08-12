@@ -471,3 +471,69 @@ def parse_json_report(
             )
 
     return None
+
+
+def enrich_reports_from_uploads(
+    reports: list[Any],
+    upload_dir: Path,
+    guidelines: list[dict[str, Any]] | None = None,
+) -> int:
+    """Backfill status/raw/vulnerable from original JSON uploads (in-place).
+
+    Older uploads stored Manual/Interview/Error as N/A and left raw/vulnerable
+    columns empty. Re-parsing the saved upload file restores Excel detail fields
+    without requiring the user to re-upload.
+    """
+    guides = guidelines or []
+    updated = 0
+    for report in reports:
+        filename = (getattr(report, "source_filename", None) or "").strip()
+        if not filename:
+            continue
+        path = upload_dir / Path(filename).name
+        if not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8-sig")
+        except OSError:
+            continue
+        parsed = parse_json_report(text, filename, guides)
+        if parsed is None:
+            continue
+        by_code = {
+            (d.code or "").strip().upper(): d
+            for d in parsed.diagnostics
+            if (d.code or "").strip()
+        }
+        for diag in getattr(report, "diagnostics", []) or []:
+            code = (getattr(diag, "code", None) or "").strip().upper()
+            src = by_code.get(code)
+            if src is None:
+                continue
+            changed = False
+            if src.status and src.status != (diag.status or ""):
+                diag.status = src.status
+                changed = True
+            if src.vulnerable_config and not (getattr(diag, "vulnerable_config", None) or "").strip():
+                diag.vulnerable_config = src.vulnerable_config
+                changed = True
+            if src.raw_config and not (getattr(diag, "raw_config", None) or "").strip():
+                diag.raw_config = src.raw_config
+                changed = True
+            if src.processed_config and not (getattr(diag, "processed_config", None) or "").strip():
+                diag.processed_config = src.processed_config
+                changed = True
+            # Refresh evidence so [취약 근거] is present for export fallbacks.
+            if src.evidence and (
+                not (diag.evidence or "").strip()
+                or (
+                    src.vulnerable_config
+                    and "[취약 근거]" not in (diag.evidence or "")
+                    and src.vulnerable_config not in (diag.evidence or "")
+                )
+            ):
+                diag.evidence = src.evidence
+                changed = True
+            if changed:
+                updated += 1
+    return updated
