@@ -19,10 +19,13 @@ class DashboardStats:
 
 def classify_host_type(target_os: str) -> str:
     os_u = (target_os or "").strip().upper()
-    is_unix = any(x in os_u for x in ("UNIX", "LINUX", "AIX", "SOLARIS", "HP", "DBMS"))
+    is_dbms = any(x in os_u for x in ("DBMS", "ORACLE", "MSSQL", "MYSQL", "POSTGRES", "SQL SERVER"))
+    is_unix = any(x in os_u for x in ("UNIX", "LINUX", "AIX", "SOLARIS", "HP", "SYNOLOGY", "DSM"))
     is_windows = "WINDOWS" in os_u
     is_win_server = is_windows and ("SERVER" in os_u or "서버" in (target_os or ""))
     is_pc = is_windows and not is_win_server
+    if is_dbms:
+        return "DBMS"
     if is_unix:
         return "UNIX/Linux"
     if is_win_server:

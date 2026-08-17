@@ -46,5 +46,213 @@
     "remediation": "[ISMS-P 조치 가이드]\n로컬 보안 정책에서 Administrator 계정 이름을 다른 이름으로 변경하여 무작위 접속 시도를 방어하십시오.",
     "pass_comment": "Administrator 기본 관리자 계정 이름이 안전하게 변경되어 있어 양호합니다.",
     "fail_comment": "기본 관리자 계정 이름(Administrator)이 그대로 유지되어 있어 계정 탈취 위험으로 취약합니다."
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-01",
+    "title": "기본 계정의 비밀번호, 정책 등을 변경하여 사용",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-01)에 맞게 설정을 조치하십시오.\n양호 기준: DBMS 기본 계정의 초기 비밀번호 및 권한 정책을 변경하여 사용하는 경우",
+    "pass_comment": "DBMS 기본 계정의 초기 비밀번호 및 권한 정책을 변경하여 사용하는 경우 양호함",
+    "fail_comment": "DBMS 기본 계정의 초기 비밀번호 및 권한 정책을 변경하지 않고 사용하는 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-02",
+    "title": "데이터베이스의 불필요 계정을 제거하거나, 잠금설정 후 사용",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-02)에 맞게 설정을 조치하십시오.\n양호 기준: 불필요한 DB 계정을 제거하거나 잠금 설정한 경우",
+    "pass_comment": "불필요한 DB 계정을 제거하거나 잠금 설정한 경우 양호함",
+    "fail_comment": "불필요한 DB 계정이 존재하거나 잠금 설정이 되어 있지 않은 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-03",
+    "title": "비밀번호 사용 기간 및 복잡도를 기관의 정책에 맞도록 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-03)에 맞게 설정을 조치하십시오.\n양호 기준: 기관 정책에 맞게 비밀번호 사용 기간 및 복잡도(길이, 문자종류 등)가 설정된 경우",
+    "pass_comment": "기관 정책에 맞게 비밀번호 사용 기간 및 복잡도(길이, 문자종류 등)가 설정된 경우 양호함",
+    "fail_comment": "비밀번호 사용 기간 및 복잡도가 기관 정책에 맞지 않게 설정된 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-04",
+    "title": "데이터베이스 관리자 권한을 꼭 필요한 계정 및 그룹에 대해서만 허용",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-04)에 맞게 설정을 조치하십시오.\n양호 기준: 관리자(DBA) 권한이 꼭 필요한 최소한의 계정 및 그룹에만 부여된 경우",
+    "pass_comment": "관리자(DBA) 권한이 꼭 필요한 최소한의 계정 및 그룹에만 부여된 경우 양호함",
+    "fail_comment": "불필요한 계정이나 그룹에 DBA 권한이 과도하게 부여된 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-05",
+    "title": "비밀번호 재사용에 대한 제약 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-05)에 맞게 설정을 조치하십시오.\n양호 기준: 비밀번호 변경 시 이전 비밀번호 재사용을 제한하는 정책이 설정된 경우",
+    "pass_comment": "비밀번호 변경 시 이전 비밀번호 재사용을 제한하는 정책이 설정된 경우 양호함",
+    "fail_comment": "비밀번호 재사용 제한 정책이 설정되어 있지 않은 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-06",
+    "title": "DB 사용자 계정을 개별적으로 부여하여 사용",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-06)에 맞게 설정을 조치하십시오.\n양호 기준: DB 접근 시 사용자별로 서로 다른 개별 계정을 사용하는 경우",
+    "pass_comment": "DB 접근 시 사용자별로 서로 다른 개별 계정을 사용하는 경우 양호함",
+    "fail_comment": "DB 계정을 공유하여 사용하는 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-07",
+    "title": "root 권한으로 서비스 구동 제한",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-07)에 맞게 설정을 조치하십시오.\n양호 기준: DBMS 서비스가 root 계정 또는 root 권한이 아닌 별도 계정으로 구동되는 경우",
+    "pass_comment": "DBMS 서비스가 root 계정 또는 root 권한이 아닌 별도 계정으로 구동되는 경우 양호함",
+    "fail_comment": "DBMS 서비스가 root 계정 또는 root 권한으로 구동되는 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-08",
+    "title": "안전한 암호화 알고리즘 사용",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-08)에 맞게 설정을 조치하십시오.\n양호 기준: SHA-256 이상의 안전한 해시 알고리즘을 사용하는 경우",
+    "pass_comment": "SHA-256 이상의 안전한 해시 알고리즘을 사용하는 경우 양호함",
+    "fail_comment": "취약한 암호화 알고리즘(MD5, SHA-1 등)을 사용하는 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-09",
+    "title": "일정 횟수의 로그인 실패 시 이에 대한 잠금정책 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-09)에 맞게 설정을 조치하십시오.\n양호 기준: 로그인 실패 횟수 제한 및 계정 잠금 정책이 설정된 경우",
+    "pass_comment": "로그인 실패 횟수 제한 및 계정 잠금 정책이 설정된 경우 양호함",
+    "fail_comment": "로그인 실패 시 잠금 정책이 설정되어 있지 않은 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-10",
+    "title": "원격에서 DB 서버로의 접속 제한",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-10)에 맞게 설정을 조치하십시오.\n양호 기준: 원격에서 DB 서버로의 접속이 IP/호스트 기반으로 제한된 경우",
+    "pass_comment": "원격에서 DB 서버로의 접속이 IP/호스트 기반으로 제한된 경우 양호함",
+    "fail_comment": "원격 접속 제한 설정이 되어 있지 않은 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-11",
+    "title": "DBA 이외의 인가되지 않은 사용자가 시스템 테이블에 접근할 수 없도록 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-11)에 맞게 설정을 조치하십시오.\n양호 기준: 시스템 테이블에 일반 사용자 접근이 차단된 경우",
+    "pass_comment": "시스템 테이블에 일반 사용자 접근이 차단된 경우 양호함",
+    "fail_comment": "일반 사용자가 시스템 테이블에 접근 가능한 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-12",
+    "title": "안전한 리스너 비밀번호 설정 및 사용",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-12)에 맞게 설정을 조치하십시오.\n양호 기준: Oracle Listener에 강력한 비밀번호가 설정된 경우",
+    "pass_comment": "Oracle Listener에 강력한 비밀번호가 설정된 경우 양호함",
+    "fail_comment": "Listener 비밀번호가 설정되지 않았거나 기본값인 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-13",
+    "title": "불필요한 ODBC/OLE-DB 데이터 소스와 드라이브를 제거하여 사용",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-13)에 맞게 설정을 조치하십시오.\n양호 기준: 불필요한 ODBC/OLE-DB 드라이버가 제거된 경우",
+    "pass_comment": "불필요한 ODBC/OLE-DB 드라이버가 제거된 경우 양호함",
+    "fail_comment": "불필요한 ODBC/OLE-DB가 설치되어 있는 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-14",
+    "title": "데이터베이스의 주요 설정 파일, 비밀번호 파일 등과 같은 주요 파일들의 접근 권한이 적절하게 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-14)에 맞게 설정을 조치하십시오.\n양호 기준: 주요 DB 파일(설정, 비밀번호 파일 등)에 대해 일반 사용자 쓰기 권한이 제거된 경우",
+    "pass_comment": "주요 DB 파일(설정, 비밀번호 파일 등)에 대해 일반 사용자 쓰기 권한이 제거된 경우 양호함",
+    "fail_comment": "주요 DB 파일에 일반 사용자 쓰기 권한이 부여된 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-15",
+    "title": "관리자 이외의 사용자가 오라클 리스너의 접속을 통해 리스너 로그 및 trace 파일에 대한 변경 제한",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-15)에 맞게 설정을 조치하십시오.\n양호 기준: Listener 로그/trace 파일에 관리자 외 변경 권한이 없는 경우",
+    "pass_comment": "Listener 로그/trace 파일에 관리자 외 변경 권한이 없는 경우 양호함",
+    "fail_comment": "Listener 로그/trace 파일에 일반 사용자 변경 권한이 있는 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-16",
+    "title": "Windows 인증 모드 사용",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-16)에 맞게 설정을 조치하십시오.\n양호 기준: SQL Server에서 Windows 인증 모드만 사용하거나 Mixed 모드에서 강력한 정책 적용",
+    "pass_comment": "SQL Server에서 Windows 인증 모드만 사용하거나 Mixed 모드에서 강력한 정책 적용 양호함",
+    "fail_comment": "SQL Server 인증 모드가 취약하게 설정된 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-17",
+    "title": "Audit Table은 데이터베이스 관리자 계정으로 접근하도록 제한",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-17)에 맞게 설정을 조치하십시오.\n양호 기준: Audit 테이블에 DBA만 접근 가능하도록 설정된 경우",
+    "pass_comment": "Audit 테이블에 DBA만 접근 가능하도록 설정된 경우 양호함",
+    "fail_comment": "일반 사용자도 Audit 테이블에 접근 가능한 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-18",
+    "title": "응용프로그램 또는 DBA 계정의 Role이 Public으로 설정되지 않도록 조정",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-18)에 맞게 설정을 조치하십시오.\n양호 기준: Public Role에 불필요한 권한이 부여되지 않은 경우",
+    "pass_comment": "Public Role에 불필요한 권한이 부여되지 않은 경우 양호함",
+    "fail_comment": "Public Role에 과도한 권한이 부여된 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-19",
+    "title": "OS_ROLES, REMOTE_OS_AUTHENTICATION, REMOTE_OS_ROLES를 FALSE로 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-19)에 맞게 설정을 조치하십시오.\n양호 기준: OS_ROLES, REMOTE_OS_AUTHENTICATION, REMOTE_OS_ROLES가 FALSE로 설정된 경우",
+    "pass_comment": "OS_ROLES, REMOTE_OS_AUTHENTICATION, REMOTE_OS_ROLES가 FALSE로 설정된 경우 양호함",
+    "fail_comment": "해당 옵션이 TRUE로 설정된 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-20",
+    "title": "인가되지 않은 Object Owner의 제한",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-20)에 맞게 설정을 조치하십시오.\n양호 기준: Object Owner가 인가된 사용자만 사용하도록 제한된 경우",
+    "pass_comment": "Object Owner가 인가된 사용자만 사용하도록 제한된 경우 양호함",
+    "fail_comment": "인가되지 않은 Object Owner가 존재하는 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-21",
+    "title": "인가되지 않은 GRANT OPTION 사용 제한",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-21)에 맞게 설정을 조치하십시오.\n양호 기준: GRANT OPTION이 일반 사용자에게 부여되지 않은 경우",
+    "pass_comment": "GRANT OPTION이 일반 사용자에게 부여되지 않은 경우 양호함",
+    "fail_comment": "GRANT OPTION이 불필요하게 부여된 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-22",
+    "title": "데이터베이스의 자원 제한 기능을 TRUE로 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-22)에 맞게 설정을 조치하십시오.\n양호 기준: RESOURCE_LIMIT이 TRUE로 설정된 경우",
+    "pass_comment": "RESOURCE_LIMIT이 TRUE로 설정된 경우 양호함",
+    "fail_comment": "RESOURCE_LIMIT이 FALSE로 설정된 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-23",
+    "title": "xp_cmdshell 사용 제한",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-23)에 맞게 설정을 조치하십시오.\n양호 기준: xp_cmdshell이 비활성화된 경우",
+    "pass_comment": "xp_cmdshell이 비활성화된 경우 양호함",
+    "fail_comment": "xp_cmdshell이 활성화된 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-24",
+    "title": "Registry Procedure 권한 제한",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-24)에 맞게 설정을 조치하십시오.\n양호 기준: Registry 관련 Procedure 권한이 제한된 경우",
+    "pass_comment": "Registry 관련 Procedure 권한이 제한된 경우 양호함",
+    "fail_comment": "Registry Procedure 권한이 과도하게 부여된 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-25",
+    "title": "주기적 보안 패치 및 벤더 권고 사항 적용",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-25)에 맞게 설정을 조치하십시오.\n양호 기준: DBMS 최신 보안 패치가 주기적으로 적용된 경우",
+    "pass_comment": "DBMS 최신 보안 패치가 주기적으로 적용된 경우 양호함",
+    "fail_comment": "보안 패치가 적용되지 않은 경우 취약함"
+  },
+  {
+    "os_type": "DBMS",
+    "code": "D-26",
+    "title": "데이터베이스의 접근, 변경, 삭제 등의 감사 기록이 기관의 감사 기록 정책에 적합하도록 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-26)에 맞게 설정을 조치하십시오.\n양호 기준: 감사(Audit) 기능이 기관 정책에 따라 활성화되고 기록되는 경우",
+    "pass_comment": "감사(Audit) 기능이 기관 정책에 따라 활성화되고 기록되는 경우 양호함",
+    "fail_comment": "감사 기능이 비활성화되거나 정책에 맞지 않게 설정된 경우 취약함"
   }
 ]

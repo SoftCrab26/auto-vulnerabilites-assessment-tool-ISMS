@@ -17,6 +17,7 @@
     <h3>자산 유형</h3>
     <div class="checks">
       <label><input type="checkbox" name="unix" {% if not options or options.unix %}checked{% endif %} /> UNIX/Linux</label>
+      <label><input type="checkbox" name="dbms" {% if not options or options.dbms %}checked{% endif %} /> DBMS</label>
       <label><input type="checkbox" name="win_server" {% if not options or options.win_server %}checked{% endif %} /> Windows Server</label>
       <label><input type="checkbox" name="pc" {% if not options or options.pc %}checked{% endif %} /> 개인 PC</label>
     </div>

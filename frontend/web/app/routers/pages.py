@@ -48,7 +48,7 @@ async def dashboard(
             "reports": reports,
             "stats": stats,
             "host_type": host_type,
-            "host_types": ["전체", "UNIX/Linux", "Windows Server", "개인 PC"],
+            "host_types": ["전체", "UNIX/Linux", "DBMS", "Windows Server", "개인 PC"],
             "flash": request.query_params.get("flash"),
         },
     )
@@ -118,7 +118,7 @@ async def guidelines_page(
             "user": user,
             "active": "guidelines",
             "os_type": os_type,
-            "os_types": ["Linux", "Windows"],
+            "os_types": ["Linux", "Windows", "DBMS"],
             "rows": rows,
             "selected": selected,
             "reports": load_reports(db),

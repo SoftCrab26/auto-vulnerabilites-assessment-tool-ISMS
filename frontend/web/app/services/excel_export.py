@@ -48,12 +48,26 @@ AREA_VERTEX_LABELS = (
     (21, "④ 패치 관리"),
     (22, "⑤ 로그 관리"),
 )
+AREA_VERTEX_LABELS_DBMS = (
+    (18, "① 계정 관리"),
+    (19, "② 접근통제"),
+    (20, "③ 권한/옵션"),
+    (21, "④ 패치/감사"),
+    (22, "-"),
+)
 SECURITY_VERTEX_LABELS = (
     (6, "① 계정 관리"),
     (7, "② 파일·디렉터리"),
     (8, "③ 서비스 관리"),
     (9, "④ 패치 관리"),
     (10, "⑤ 로그 관리"),
+)
+SECURITY_VERTEX_LABELS_DBMS = (
+    (6, "① 계정 관리"),
+    (7, "② 접근통제"),
+    (8, "③ 권한/옵션"),
+    (9, "④ 패치/감사"),
+    (10, "-"),
 )
 
 from app.config import EXCEL_TEMPLATE_DIR, EXPORT_DIR
@@ -64,10 +78,22 @@ FAIL_FILL = PatternFill(fill_type="solid", fgColor="FFFF0000")
 FAIL_FONT = Font(bold=True, color="FFFFFFFF")
 PASS_FILL = PatternFill(fill_type="solid", fgColor="FFFFFFFF")
 PASS_FONT = Font(bold=True, color="FF000000")
-WARN_FILL = PatternFill(fill_type="solid", fgColor="FFFFFF00")
+WARN_FILL = PatternFill(fill_type="solid", fgColor="FFFFC000")  # 연주황
 WARN_FONT = Font(bold=True, color="FF000000")
 NA_FILL = PatternFill(fill_type="solid", fgColor="FFD9D9D9")
 NA_FONT = Font(bold=True, color="FF000000")
+
+
+def _cf_fill(rgb: str) -> PatternFill:
+    """Excel CF ignores fills that only set fgColor; set both fg and bg."""
+    return PatternFill(patternType="solid", fgColor=rgb, bgColor=rgb)
+
+
+# CF rules for O-column dropdown (fill+font update together on value change).
+CF_FAIL_FILL = _cf_fill("FFFF0000")
+CF_PASS_FILL = _cf_fill("FFFFFFFF")
+CF_WARN_FILL = _cf_fill("FFFFC000")
+CF_NA_FILL = _cf_fill("FFD9D9D9")
 
 _CENTER = Alignment(horizontal="center", vertical="center")
 _WARN_LABELS = {"인터뷰", "수동점검", "ERROR", "부분만족"}
@@ -80,6 +106,7 @@ class ExportOptions:
     summary: bool = False
     action_plan: bool = False
     unix: bool = True
+    dbms: bool = True
     win_server: bool = True
     pc: bool = True
 
@@ -133,6 +160,8 @@ def _filter_reports(reports: list[HostReport], options: ExportOptions) -> list[H
         host_type = classify_host_type(report.target_os)
         if host_type == "UNIX/Linux" and options.unix:
             selected.append(report)
+        elif host_type == "DBMS" and options.dbms:
+            selected.append(report)
         elif host_type == "Windows Server" and options.win_server:
             selected.append(report)
         elif host_type == "개인 PC" and options.pc:
@@ -142,10 +171,42 @@ def _filter_reports(reports: list[HostReport], options: ExportOptions) -> list[H
     return selected
 
 
+def _export_os_group_key(target_os: str) -> str:
+    """AIX/Linux/Synology → LINUX, Oracle/DBMS → DBMS, Windows 분리."""
+    raw = (target_os or "").strip()
+    u = raw.upper()
+    if any(m in u for m in ("ORACLE", "DBMS", "MSSQL", "MYSQL", "POSTGRES", "SQL SERVER")):
+        return "DBMS"
+    if "WINDOW" in u:
+        if "SERVER" in u or "서버" in raw:
+            return "WINDOWS_SERVER"
+        return "WINDOWS"
+    unix_markers = (
+        "AIX",
+        "LINUX",
+        "UNIX",
+        "SOLARIS",
+        "HP-UX",
+        "HPUX",
+        "CENTOS",
+        "RHEL",
+        "UBUNTU",
+        "SYNOLOGY",
+        "DSM",
+    )
+    if any(m in u for m in unix_markers) or not u:
+        return "LINUX"
+    return u
+
+
+def _is_dbms_group(os_type: str) -> bool:
+    return (os_type or "").strip().upper() == "DBMS"
+
+
 def _group_by_os(reports: list[HostReport]) -> dict[str, list[HostReport]]:
     groups: dict[str, list[HostReport]] = {}
     for report in reports:
-        key = (report.target_os or "UNIX").strip().upper() or "UNIX"
+        key = _export_os_group_key(report.target_os)
         groups.setdefault(key, []).append(report)
     return groups
 
@@ -159,24 +220,30 @@ def _safe_sheet_name(name: str) -> str:
     return cleaned[:31] or "host"
 
 
-def _apply_result_style(cell, result_text: str) -> None:
+def _apply_result_style(cell, result_text: str, *, direct: bool = True) -> None:
+    """Style 점검결과 cell.
+
+    direct=False: clear static fill so conditional formatting owns bg+font
+    when the user changes the dropdown value.
+    """
+    cell.alignment = _CENTER
+    if not direct:
+        cell.fill = PatternFill(fill_type=None)
+        cell.font = Font(bold=True, color="FF000000")
+        return
     text = (result_text or "").strip()
     if text == "취약" or text == "N":
         cell.fill = FAIL_FILL
         cell.font = FAIL_FONT
-        cell.alignment = _CENTER
     elif text == "양호" or text == "Y":
         cell.fill = PASS_FILL
         cell.font = PASS_FONT
-        cell.alignment = _CENTER
     elif text in _WARN_LABELS:
         cell.fill = WARN_FILL
         cell.font = WARN_FONT
-        cell.alignment = _CENTER
     elif text.upper() == "N/A":
         cell.fill = NA_FILL
         cell.font = NA_FONT
-        cell.alignment = _CENTER
 
 
 def _clear_chart_cache(chart) -> None:
@@ -269,7 +336,10 @@ def _lookup_guide_comment(
     *,
     kind: str,
 ) -> str:
-    guide_os = "Windows" if "windows" in (target_os or "").lower() else "Linux"
+    """현황 멘트용 가이드. Windows/DBMS 분리, AIX/Synology 등은 Linux 가이드 사용."""
+    from app.services.json_parser import guide_os_type
+
+    guide_os = guide_os_type(target_os, code)
     for g in guidelines or []:
         if (
             str(g.get("os_type", "")).lower() == guide_os.lower()
@@ -279,13 +349,108 @@ def _lookup_guide_comment(
     return ""
 
 
+_CRITERIA_CACHE: dict[str, dict[str, str]] | None = None
+
+
+def _load_criteria_map() -> dict[str, dict[str, str]]:
+    """템플릿 기준 DB → 코드별 양호/취약 기준 문구 (UNIX + DBMS)."""
+    global _CRITERIA_CACHE
+    if _CRITERIA_CACHE is not None:
+        return _CRITERIA_CACHE
+    mapping: dict[str, dict[str, str]] = {}
+    for name in (
+        "UNIX_서버_취약점진단_상세결과보고서.xlsx",
+        "DBMS_서버_취약점진단_상세결과보고서.xlsx",
+    ):
+        path = EXCEL_TEMPLATE_DIR / name
+        if not path.exists():
+            continue
+        try:
+            wb = load_workbook(path, read_only=True, data_only=True)
+            if "기준 DB" in wb.sheetnames:
+                for row in wb["기준 DB"].iter_rows(min_row=2, max_col=4, values_only=True):
+                    code = str(row[0] or "").strip().upper()
+                    if not code:
+                        continue
+                    mapping[code] = {
+                        "title": str(row[1] or "").strip(),
+                        "pass": str(row[2] or "").strip(),
+                        "fail": str(row[3] or "").strip(),
+                    }
+            wb.close()
+        except Exception:
+            continue
+    _CRITERIA_CACHE = mapping
+    return mapping
+
+
+def _extract_criteria_body(block: str) -> str:
+    text = (block or "").strip()
+    if not text:
+        return ""
+    if "■ 기준" in text:
+        text = text.split("■ 기준", 1)[1]
+        if ":" in text:
+            text = text.split(":", 1)[1]
+    if "■ 현황" in text:
+        text = text.split("■ 현황", 1)[0]
+    lines = []
+    for line in text.splitlines():
+        s = line.strip()
+        if not s or s.startswith("※"):
+            continue
+        lines.append(s)
+    return " ".join(lines).strip()
+
+
+def _criteria_to_status_comment(block: str, *, kind: str) -> str:
+    """기준 문구를 ■ 현황에 붙일 형식적 문장으로 변환."""
+    ending = "양호함" if kind == "pass" else "취약함"
+    body = _extract_criteria_body(block)
+    if not body:
+        return ""
+    body = body.replace("존재하지 경우", "존재하는 경우")
+    body = re.sub(r'\s*경우\s*["“”]?양호["“”]?\s*$', "", body)
+    body = re.sub(r'\s*경우\s*["“”]?취약["“”]?\s*$', "", body)
+    body = body.strip().rstrip(",").strip()
+    if not body:
+        return ""
+    replacements = (
+        ("하지 않는", "하지 않아"),
+        ("되지 않은", "되지 않아"),
+        ("되지 않는", "되지 않아"),
+        ("존재하지 않는", "존재하지 않아"),
+        ("존재하지 않은", "존재하지 않아"),
+        ("없는", "없어"),
+        ("있는", "있어"),
+        ("하는", "하여"),
+        ("되는", "되어"),
+        ("된", "되어"),
+        ("한", "하여"),
+        ("인", "이므로"),
+    )
+    converted = False
+    for old, new in replacements:
+        if body.endswith(old):
+            body = body[: -len(old)] + new
+            converted = True
+            break
+    if body.endswith(ending):
+        return body
+    if converted or body.endswith(("하여", "되어", "않아", "있어", "없어", "이므로")):
+        return f"{body} {ending}"
+    return f"{body}이므로 {ending}"
+
+
 def _to_ham_status_comment(text: str, *, ending: str) -> str:
-    """Normalize guideline comments to …양호함 / …취약함 endings."""
+    """Normalize formal comments to …양호함 / …취약함 endings."""
     t = (text or "").strip().rstrip(".")
     replacements = (
         ("양호합니다", "양호함"),
         ("취약합니다", "취약함"),
         ("안전합니다", "양호함"),
+        ("양호하다", "양호함"),
+        ("취약하다", "취약함"),
     )
     for old, new in replacements:
         if t.endswith(old):
@@ -293,11 +458,101 @@ def _to_ham_status_comment(text: str, *, ending: str) -> str:
             break
     if ending == "양호함" and not t.endswith("양호함"):
         if not t:
-            return "설정이 기준에 부합하여 양호함"
+            return ""
+        if t.endswith("지 않습니다") or t.endswith("지 않았습니다"):
+            t = t.rsplit("지 않", 1)[0] + "되어 양호함"
+        elif t.endswith("있습니다"):
+            t = t[: -len("있습니다")] + "있어 양호함"
+        elif t.endswith("습니다"):
+            t = t[: -len("습니다")] + " 양호함"
+        elif t.endswith("다"):
+            t = t[:-1] + " 양호함"
+        else:
+            t = t.rstrip() + " 양호함"
     if ending == "취약함" and not t.endswith("취약함"):
         if not t:
-            return "설정이 기준에 미달하여 취약함"
+            return ""
+        if t.endswith("지 않습니다") or t.endswith("지 않았습니다"):
+            t = t.rsplit("지 않", 1)[0] + "지 않아 취약함"
+        elif t.endswith("있습니다"):
+            t = t[: -len("있습니다")] + "있어 취약함"
+        elif t.endswith("습니다"):
+            t = t[: -len("습니다")] + " 취약함"
+        elif t.endswith("다"):
+            t = t[:-1] + " 취약함"
+        else:
+            t = t.rstrip() + " 취약함"
     return t
+
+
+def _is_korean_comment(text: str) -> bool:
+    t = (text or "").strip()
+    if not t:
+        return False
+    return sum(1 for ch in t if "가" <= ch <= "힣") >= 4
+
+
+def _item_title_for_status(diag, guidelines: list[dict], target_os: str) -> str:
+    code = (getattr(diag, "code", "") or "").strip().upper()
+    criteria = _load_criteria_map().get(code) or {}
+    if criteria.get("title"):
+        return criteria["title"]
+    from app.services.json_parser import guide_os_type
+
+    guide_os = guide_os_type(target_os, code)
+    for g in guidelines or []:
+        if (
+            str(g.get("os_type", "")).lower() == guide_os.lower()
+            and str(g.get("code", "")).lower() == code.lower()
+        ):
+            t = str(g.get("title") or "").strip()
+            if t:
+                return t
+    return code or "해당 항목"
+
+
+def _build_pass_status_comment(
+    diag,
+    *,
+    guidelines: list[dict],
+    target_os: str,
+) -> str:
+    """U열: ■ 현황 양호 멘트 — 기준과 같은 일률 문구."""
+    code = (getattr(diag, "code", "") or "").strip().upper()
+    # 1) 기준 DB 양호 기준을 현황처럼 되풀이 (일률)
+    criteria = _load_criteria_map().get(code) or {}
+    text = _criteria_to_status_comment(criteria.get("pass", ""), kind="pass")
+    if _is_korean_comment(text):
+        return text
+    # 2) 가이드 한국어 (기준 DB 없을 때만)
+    raw = _lookup_guide_comment(guidelines, target_os, code, kind="pass_comment")
+    text = _to_ham_status_comment(raw, ending="양호함") if raw else ""
+    if _is_korean_comment(text):
+        return text
+    title = _item_title_for_status(diag, guidelines, target_os)
+    return f"{title} 설정이 기준에 맞게 적용되어 양호함"
+
+
+def _build_fail_status_comment(
+    diag,
+    *,
+    guidelines: list[dict],
+    target_os: str,
+) -> str:
+    """V열: ■ 현황 취약 멘트 — 기준과 같은 일률 문구."""
+    code = (getattr(diag, "code", "") or "").strip().upper()
+    # 1) 기준 DB 취약 기준을 현황처럼 되풀이 (일률)
+    criteria = _load_criteria_map().get(code) or {}
+    text = _criteria_to_status_comment(criteria.get("fail", ""), kind="fail")
+    if _is_korean_comment(text):
+        return text
+    # 2) 가이드 한국어 (기준 DB 없을 때만)
+    raw = _lookup_guide_comment(guidelines, target_os, code, kind="fail_comment")
+    text = _to_ham_status_comment(raw, ending="취약함") if raw else ""
+    if _is_korean_comment(text):
+        return text
+    title = _item_title_for_status(diag, guidelines, target_os)
+    return f"{title} 기준 미달 설정이 적용되어 취약함"
 
 
 def _inspection_status_comment(
@@ -306,21 +561,18 @@ def _inspection_status_comment(
     guidelines: list[dict],
     target_os: str,
 ) -> str:
-    """점검현황(U열): Pass/Fail short sentence only — nothing else."""
-    status = (getattr(diag, "status", "") or "").strip().lower()
-    code = getattr(diag, "code", "") or ""
-    if status in {"pass", "good"}:
-        raw = _lookup_guide_comment(guidelines, target_os, code, kind="pass_comment")
-        return _to_ham_status_comment(raw, ending="양호함")
-    if status in {"fail", "vulnerable"}:
-        raw = _lookup_guide_comment(guidelines, target_os, code, kind="fail_comment")
-        return _to_ham_status_comment(raw, ending="취약함")
+    """단일 현황 멘트 (현재 결과에 맞는 형식 문장)."""
+    result_ko = _status_ko_detail(getattr(diag, "status", "") or "")
+    if result_ko == "양호":
+        return _build_pass_status_comment(diag, guidelines=guidelines, target_os=target_os)
+    if result_ko == "취약":
+        return _build_fail_status_comment(diag, guidelines=guidelines, target_os=target_os)
     return ""
 
 
-_OP_FONT_RED = InlineFont(b=True, color="FFFF0000")
-_OP_FONT_RED_BODY = InlineFont(color="FFFF0000")
-_OP_FONT_NORMAL = InlineFont(color="FF000000")
+_OP_FONT_RED = InlineFont(b=False, sz=10, color="FFFF0000")
+_OP_FONT_RED_BODY = InlineFont(b=False, sz=10, color="FFFF0000")
+_OP_FONT_NORMAL = InlineFont(b=False, sz=10, color="FF000000")
 
 
 def _evidence_preamble(evidence: str) -> str:
@@ -336,7 +588,7 @@ def _evidence_preamble(evidence: str) -> str:
 
 
 def _operation_status_text(diag) -> str | CellRichText:
-    """운영현황(Q열): 양호→설정값 현황까지 / 취약·수동점검→설정값 상세까지.
+    """운영현황(Q열): [취약점 현황] → [설정값 현황] → [설정값 상세] (양호 포함 모든 결과).
 
     [취약점 현황] 헤더+본문은 전부 빨간색.
     """
@@ -356,17 +608,12 @@ def _operation_status_text(diag) -> str | CellRichText:
         raw = _extract_evidence_section(evidence, "[진단 로그 / 설정 원본 (RawConfig)]")
 
     status = (getattr(diag, "status", "") or "").strip().lower()
-    result_ko = _status_ko_detail(getattr(diag, "status", "") or "")
 
     # Fail with empty VulnerableConfig: use leading evidence sentence as 취약점 현황.
     if not vulnerable and status in {"fail", "vulnerable"}:
         preamble = _evidence_preamble(evidence)
         if preamble and preamble.upper() != "N/A" and "양호" not in preamble:
             vulnerable = preamble
-
-    include_raw = result_ko in {"취약", "수동점검"}
-    if not include_raw:
-        raw = ""
 
     # Keep Excel cells usable — Synology RawConfig can be large.
     if len(raw) > 8000:
@@ -400,13 +647,12 @@ def _operation_status_text(diag) -> str | CellRichText:
         header="설정값 현황",
         body=processed,
     )
-    if include_raw:
-        _append_section(
-            header_font=_OP_FONT_NORMAL,
-            body_font=_OP_FONT_NORMAL,
-            header="설정값 상세",
-            body=raw,
-        )
+    _append_section(
+        header_font=_OP_FONT_NORMAL,
+        body_font=_OP_FONT_NORMAL,
+        header="설정값 상세",
+        body=raw,
+    )
 
     if not blocks:
         return ""
@@ -436,9 +682,13 @@ def _fill_host_detail_sheet(
     end_row: int,
     guidelines: list[dict] | None = None,
     short_inspection_status: bool = False,
+    pass_comment_col: int | None = None,
+    fail_comment_col: int | None = None,
 ) -> None:
     mapping = _diag_map(report)
     guides = guidelines or []
+    u_col = pass_comment_col or (evidence_col if short_inspection_status else None)
+    v_col = fail_comment_col
     for row in range(start_row, end_row + 1):
         code = str(ws.cell(row, code_col).value or "").strip()
         if not code:
@@ -447,24 +697,34 @@ def _fill_host_detail_sheet(
         diag = mapping.get(code.upper())
         if diag is None:
             result_cell.value = "N/A"
-            _apply_result_style(result_cell, "N/A")
-            if evidence_col:
+            _apply_result_style(result_cell, "N/A", direct=not short_inspection_status)
+            if short_inspection_status:
+                if u_col:
+                    ws.cell(row, u_col).value = ""
+                if v_col:
+                    ws.cell(row, v_col).value = ""
+            elif evidence_col:
                 ws.cell(row, evidence_col).value = ""
             if op_col:
                 ws.cell(row, op_col).value = ""
             continue
         result_text = result_mapper(diag.status)
         result_cell.value = result_text
-        _apply_result_style(result_cell, result_text)
-        if evidence_col:
-            if short_inspection_status:
-                ws.cell(row, evidence_col).value = _inspection_status_comment(
-                    diag,
-                    guidelines=guides,
-                    target_os=report.target_os,
+        # Detail report: CF owns fill+font so dropdown changes update background too.
+        _apply_result_style(result_cell, result_text, direct=not short_inspection_status)
+        if short_inspection_status and u_col:
+            # U=양호 형식 멘트, V=취약 형식 멘트 (P수식이 O에 따라 선택)
+            ws.cell(row, u_col).value = _build_pass_status_comment(
+                diag, guidelines=guides, target_os=report.target_os
+            )
+            ws.cell(row, u_col).alignment = Alignment(wrap_text=True, vertical="top")
+            if v_col:
+                ws.cell(row, v_col).value = _build_fail_status_comment(
+                    diag, guidelines=guides, target_os=report.target_os
                 )
-            else:
-                ws.cell(row, evidence_col).value = diag.evidence or ""
+                ws.cell(row, v_col).alignment = Alignment(wrap_text=True, vertical="top")
+        elif evidence_col:
+            ws.cell(row, evidence_col).value = diag.evidence or ""
             ws.cell(row, evidence_col).alignment = Alignment(wrap_text=True, vertical="top")
         if op_col:
             if short_inspection_status:
@@ -476,19 +736,20 @@ def _fill_host_detail_sheet(
     _scale_item_row_heights(ws, start_row, end_row, code_col, factor=1.5)
 
 def _reapply_detail_conditional_formatting(ws) -> None:
-    """O열 값 변경 시 색이 따라가도록 CF만 사용 (드롭다운과 연동)."""
+    """O열 값 변경 시 글씨·배경색이 따라가도록 CF 적용 (드롭다운 연동)."""
     try:
         ws.conditional_formatting._cf_rules.clear()
     except Exception:
         pass
 
     # Priority: first match wins (stopIfTrue).
+    # Use CF_* fills (fg+bg) — Excel ignores CF fills that only set fgColor.
     ws.conditional_formatting.add(
         "O28:O94",
         CellIsRule(
             operator="equal",
             formula=['"취약"'],
-            fill=FAIL_FILL,
+            fill=CF_FAIL_FILL,
             font=FAIL_FONT,
             stopIfTrue=True,
         ),
@@ -498,7 +759,7 @@ def _reapply_detail_conditional_formatting(ws) -> None:
         CellIsRule(
             operator="equal",
             formula=['"수동점검"'],
-            fill=WARN_FILL,
+            fill=CF_WARN_FILL,
             font=WARN_FONT,
             stopIfTrue=True,
         ),
@@ -508,7 +769,7 @@ def _reapply_detail_conditional_formatting(ws) -> None:
         CellIsRule(
             operator="equal",
             formula=['"양호"'],
-            fill=PASS_FILL,
+            fill=CF_PASS_FILL,
             font=PASS_FONT,
             stopIfTrue=True,
         ),
@@ -518,7 +779,7 @@ def _reapply_detail_conditional_formatting(ws) -> None:
         CellIsRule(
             operator="equal",
             formula=['"N/A"'],
-            fill=NA_FILL,
+            fill=CF_NA_FILL,
             font=NA_FONT,
             stopIfTrue=True,
         ),
@@ -542,8 +803,30 @@ def _add_result_enum_dropdown(ws, start_row: int = 28, end_row: int = 94) -> Non
     ws.add_data_validation(dv)
 
 
+def _is_dbms_detail_sheet(ws, code_col: int = 3) -> bool:
+    code = str(ws.cell(28, code_col).value or "").strip().upper()
+    return code.startswith("D-")
+
+
 def _fix_host_stat_formulas(ws) -> None:
     """Count 취약 only via COUNTIF; interview/manual/error go to 해당없음 bucket."""
+    if _is_dbms_detail_sheet(ws):
+        specs = [
+            (18, "O28:O36"),
+            (19, "O37:O45"),
+            (20, "O46:O51"),
+            (21, "O52:O53"),
+        ]
+        # Row 22 unused for DBMS — keep zeros from template.
+        for row, rng in specs:
+            ws.cell(row, 6).value = f'=COUNTIF({rng},"양호")'
+            ws.cell(row, 7).value = f'=COUNTIF({rng},"취약")'
+            ws.cell(row, 8).value = f'=COUNTIF({rng},"부분만족")'
+            ws.cell(row, 9).value = (
+                f'=COUNTIF({rng},"N/A")+COUNTIF({rng},"인터뷰")'
+                f'+COUNTIF({rng},"수동점검")+COUNTIF({rng},"ERROR")'
+            )
+        return
     specs = [
         (18, "O28:O40"),
         (19, "O41:O60"),
@@ -558,6 +841,18 @@ def _fix_host_stat_formulas(ws) -> None:
         ws.cell(row, 9).value = (
             f'=COUNTIF({rng},"N/A")+COUNTIF({rng},"인터뷰")'
             f'+COUNTIF({rng},"수동점검")+COUNTIF({rng},"ERROR")'
+        )
+
+
+def _fix_detail_status_formulas(ws, start_row: int = 28, end_row: int = 94) -> None:
+    """P열: O값에 따라 양호→기준C&U, 취약→기준D&V. 수동점검/N/A는 현황 빈칸."""
+    for row in range(start_row, end_row + 1):
+        # 기준 DB rows: U-01 at row 2 → item row 28 maps to db row (row-26)
+        db_row = row - 26
+        ws.cell(row, 16).value = (
+            f'=IF(O{row}="양호",\'기준 DB\'!C{db_row}&U{row},'
+            f'IF(O{row}="취약",\'기준 DB\'!D{db_row}&V{row},'
+            f'IF(OR(O{row}="N/A",O{row}="수동점검"),\'기준 DB\'!E{db_row},"-")))'
         )
 
 
@@ -749,7 +1044,8 @@ def _add_host_area_charts(ws) -> None:
     """Recreate live, pinned area charts — radar at column P, bar at column Q."""
     ws._charts = []
     # AA열: 꼭짓점/축 라벨 / L열: 보안수준(비율)
-    _write_vertex_labels(ws, AREA_VERTEX_LABELS, col=27)
+    labels = AREA_VERTEX_LABELS_DBMS if _is_dbms_detail_sheet(ws) else AREA_VERTEX_LABELS
+    _write_vertex_labels(ws, labels, col=27)
     if not ws.cell(17, 12).value:
         ws.cell(17, 12).value = "보안수준"
     ws.cell(17, 27).value = "점검 영역"
@@ -892,7 +1188,8 @@ def _fill_security_level_sheet(ws, reports: list[HostReport], os_type: str) -> N
 
     # Rebuild all charts: live cell refs, percent labels, pinned anchors.
     ws._charts = []
-    _write_vertex_labels(ws, SECURITY_VERTEX_LABELS, col=13)  # M열
+    sec_labels = SECURITY_VERTEX_LABELS_DBMS if _is_dbms_group(os_type) else SECURITY_VERTEX_LABELS
+    _write_vertex_labels(ws, sec_labels, col=13)  # M열
     if not ws.cell(5, 11).value:
         ws.cell(5, 11).value = "보안수준"
     ws.cell(5, 13).value = "점검 영역"
@@ -978,7 +1275,10 @@ def generate_detailed_report(
     os_type: str,
     guidelines: list[dict] | None = None,
 ) -> Path:
-    template = EXCEL_TEMPLATE_DIR / "UNIX_서버_취약점진단_상세결과보고서.xlsx"
+    if _is_dbms_group(os_type):
+        template = EXCEL_TEMPLATE_DIR / "DBMS_서버_취약점진단_상세결과보고서.xlsx"
+    else:
+        template = EXCEL_TEMPLATE_DIR / "UNIX_서버_취약점진단_상세결과보고서.xlsx"
     if not template.exists():
         raise FileNotFoundError(f"상세결과 템플릿 없음: {template.name}")
 
@@ -1016,6 +1316,7 @@ def generate_detailed_report(
 
     sample_name = "sample" if "sample" in wb.sheetnames else None
     created: list[str] = []
+    detail_end = 53 if _is_dbms_group(os_type) else 94
     if sample_name:
         for report, sheet_name in zip(reports, sheet_names):
             if sheet_name in wb.sheetnames:
@@ -1042,13 +1343,16 @@ def generate_detailed_report(
                 evidence_col=21,
                 op_col=17,
                 start_row=28,
-                end_row=94,
+                end_row=detail_end,
                 guidelines=guidelines,
                 short_inspection_status=True,
+                pass_comment_col=21,  # U: 양호 형식 멘트
+                fail_comment_col=22,  # V: 취약 형식 멘트
             )
             _fix_host_stat_formulas(ws)
+            _fix_detail_status_formulas(ws, start_row=28, end_row=detail_end)
             _reapply_detail_conditional_formatting(ws)
-            _add_result_enum_dropdown(ws)
+            _add_result_enum_dropdown(ws, start_row=28, end_row=detail_end)
             _add_host_area_charts(ws)
 
         try:
@@ -1163,7 +1467,7 @@ def export_reports(
 
     if not (options.detail or options.summary or options.action_plan):
         raise ValueError("출력할 보고서 양식을 최소 하나 이상 선택해야 합니다.")
-    if not (options.unix or options.win_server or options.pc):
+    if not (options.unix or options.dbms or options.win_server or options.pc):
         raise ValueError("내보낼 자산 유형을 최소 하나 이상 선택해야 합니다.")
 
     target = _filter_reports(reports, options)

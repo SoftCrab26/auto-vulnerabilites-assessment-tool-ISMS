@@ -11,24 +11,34 @@ from app.models import Guideline
 
 
 def seed_guidelines(db: Session) -> None:
-    if db.query(Guideline).count() > 0:
-        return
+    """Insert seed guidelines; also backfill missing (os_type, code) pairs."""
     path = Path(GUIDELINES_SEED)
     if not path.exists():
         return
     items = json.loads(path.read_text(encoding="utf-8"))
+    existing = {
+        (g.os_type, g.code)
+        for g in db.query(Guideline.os_type, Guideline.code).all()
+    }
+    added = 0
     for item in items:
+        os_type = item.get("os_type", "Linux")
+        code = item.get("code", "")
+        if not code or (os_type, code) in existing:
+            continue
         db.add(
             Guideline(
-                os_type=item.get("os_type", "Linux"),
-                code=item.get("code", ""),
+                os_type=os_type,
+                code=code,
                 title=item.get("title", ""),
                 remediation=item.get("remediation", ""),
                 pass_comment=item.get("pass_comment", ""),
                 fail_comment=item.get("fail_comment", ""),
             )
         )
-    db.commit()
+        added += 1
+    if added or db.query(Guideline).count() == 0:
+        db.commit()
 
 
 def guidelines_as_dicts(db: Session) -> list[dict[str, Any]]:

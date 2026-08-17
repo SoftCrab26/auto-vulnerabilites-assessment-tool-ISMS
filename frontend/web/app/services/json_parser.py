@@ -13,6 +13,9 @@ HIGH_ITEMS = {
 }
 LOW_ITEMS = {16, 42, 43, 59}
 
+DBMS_HIGH_ITEMS = {1, 2, 4, 7, 8, 10, 12, 14, 19, 23, 25, 26}
+DBMS_LOW_ITEMS = {13, 16, 24}
+
 RAW_PREVIEW_LIMIT = 1500
 
 FALLBACK_REMEDIATION = (
@@ -48,7 +51,41 @@ class ParsedReport:
     diagnostics: list[ParsedDiagnostic] = field(default_factory=list)
 
 
+def dbms_category(code: str) -> str:
+    if not code.upper().startswith("D-"):
+        return "기타"
+    try:
+        num = int(code[2:])
+    except ValueError:
+        return "기타"
+    if 1 <= num <= 9:
+        return "계정 관리"
+    if 10 <= num <= 18:
+        return "접근통제"
+    if 19 <= num <= 24:
+        return "권한/옵션"
+    if 25 <= num <= 26:
+        return "패치/감사"
+    return "기타"
+
+
+def dbms_severity(code: str) -> str:
+    if not code.upper().startswith("D-"):
+        return "Medium"
+    try:
+        num = int(code[2:])
+    except ValueError:
+        return "Medium"
+    if num in DBMS_HIGH_ITEMS:
+        return "High"
+    if num in DBMS_LOW_ITEMS:
+        return "Low"
+    return "Medium"
+
+
 def linux_category(code: str) -> str:
+    if code.upper().startswith("D-"):
+        return dbms_category(code)
     if not code.startswith("U-"):
         return "기타 서비스"
     try:
@@ -67,6 +104,8 @@ def linux_category(code: str) -> str:
 
 
 def linux_severity(code: str) -> str:
+    if code.upper().startswith("D-"):
+        return dbms_severity(code)
     if not code.startswith("U-"):
         return "Medium"
     try:
@@ -78,6 +117,17 @@ def linux_severity(code: str) -> str:
     if num in LOW_ITEMS:
         return "Low"
     return "Medium"
+
+
+def guide_os_type(target_os: str, code: str = "") -> str:
+    """Map host OS / item code to guidelines.os_type key."""
+    code_u = (code or "").strip().upper()
+    os_l = (target_os or "").lower()
+    if code_u.startswith("D-") or any(x in os_l for x in ("dbms", "oracle", "mssql", "mysql", "postgres")):
+        return "DBMS"
+    if "windows" in os_l:
+        return "Windows"
+    return "Linux"
 
 
 def map_go_status(status: int) -> str:
@@ -140,6 +190,7 @@ def parse_filename_meta(filename: str) -> tuple[str, str, str]:
         "unix": "Linux",
         "linux": "Linux",
         "dbms": "DBMS",
+        "oracle": "Oracle",
         "windows": "Windows",
         "pc": "Windows",
         "aix": "AIX",
@@ -153,14 +204,21 @@ def parse_filename_meta(filename: str) -> tuple[str, str, str]:
     lower_base = base.lower()
     if lower_base.startswith("aix_") or "_aix_" in f"_{lower_base}_":
         target_os = "AIX"
+    if lower_base.startswith("oracle_") or lower_base.startswith("dbms_"):
+        target_os = "Oracle" if lower_base.startswith("oracle_") else "DBMS"
 
     if len(parts) >= 3:
         first = parts[0].strip()
         key = first.lower()
         if key in known:
             target_os = known[key]
-            ip_address = parts[-1]
-            hostname = "_".join(parts[1:-1]) or "UNKNOWN"
+            # oracle_<uniqueName>_<timestamp> — last token is not an IP.
+            if key in {"oracle", "dbms"}:
+                hostname = "_".join(parts[1:-1]) or "UNKNOWN"
+                ip_address = "0.0.0.0"
+            else:
+                ip_address = parts[-1]
+                hostname = "_".join(parts[1:-1]) or "UNKNOWN"
         else:
             ip_address = parts[-1]
             hostname = "_".join(parts[:-1]) or "UNKNOWN"
@@ -212,11 +270,37 @@ def infer_os_from_items(items: list[dict[str, Any]], fallback: str) -> str:
 
 
 def _guideline_lookup(guidelines: list[dict[str, Any]], os_type: str, code: str) -> dict[str, Any] | None:
-    guide_os = "Windows" if "windows" in os_type.lower() else "Linux"
+    guide_os = guide_os_type(os_type, code)
     for g in guidelines:
         if g.get("os_type", "").lower() == guide_os.lower() and g.get("code", "").lower() == code.lower():
             return g
     return None
+
+
+def _apply_dbms_metadata(report: ParsedReport, data: dict[str, Any], filename: str) -> None:
+    """Prefer Oracle scanner engine/metadata when present."""
+    engine = str(data.get("engine") or data.get("Engine") or "").strip().upper()
+    meta = data.get("metadata") or data.get("Metadata") or {}
+    if not isinstance(meta, dict):
+        meta = {}
+    codes = [str(d.code or "").upper() for d in report.diagnostics]
+    is_dbms = (
+        engine in {"ORACLE", "MSSQL", "MYSQL", "DBMS", "POSTGRES"}
+        or Path(filename).stem.lower().startswith(("oracle_", "dbms_"))
+        or any(c.startswith("D-") for c in codes)
+    )
+    if not is_dbms:
+        return
+    if engine == "ORACLE" or Path(filename).stem.lower().startswith("oracle_"):
+        report.target_os = "Oracle"
+    else:
+        report.target_os = engine.title() if engine else "DBMS"
+    host = str(meta.get("dbUniqueName") or meta.get("UniqueName") or meta.get("dbName") or meta.get("Name") or "").strip()
+    if host:
+        report.hostname = host
+    generated = data.get("generatedAt") or data.get("GeneratedAt")
+    if generated:
+        report.inspection_date = str(generated).replace("T", " ")[:19]
 
 
 def _build_remediation(
@@ -332,10 +416,10 @@ def convert_check_results(
         report.diagnostics.append(
             ParsedDiagnostic(
                 code=code,
-                category=linux_category(code),
+                category=dbms_category(code) if code.upper().startswith("D-") else linux_category(code),
                 title=description,
                 status=status_str,
-                severity=linux_severity(code),
+                severity=dbms_severity(code) if code.upper().startswith("D-") else linux_severity(code),
                 description=description,
                 evidence=_build_evidence(
                     status_str=status_str,
@@ -453,22 +537,27 @@ def parse_json_report(
         results = data.get("Results") or data.get("results")
         if isinstance(results, list) and results and isinstance(results[0], dict):
             complete = looks_like_complete_check_result(results[0])
-            return convert_check_results(
+            report = convert_check_results(
                 results,
                 filename,
                 guidelines,
                 synthesize_comments=not complete,
             )
+            _apply_dbms_metadata(report, data, filename)
+            return report
 
     if isinstance(data, list) and data and isinstance(data[0], dict):
         if any(k in data[0] for k in ("Code", "code", "Status", "status")):
             complete = looks_like_complete_check_result(data[0])
-            return convert_check_results(
+            report = convert_check_results(
                 data,
                 filename,
                 guidelines,
                 synthesize_comments=not complete,
             )
+            # list-only payloads may still be oracle_* filenames / D-codes
+            _apply_dbms_metadata(report, {}, filename)
+            return report
 
     return None
 

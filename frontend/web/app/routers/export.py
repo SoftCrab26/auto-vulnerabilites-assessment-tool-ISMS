@@ -27,6 +27,7 @@ async def export_run(
     summary: str | None = Form(None),
     action_plan: str | None = Form(None),
     unix: str | None = Form(None),
+    dbms: str | None = Form(None),
     win_server: str | None = Form(None),
     pc: str | None = Form(None),
 ):
@@ -45,6 +46,7 @@ async def export_run(
         summary=summary is not None,
         action_plan=action_plan is not None,
         unix=unix is not None,
+        dbms=dbms is not None,
         win_server=win_server is not None,
         pc=pc is not None,
     )
