@@ -14,6 +14,7 @@ from app.deps import require_user
 from app.models import DiagnosticItem, HostReport
 from app.services.guidelines import guidelines_as_dicts, list_guidelines, update_guideline
 from app.services.json_parser import parse_json_report
+from app.services.detail_to_risk import list_detailed_exports
 from app.services.stats import compute_stats, filter_diagnostics, filter_reports, load_reports
 
 router = APIRouter(tags=["pages"])
@@ -118,7 +119,7 @@ async def guidelines_page(
             "user": user,
             "active": "guidelines",
             "os_type": os_type,
-            "os_types": ["Linux", "Windows", "DBMS"],
+            "os_types": ["Linux", "Windows", "DBMS", "PC"],
             "rows": rows,
             "selected": selected,
             "reports": load_reports(db),
@@ -171,6 +172,8 @@ async def export_page(request: Request, db: Session = Depends(get_db)):
             "logs": [],
             "files": [],
             "error": None,
+            "detail_files": list_detailed_exports(),
+            "selected_detail": "",
         },
     )
 

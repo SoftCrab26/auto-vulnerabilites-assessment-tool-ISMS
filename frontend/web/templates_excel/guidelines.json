@@ -254,5 +254,149 @@
     "remediation": "[ISMS-P 조치 가이드]\n주통기 DBMS 기준(D-26)에 맞게 설정을 조치하십시오.\n양호 기준: 감사(Audit) 기능이 기관 정책에 따라 활성화되고 기록되는 경우",
     "pass_comment": "감사(Audit) 기능이 기관 정책에 따라 활성화되고 기록되는 경우 양호함",
     "fail_comment": "감사 기능이 비활성화되거나 정책에 맞지 않게 설정된 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-01",
+    "title": "비밀번호의 주기적 변경",
+    "remediation": "[ISMS-P 조치 가이드]\n로컬 보안 정책 > 계정 정책 > 암호 정책에서 '최대 암호 사용 기간'을 90일 이하로 설정하십시오.\n명령: net accounts /maxpwage:90",
+    "pass_comment": "최대 암호 사용 기간이 90일 이하로 설정된 경우 양호함",
+    "fail_comment": "최대 암호 사용 기간이 90일을 초과하거나 무제한으로 설정된 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-02",
+    "title": "비밀번호 관리정책 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n로컬 보안 정책에서 최소 암호 길이를 8자 이상으로 설정하고 암호 복잡성 요구 사항을 사용하십시오.",
+    "pass_comment": "최소 암호 길이가 8자 이상이고 암호 복잡성이 설정된 경우 양호함",
+    "fail_comment": "최소 암호 길이가 8자 미만이거나 암호 복잡성이 설정되지 않은 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-03",
+    "title": "복구 콘솔에서 자동 로그온을 금지하도록 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n복구 콘솔 자동 관리 로그온을 사용 안 함으로 설정하십시오.\n레지스트리: HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Setup\\RecoveryConsole\\securitylevel = 0",
+    "pass_comment": "복구 콘솔 자동 로그온이 사용 안 함으로 설정된 경우 양호함",
+    "fail_comment": "복구 콘솔 자동 로그온이 허용된 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-04",
+    "title": "공유 폴더 제거",
+    "remediation": "[ISMS-P 조치 가이드]\n불필요한 공유 폴더를 제거하고 기본 공유(C$, ADMIN$ 등)는 AutoShareWks=0으로 비활성화하십시오.",
+    "pass_comment": "기본 공유 및 불필요한 공유 폴더가 존재하지 않는 경우 양호함",
+    "fail_comment": "기본 공유 폴더(C$, ADMIN$ 등) 또는 불필요한 공유가 존재하는 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-05",
+    "title": "불필요한 서비스 제거",
+    "remediation": "[ISMS-P 조치 가이드]\n업무에 불필요한 서비스(RemoteRegistry, 불필요 스풀러 등)를 사용 안 함으로 설정하십시오.",
+    "pass_comment": "불필요한 서비스가 사용 안 함으로 설정된 경우 양호함",
+    "fail_comment": "불필요한 서비스가 자동 시작으로 설정된 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-06",
+    "title": "비인가 상용 메신저 사용 금지",
+    "remediation": "[ISMS-P 조치 가이드]\n기관 정책에 위배되는 상용 메신저(카카오톡 등)를 제거하고 설치를 제한하십시오.",
+    "pass_comment": "비인가 상용 메신저가 설치되지 않은 경우 양호함",
+    "fail_comment": "비인가 상용 메신저가 설치되어 있는 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-07",
+    "title": "파일 시스템이 NTFS 포맷으로 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n모든 고정 드라이브를 NTFS로 변환하십시오. (convert 드라이브: /fs:ntfs)",
+    "pass_comment": "모든 고정 드라이브의 파일 시스템이 NTFS로 설정된 경우 양호함",
+    "fail_comment": "NTFS가 아닌 파일 시스템(FAT32 등)이 존재하는 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-08",
+    "title": "PC 내 하나의 OS만 설치(멀티 부팅 미사용)",
+    "remediation": "[ISMS-P 조치 가이드]\n멀티 부팅 구성을 제거하고 단일 OS만 유지하십시오. (bcdedit로 부팅 항목 확인)",
+    "pass_comment": "PC 내 하나의 OS만 설치된 경우 양호함",
+    "fail_comment": "멀티 부팅이 설정되어 있는 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-09",
+    "title": "브라우저 종료 시 임시 인터넷 파일 폴더의 내용을 삭제하도록 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n브라우저 종료 시 임시 인터넷 파일을 삭제하도록 설정하십시오.\n레지스트리: HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\CACHE\\Persistent = 0",
+    "pass_comment": "브라우저 종료 시 임시 인터넷 파일 폴더를 비우도록 설정된 경우 양호함",
+    "fail_comment": "브라우저 종료 시 임시 인터넷 파일 폴더 비우기가 미사용인 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-10",
+    "title": "주기적 보안 패치 및 벤더 권고사항 적용",
+    "remediation": "[ISMS-P 조치 가이드]\nWindows Update를 활성화하고 최신 HOT FIX를 적용하십시오.",
+    "pass_comment": "HOT FIX가 설치되어 있고 자동 업데이트가 비활성화되지 않은 경우 양호함",
+    "fail_comment": "HOT FIX가 없거나 자동 업데이트가 비활성화된 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-11",
+    "title": "지원이 종료되지 않은 Windows OS Build 적용",
+    "remediation": "[ISMS-P 조치 가이드]\nMicrosoft 지원 주기표에 따라 지원이 종료되지 않은 Windows 10/11 빌드로 업그레이드하십시오.",
+    "pass_comment": "지원이 종료되지 않은 Windows OS Build를 사용하는 경우 양호함",
+    "fail_comment": "지원이 종료된 Windows OS Build를 사용하는 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-12",
+    "title": "Windows 자동 로그인 점검",
+    "remediation": "[ISMS-P 조치 가이드]\nAutoAdminLogon을 비활성화하고 저장된 자동 로그인 비밀번호를 제거하십시오.\n레지스트리: HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\AutoAdminLogon = 0",
+    "pass_comment": "AutoAdminLogon이 비활성화되어 있거나 설정되지 않은 경우 양호함",
+    "fail_comment": "Windows 자동 로그온이 활성화된 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-13",
+    "title": "바이러스 백신 프로그램 설치 및 주기적 업데이트",
+    "remediation": "[ISMS-P 조치 가이드]\n기관 정책에 맞는 바이러스 백신을 설치하고 엔진/패턴을 최신으로 유지하십시오.",
+    "pass_comment": "바이러스 백신 프로그램이 설치되어 있는 경우 양호함",
+    "fail_comment": "바이러스 백신 프로그램이 설치되어 있지 않은 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-14",
+    "title": "바이러스 백신 프로그램에서 제공하는 실시간 감시 기능 활성화",
+    "remediation": "[ISMS-P 조치 가이드]\n백신(또는 Windows Defender)의 실시간 보호 기능을 활성화하십시오.",
+    "pass_comment": "실시간 감시 기능이 활성화된 경우 양호함",
+    "fail_comment": "실시간 감시 기능이 비활성화된 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-15",
+    "title": "OS에서 제공하는 침입차단 기능 활성화",
+    "remediation": "[ISMS-P 조치 가이드]\nWindows Defender 방화벽의 표준/공용 프로필을 사용으로 설정하십시오.",
+    "pass_comment": "Windows 방화벽이 사용으로 설정된 경우 양호함",
+    "fail_comment": "Windows 방화벽이 사용 안 함으로 설정된 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-16",
+    "title": "화면보호기 대기 시간 설정 및 재시작 시 암호 보호 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n화면보호기 대기 시간을 10분(600초) 이하로 설정하고 재시작 시 암호 보호를 사용하십시오.\nScreenSaveTimeOut ≤ 600, ScreenSaverIsSecure = 1",
+    "pass_comment": "화면보호기 암호 보호가 설정되고 대기 시간이 10분 이하인 경우 양호함",
+    "fail_comment": "화면보호기 암호 보호가 없거나 대기 시간이 10분을 초과하는 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-17",
+    "title": "CD, DVD, USB 메모리 등 이동식 미디어의 자동 실행 방지",
+    "remediation": "[ISMS-P 조치 가이드]\nAutorun.inf 자동 실행을 차단하고 NoDriveTypeAutoRun을 0xff로 설정하십시오.",
+    "pass_comment": "이동식 미디어 자동 실행이 방지된 경우 양호함",
+    "fail_comment": "이동식 미디어 자동 실행 방지가 설정되지 않은 경우 취약함"
+  },
+  {
+    "os_type": "PC",
+    "code": "PC-18",
+    "title": "원격 지원을 금지하도록 정책이 설정",
+    "remediation": "[ISMS-P 조치 가이드]\n원격 지원(fAllowToGetHelp)을 사용 안 함으로 설정하십시오.",
+    "pass_comment": "원격 지원이 사용 안 함으로 설정된 경우 양호함",
+    "fail_comment": "원격 지원이 허용된 경우 취약함"
   }
 ]

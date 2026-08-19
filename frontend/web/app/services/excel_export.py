@@ -55,6 +55,13 @@ AREA_VERTEX_LABELS_DBMS = (
     (21, "④ 패치/감사"),
     (22, "-"),
 )
+AREA_VERTEX_LABELS_PC = (
+    (18, "① 계정 관리"),
+    (19, "② 접근 관리"),
+    (20, "③ 패치 관리"),
+    (21, "④ 보안 관리"),
+    (22, "-"),
+)
 SECURITY_VERTEX_LABELS = (
     (6, "① 계정 관리"),
     (7, "② 파일·디렉터리"),
@@ -67,6 +74,13 @@ SECURITY_VERTEX_LABELS_DBMS = (
     (7, "② 접근통제"),
     (8, "③ 권한/옵션"),
     (9, "④ 패치/감사"),
+    (10, "-"),
+)
+SECURITY_VERTEX_LABELS_PC = (
+    (6, "① 계정 관리"),
+    (7, "② 접근 관리"),
+    (8, "③ 패치 관리"),
+    (9, "④ 보안 관리"),
     (10, "-"),
 )
 
@@ -104,7 +118,6 @@ RESULT_ENUM_VALUES = ("취약", "N/A", "수동점검", "양호")
 class ExportOptions:
     detail: bool = True
     summary: bool = False
-    action_plan: bool = False
     unix: bool = True
     dbms: bool = True
     win_server: bool = True
@@ -144,12 +157,15 @@ def _status_ko_detail(status: str) -> str:
 
 
 def _status_yn(status: str) -> str:
-    s = (status or "").strip().lower()
-    if s in {"pass", "good"}:
+    raw = (status or "").strip()
+    s = raw.lower()
+    if raw in {"양호", "Y"} or s in {"pass", "good", "y"}:
         return "Y"
-    if s in {"fail", "vulnerable"}:
+    if raw in {"취약", "N"} or s in {"fail", "vulnerable", "n"}:
         return "N"
-    if s in {"interview", "manual", "error"}:
+    if s in {"interview", "manual", "error", "인터뷰", "수동점검", "n/a", "na"}:
+        return "N/A"
+    if raw in RESULT_ENUM_VALUES:
         return "N/A"
     return "N/A"
 
@@ -177,6 +193,10 @@ def _export_os_group_key(target_os: str) -> str:
     u = raw.upper()
     if any(m in u for m in ("ORACLE", "DBMS", "MSSQL", "MYSQL", "POSTGRES", "SQL SERVER")):
         return "DBMS"
+    if any(m in u for m in ("FIREWALL", "IPS", "IDS", "WAF", "VPN", "UTM", "SECURITY")) or any(
+        m in raw for m in ("방화벽", "정보보호", "보안장비")
+    ):
+        return "SECURITY"
     if "WINDOW" in u:
         if "SERVER" in u or "서버" in raw:
             return "WINDOWS_SERVER"
@@ -201,6 +221,32 @@ def _export_os_group_key(target_os: str) -> str:
 
 def _is_dbms_group(os_type: str) -> bool:
     return (os_type or "").strip().upper() == "DBMS"
+
+
+def _is_windows_server_group(os_type: str) -> bool:
+    return (os_type or "").strip().upper() == "WINDOWS_SERVER"
+
+
+def _is_pc_group(os_type: str) -> bool:
+    return (os_type or "").strip().upper() == "WINDOWS"
+
+
+def _is_security_group(os_type: str) -> bool:
+    key = (os_type or "").strip().upper()
+    return key in {"SECURITY", "정보보호시스템"} or "정보보호" in (os_type or "")
+
+
+def _risk_workbook_spec(os_type: str) -> tuple[str, str, int]:
+    """Return (template_name, output_stem, host_end_row)."""
+    if _is_pc_group(os_type):
+        return "PC_위험분석및평가보고서_양식.xlsm", "PC_위험분석및평가보고서", 38
+    if _is_security_group(os_type):
+        return (
+            "정보보호시스템_위험분석및평가보고서_양식.xlsm",
+            "정보보호시스템_위험분석및평가보고서",
+            43,
+        )
+    return "UNIX_서버_위험관리 계획서_양식.xlsm", f"{(os_type or 'LINUX').replace(' ', '_')}_서버_위험분석및평가보고서", 87
 
 
 def _group_by_os(reports: list[HostReport]) -> dict[str, list[HostReport]]:
@@ -232,12 +278,18 @@ def _apply_result_style(cell, result_text: str, *, direct: bool = True) -> None:
         cell.font = Font(bold=True, color="FF000000")
         return
     text = (result_text or "").strip()
-    if text == "취약" or text == "N":
+    if text == "취약":
         cell.fill = FAIL_FILL
         cell.font = FAIL_FONT
-    elif text == "양호" or text == "Y":
+    elif text == "양호":
         cell.fill = PASS_FILL
         cell.font = PASS_FONT
+    elif text == "Y":
+        cell.fill = PASS_FILL
+        cell.font = PASS_FONT
+    elif text == "N":
+        cell.fill = FAIL_FILL
+        cell.font = FAIL_FONT
     elif text in _WARN_LABELS:
         cell.fill = WARN_FILL
         cell.font = WARN_FONT
@@ -361,6 +413,7 @@ def _load_criteria_map() -> dict[str, dict[str, str]]:
     for name in (
         "UNIX_서버_취약점진단_상세결과보고서.xlsx",
         "DBMS_서버_취약점진단_상세결과보고서.xlsx",
+        "PC_취약점진단_상세결과보고서.xlsx",
     ):
         path = EXCEL_TEMPLATE_DIR / name
         if not path.exists():
@@ -724,7 +777,11 @@ def _fill_host_detail_sheet(
                 )
                 ws.cell(row, v_col).alignment = Alignment(wrap_text=True, vertical="top")
         elif evidence_col:
-            ws.cell(row, evidence_col).value = diag.evidence or ""
+            if hasattr(diag, "inspection_status"):
+                status_text = diag.inspection_status or ""
+            else:
+                status_text = diag.evidence or ""
+            ws.cell(row, evidence_col).value = status_text
             ws.cell(row, evidence_col).alignment = Alignment(wrap_text=True, vertical="top")
         if op_col:
             if short_inspection_status:
@@ -735,17 +792,91 @@ def _fill_host_detail_sheet(
 
     _scale_item_row_heights(ws, start_row, end_row, code_col, factor=1.5)
 
-def _reapply_detail_conditional_formatting(ws) -> None:
+
+def _reapply_risk_result_cf(ws, start_row: int = 21, end_row: int = 87) -> None:
+    """위험분석 및 평가 보고서 서식.
+
+    M열: Y=흰배경 검은글자, N=빨간배경 흰글자
+    W열: 통제 적용=빨간배경 흰글자
+    """
+    cf = getattr(ws.conditional_formatting, "_cf_rules", {}) or {}
+    for key in list(cf):
+        ref = str(getattr(key, "sqref", key) or "").upper().replace("$", "")
+        if ref.startswith("M"):
+            try:
+                del cf[key]
+            except Exception:
+                pass
+            continue
+        if not ref.startswith("W"):
+            continue
+        kept = [
+            rule
+            for rule in (cf.get(key) or [])
+            if "통제 적용" not in "".join(str(x) for x in (getattr(rule, "formula", None) or []))
+        ]
+        if kept:
+            cf[key] = kept
+        else:
+            try:
+                del cf[key]
+            except Exception:
+                pass
+
+    rng = f"M{start_row}:M{end_row}"
+    ws.conditional_formatting.add(
+        rng,
+        CellIsRule(
+            operator="equal",
+            formula=['"Y"'],
+            fill=CF_PASS_FILL,
+            font=PASS_FONT,
+            stopIfTrue=True,
+        ),
+    )
+    ws.conditional_formatting.add(
+        rng,
+        CellIsRule(
+            operator="equal",
+            formula=['"N"'],
+            fill=CF_FAIL_FILL,
+            font=FAIL_FONT,
+            stopIfTrue=True,
+        ),
+    )
+    ws.conditional_formatting.add(
+        rng,
+        CellIsRule(
+            operator="equal",
+            formula=['"N/A"'],
+            font=Font(bold=True, color="FFBFBFBF"),
+            stopIfTrue=True,
+        ),
+    )
+    ws.conditional_formatting.add(
+        f"W{start_row}:W{end_row}",
+        CellIsRule(
+            operator="equal",
+            formula=['"통제 적용"'],
+            fill=CF_FAIL_FILL,
+            font=FAIL_FONT,
+            stopIfTrue=True,
+        ),
+    )
+
+
+def _reapply_detail_conditional_formatting(ws, start_row: int = 28, end_row: int = 94) -> None:
     """O열 값 변경 시 글씨·배경색이 따라가도록 CF 적용 (드롭다운 연동)."""
     try:
         ws.conditional_formatting._cf_rules.clear()
     except Exception:
         pass
 
+    rng = f"O{start_row}:O{end_row}"
     # Priority: first match wins (stopIfTrue).
     # Use CF_* fills (fg+bg) — Excel ignores CF fills that only set fgColor.
     ws.conditional_formatting.add(
-        "O28:O94",
+        rng,
         CellIsRule(
             operator="equal",
             formula=['"취약"'],
@@ -755,7 +886,7 @@ def _reapply_detail_conditional_formatting(ws) -> None:
         ),
     )
     ws.conditional_formatting.add(
-        "O28:O94",
+        rng,
         CellIsRule(
             operator="equal",
             formula=['"수동점검"'],
@@ -765,7 +896,7 @@ def _reapply_detail_conditional_formatting(ws) -> None:
         ),
     )
     ws.conditional_formatting.add(
-        "O28:O94",
+        rng,
         CellIsRule(
             operator="equal",
             formula=['"양호"'],
@@ -775,7 +906,7 @@ def _reapply_detail_conditional_formatting(ws) -> None:
         ),
     )
     ws.conditional_formatting.add(
-        "O28:O94",
+        rng,
         CellIsRule(
             operator="equal",
             formula=['"N/A"'],
@@ -808,6 +939,11 @@ def _is_dbms_detail_sheet(ws, code_col: int = 3) -> bool:
     return code.startswith("D-")
 
 
+def _is_pc_detail_sheet(ws, code_col: int = 3) -> bool:
+    code = str(ws.cell(28, code_col).value or "").strip().upper()
+    return code.startswith("PC-")
+
+
 def _fix_host_stat_formulas(ws) -> None:
     """Count 취약 only via COUNTIF; interview/manual/error go to 해당없음 bucket."""
     if _is_dbms_detail_sheet(ws):
@@ -818,6 +954,22 @@ def _fix_host_stat_formulas(ws) -> None:
             (21, "O52:O53"),
         ]
         # Row 22 unused for DBMS — keep zeros from template.
+        for row, rng in specs:
+            ws.cell(row, 6).value = f'=COUNTIF({rng},"양호")'
+            ws.cell(row, 7).value = f'=COUNTIF({rng},"취약")'
+            ws.cell(row, 8).value = f'=COUNTIF({rng},"부분만족")'
+            ws.cell(row, 9).value = (
+                f'=COUNTIF({rng},"N/A")+COUNTIF({rng},"인터뷰")'
+                f'+COUNTIF({rng},"수동점검")+COUNTIF({rng},"ERROR")'
+            )
+        return
+    if _is_pc_detail_sheet(ws):
+        specs = [
+            (18, "O28:O30"),
+            (19, "O31:O36"),
+            (20, "O37:O38"),
+            (21, "O39:O45"),
+        ]
         for row, rng in specs:
             ws.cell(row, 6).value = f'=COUNTIF({rng},"양호")'
             ws.cell(row, 7).value = f'=COUNTIF({rng},"취약")'
@@ -1044,7 +1196,12 @@ def _add_host_area_charts(ws) -> None:
     """Recreate live, pinned area charts — radar at column P, bar at column Q."""
     ws._charts = []
     # AA열: 꼭짓점/축 라벨 / L열: 보안수준(비율)
-    labels = AREA_VERTEX_LABELS_DBMS if _is_dbms_detail_sheet(ws) else AREA_VERTEX_LABELS
+    if _is_dbms_detail_sheet(ws):
+        labels = AREA_VERTEX_LABELS_DBMS
+    elif _is_pc_detail_sheet(ws):
+        labels = AREA_VERTEX_LABELS_PC
+    else:
+        labels = AREA_VERTEX_LABELS
     _write_vertex_labels(ws, labels, col=27)
     if not ws.cell(17, 12).value:
         ws.cell(17, 12).value = "보안수준"
@@ -1157,7 +1314,7 @@ def _fill_security_level_sheet(ws, reports: list[HostReport], os_type: str) -> N
 
     for i in range(host_count):
         r = 36 + i
-        ws.cell(r, 1).value = (os_type or "UNIX").upper()
+        ws.cell(r, 1).value = "PC" if _is_pc_group(os_type) else (os_type or "UNIX").upper()
         ws.cell(r, 2).value = '=INDIRECT(ADDRESS(ROW()-29,2,1,TRUE,"점검대상"))'
         for c in range(3, 11):
             ws.cell(r, c).value = f'=IFERROR(INDIRECT(ADDRESS(23,COLUMN()+1,1,TRUE,$B{r})),0)'
@@ -1188,7 +1345,12 @@ def _fill_security_level_sheet(ws, reports: list[HostReport], os_type: str) -> N
 
     # Rebuild all charts: live cell refs, percent labels, pinned anchors.
     ws._charts = []
-    sec_labels = SECURITY_VERTEX_LABELS_DBMS if _is_dbms_group(os_type) else SECURITY_VERTEX_LABELS
+    if _is_dbms_group(os_type):
+        sec_labels = SECURITY_VERTEX_LABELS_DBMS
+    elif _is_pc_group(os_type):
+        sec_labels = SECURITY_VERTEX_LABELS_PC
+    else:
+        sec_labels = SECURITY_VERTEX_LABELS
     _write_vertex_labels(ws, sec_labels, col=13)  # M열
     if not ws.cell(5, 11).value:
         ws.cell(5, 11).value = "보안수준"
@@ -1275,17 +1437,22 @@ def generate_detailed_report(
     os_type: str,
     guidelines: list[dict] | None = None,
 ) -> Path:
+    clean_os = os_type.replace(" ", "_")
     if _is_dbms_group(os_type):
         template = EXCEL_TEMPLATE_DIR / "DBMS_서버_취약점진단_상세결과보고서.xlsx"
+        out_prefix = f"{clean_os}_서버_취약점진단_상세결과보고서"
+    elif _is_pc_group(os_type):
+        template = EXCEL_TEMPLATE_DIR / "PC_취약점진단_상세결과보고서.xlsx"
+        out_prefix = "PC_취약점진단_상세결과보고서"
     else:
         template = EXCEL_TEMPLATE_DIR / "UNIX_서버_취약점진단_상세결과보고서.xlsx"
+        out_prefix = f"{clean_os}_서버_취약점진단_상세결과보고서"
     if not template.exists():
         raise FileNotFoundError(f"상세결과 템플릿 없음: {template.name}")
 
-    clean_os = os_type.replace(" ", "_")
     out = _unique_path(
         EXPORT_DIR,
-        f"{clean_os}_서버_취약점진단_상세결과보고서_{datetime.now():%Y%m%d}",
+        f"{out_prefix}_{datetime.now():%Y%m%d}",
         ".xlsx",
     )
     shutil.copy2(template, out)
@@ -1316,7 +1483,12 @@ def generate_detailed_report(
 
     sample_name = "sample" if "sample" in wb.sheetnames else None
     created: list[str] = []
-    detail_end = 53 if _is_dbms_group(os_type) else 94
+    if _is_dbms_group(os_type):
+        detail_end = 53
+    elif _is_pc_group(os_type):
+        detail_end = 45
+    else:
+        detail_end = 94
     if sample_name:
         for report, sheet_name in zip(reports, sheet_names):
             if sheet_name in wb.sheetnames:
@@ -1351,7 +1523,7 @@ def generate_detailed_report(
             )
             _fix_host_stat_formulas(ws)
             _fix_detail_status_formulas(ws, start_row=28, end_row=detail_end)
-            _reapply_detail_conditional_formatting(ws)
+            _reapply_detail_conditional_formatting(ws, start_row=28, end_row=detail_end)
             _add_result_enum_dropdown(ws, start_row=28, end_row=detail_end)
             _add_host_area_charts(ws)
 
@@ -1376,13 +1548,169 @@ def generate_detailed_report(
     return out
 
 
-def generate_risk_workbook(reports: list[HostReport], os_type: str, template_name: str, out_prefix: str) -> Path:
+def _cia_int(report, attr: str, default: int = 3) -> int:
+    raw = getattr(report, attr, None)
+    try:
+        n = int(raw)
+        if 1 <= n <= 3:
+            return n
+    except (TypeError, ValueError):
+        pass
+    return default
+
+
+def _copy_row_style(ws, src_row: int, dst_row: int, max_col: int = 12) -> None:
+    if src_row == dst_row:
+        return
+    for col in range(1, max_col + 1):
+        src = ws.cell(src_row, col)
+        dst = ws.cell(dst_row, col)
+        if src.has_style:
+            dst._style = copy(src._style)
+
+
+def _fill_risk_targets_sheet(ws, reports: list[HostReport], sheet_names: list[str]) -> None:
+    if ws is None:
+        return
+    for i, (report, sheet_name) in enumerate(zip(reports, sheet_names)):
+        row = 7 + i
+        _copy_row_style(ws, 7, row, max_col=12)
+        ws.cell(row, 2).value = i + 1
+        ws.cell(row, 3).value = sheet_name
+        ws.cell(row, 4).value = report.target_os
+        ws.cell(row, 5).value = report.ip_address
+        usage = str(getattr(report, "usage", "") or "").strip()
+        if not usage:
+            tos = str(getattr(report, "target_os", "") or "").upper()
+            if "WINDOW" in tos and "SERVER" not in tos and "서버" not in str(getattr(report, "target_os", "") or ""):
+                usage = "개인 PC"
+        ws.cell(row, 6).value = usage
+        ws.cell(row, 7).value = _cia_int(report, "cia_c")
+        ws.cell(row, 8).value = _cia_int(report, "cia_i")
+        ws.cell(row, 9).value = _cia_int(report, "cia_a")
+        ws.cell(row, 10).value = (
+            f'=IF(AND(SUM(G{row}:I{row})>=8, SUM(G{row}:I{row})<=9), "1등급", '
+            f'IF(AND(SUM(G{row}:I{row})>=6, SUM(G{row}:I{row})<=7), "2등급", '
+            f'IF(AND(SUM(G{row}:I{row})>=3, SUM(G{row}:I{row})<=5), "3등급", "")))'
+        )
+
+
+def _expand_risk_summary_columns(ws, host_count: int) -> None:
+    """Copy L-column host formulas across extra hosts; widen K SUM ranges."""
+    if ws is None or host_count < 1:
+        return
+    from openpyxl.worksheet.formula import ArrayFormula
+
+    src_col = 12
+    last_letter = get_column_letter(11 + host_count)
+    for i in range(1, host_count):
+        col = 12 + i
+        letter = get_column_letter(col)
+        ws.column_dimensions[letter].width = ws.column_dimensions["L"].width or 12
+        for row in range(1, 88):
+            src = ws.cell(row, src_col)
+            dst = ws.cell(row, col)
+            if src.has_style:
+                dst._style = copy(src._style)
+            val = src.value
+            if val is None:
+                continue
+            if isinstance(val, ArrayFormula):
+                text = (val.text or "").replace("L$", f"{letter}$")
+                dst.value = ArrayFormula(f"{letter}{row}", text)
+            elif isinstance(val, str):
+                dst.value = val.replace("L$", f"{letter}$")
+            else:
+                dst.value = val
+
+    for row in (75, 76, 77, 81, 82, 83, 84, 85, 86, 87):
+        ws.cell(row, 11).value = f"=SUM(L{row}:{last_letter}{row})"
+
+
+def _unmerge_overlap(ws, min_row: int, max_row: int, min_col: int = 1, max_col: int = 11) -> None:
+    to_remove = []
+    for merged in list(ws.merged_cells.ranges):
+        if merged.max_row < min_row or merged.min_row > max_row:
+            continue
+        if merged.max_col < min_col or merged.min_col > max_col:
+            continue
+        to_remove.append(str(merged))
+    for coord in to_remove:
+        try:
+            ws.unmerge_cells(coord)
+        except Exception:
+            pass
+
+
+def _try_merge(ws, start_row: int, start_col: int, end_row: int, end_col: int) -> None:
+    try:
+        ws.merge_cells(start_row=start_row, start_column=start_col, end_row=end_row, end_column=end_col)
+    except Exception:
+        pass
+
+
+def _expand_risk_security_rows(ws, host_count: int) -> None:
+    """Insert extra host rows under 장비별 위험도 통계 and fix 계/비율 formulas."""
+    if ws is None or host_count < 1:
+        return
+    # Template merges (B36:K36 그래프 제목 등)는 insert_rows 후에도 그대로 남아 호스트 행을 가린다.
+    _unmerge_overlap(ws, 31, 45, 2, 11)
+    if host_count > 1:
+        ws.insert_rows(32, host_count - 1)
+        for r in range(32, 31 + host_count):
+            _copy_row_style(ws, 31, r, max_col=11)
+
+    for i in range(host_count):
+        r = 31 + i
+        _try_merge(ws, r, 2, r, 3)
+        ws.cell(r, 2).value = f"=점검대상!C{7 + i}"
+        for offset, col in enumerate(range(4, 11), start=2):
+            ws.cell(r, col).value = f"=HLOOKUP($B{r}, '요약 통계'!$80:$87, {offset}, 0)"
+        ws.cell(r, 11).value = f"=SUM(D{r}:J{r})"
+
+    total_row = 31 + host_count
+    _try_merge(ws, total_row, 2, total_row, 3)
+    ws.cell(total_row, 2).value = "계"
+    for col in range(4, 12):
+        letter = get_column_letter(col)
+        ws.cell(total_row, col).value = f"=SUM({letter}31:{letter}{total_row - 1})"
+
+    avg_row = total_row + 1
+    _try_merge(ws, avg_row, 2, avg_row, 3)
+    ws.cell(avg_row, 2).value = "비율"
+    for col in range(4, 11):
+        letter = get_column_letter(col)
+        ws.cell(avg_row, col).value = f'=IFERROR({letter}{total_row}/$K${total_row},"-")'
+    ws.cell(avg_row, 11).value = f'=IFERROR(SUM(D{avg_row}:J{avg_row}),"-")'
+
+    avg_row2 = total_row + 2
+    _try_merge(ws, avg_row2, 2, avg_row2, 3)
+    ws.cell(avg_row2, 2).value = "비율"
+    for col in range(4, 11):
+        letter = get_column_letter(col)
+        ws.cell(avg_row2, col).value = f'=IFERROR({letter}{avg_row}/$K${avg_row},"-")'
+    ws.cell(avg_row2, 11).value = f'=IFERROR(SUM(D{avg_row2}:J{avg_row2}),"-")'
+
+    graph_row = avg_row2 + 2
+    _try_merge(ws, graph_row, 2, graph_row, 11)
+    if not ws.cell(graph_row, 2).value:
+        ws.cell(graph_row, 2).value = "◎ 위험도 통계 그래프"
+
+
+def generate_risk_workbook(
+    reports: list[HostReport],
+    os_type: str,
+    template_name: str | None = None,
+    out_prefix: str | None = None,
+) -> Path:
+    spec_template, spec_stem, end_row = _risk_workbook_spec(os_type)
+    template_name = template_name or spec_template
+    out_stem = out_prefix or spec_stem
     template = EXCEL_TEMPLATE_DIR / template_name
     if not template.exists():
         raise FileNotFoundError(f"템플릿 없음: {template_name}")
 
-    clean_os = os_type.replace(" ", "_")
-    out = _unique_path(EXPORT_DIR, f"{clean_os}_{out_prefix}_{datetime.now():%Y%m%d}", ".xlsm")
+    out = _unique_path(EXPORT_DIR, f"{out_stem}_{datetime.now():%Y%m%d}", ".xlsm")
     shutil.copy2(template, out)
     wb = load_workbook(out, keep_vba=True)
 
@@ -1406,21 +1734,13 @@ def generate_risk_workbook(reports: list[HostReport], os_type: str, template_nam
         sheet_names.append(name)
 
     if "점검대상" in wb.sheetnames:
-        ws = wb["점검대상"]
-        for i, (report, sheet_name) in enumerate(zip(reports, sheet_names)):
-            row = 7 + i
-            ws.cell(row, 2).value = i + 1
-            ws.cell(row, 3).value = sheet_name
-            ws.cell(row, 4).value = report.target_os
-            ws.cell(row, 5).value = report.ip_address
-            ws.cell(row, 7).value = 3
-            ws.cell(row, 8).value = 3
-            ws.cell(row, 9).value = 3
-            ws.cell(row, 10).value = (
-                f'=IF(AND(SUM(G{row}:I{row})>=8, SUM(G{row}:I{row})<=9), "1등급", '
-                f'IF(AND(SUM(G{row}:I{row})>=6, SUM(G{row}:I{row})<=7), "2등급", '
-                f'IF(AND(SUM(G{row}:I{row})>=3, SUM(G{row}:I{row})<=5), "3등급", "")))'
-            )
+        _fill_risk_targets_sheet(wb["점검대상"], reports, sheet_names)
+
+    if "요약 통계" in wb.sheetnames:
+        _expand_risk_summary_columns(wb["요약 통계"], len(reports))
+
+    if "보안수준 통계" in wb.sheetnames:
+        _expand_risk_security_rows(wb["보안수준 통계"], len(reports))
 
     sample_name = "sample" if "sample" in wb.sheetnames else None
     if sample_name:
@@ -1443,10 +1763,25 @@ def generate_risk_workbook(reports: list[HostReport], os_type: str, template_nam
                 evidence_col=15,
                 op_col=None,
                 start_row=21,
-                end_row=87,
+                end_row=end_row,
             )
+            _reapply_risk_result_cf(ws, start_row=21, end_row=end_row)
+            if _is_pc_group(os_type) or _is_security_group(os_type):
+                for row in range(21, end_row + 1):
+                    if not str(ws.cell(row, 4).value or "").strip():
+                        continue
+                    db_row = row - 19
+                    ws.cell(row, 17).value = (
+                        f'=IF(M{row}="N",\'잠재위험 및 대응책 DB\'!B{db_row},"-")'
+                    )
         try:
             del wb[sample_name]
+        except Exception:
+            pass
+
+    if "잠재위험 및 대응책 DB" in wb.sheetnames:
+        try:
+            wb["잠재위험 및 대응책 DB"].sheet_state = "visible"
         except Exception:
             pass
 
@@ -1465,7 +1800,7 @@ def export_reports(
     now = datetime.now().strftime("%H:%M:%S")
     logs.append(f"[{now}] 보고서 생성 작업을 시작합니다...")
 
-    if not (options.detail or options.summary or options.action_plan):
+    if not (options.detail or options.summary):
         raise ValueError("출력할 보고서 양식을 최소 하나 이상 선택해야 합니다.")
     if not (options.unix or options.dbms or options.win_server or options.pc):
         raise ValueError("내보낼 자산 유형을 최소 하나 이상 선택해야 합니다.")
@@ -1499,25 +1834,8 @@ def export_reports(
 
     if options.summary:
         for os_type, group in groups.items():
-            logs.append(f"[{datetime.now():%H:%M:%S}] {os_type} 위험관리 계획서 생성 중... ({len(group)} hosts)")
-            path = generate_risk_workbook(
-                group,
-                os_type,
-                "UNIX_서버_위험관리 계획서_양식.xlsm",
-                "서버_위험관리_계획서",
-            )
-            files.append(path.name)
-            logs.append(f"[{datetime.now():%H:%M:%S}]   - 완료: {path.name}")
-
-    if options.action_plan:
-        for os_type, group in groups.items():
-            logs.append(f"[{datetime.now():%H:%M:%S}] {os_type} 위험 분석 평가표 생성 중... ({len(group)} hosts)")
-            path = generate_risk_workbook(
-                group,
-                os_type,
-                "UNIX_서버_위험_분석_평가표_양식.xlsm",
-                "서버_위험_분석_평가표",
-            )
+            logs.append(f"[{datetime.now():%H:%M:%S}] {os_type} 위험분석 및 평가 보고서 생성 중... ({len(group)} hosts)")
+            path = generate_risk_workbook(group, os_type)
             files.append(path.name)
             logs.append(f"[{datetime.now():%H:%M:%S}]   - 완료: {path.name}")
 

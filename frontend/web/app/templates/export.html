@@ -7,12 +7,34 @@
 </div>
 
 <section class="panel">
+  <form method="post" action="/export/from-detail" enctype="multipart/form-data">
+    <h3 style="margin-top:0">상세결과보고서 → 위험분석 및 평가 보고서</h3>
+    <p class="muted" style="margin:0 0 12px">오탐·수동점검을 반영한 상세결과 엑셀을 올리면 위험분석 및 평가 보고서를 만듭니다.</p>
+    <label class="muted" style="display:block; margin-bottom:6px">엑셀 업로드 (.xlsx)</label>
+    <input type="file" name="detail_file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+    {% if detail_files %}
+    <label class="muted" style="display:block; margin:12px 0 6px">또는 최근 생성한 상세결과보고서</label>
+    <select name="existing_file">
+      <option value="">선택 안 함</option>
+      {% for f in detail_files %}
+        <option value="{{ f }}" {% if selected_detail == f %}selected{% endif %}>{{ f }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+    <div style="margin-top:16px">
+      <button type="submit">위험분석 및 평가 보고서 생성</button>
+    </div>
+  </form>
+</section>
+
+<section class="panel" style="margin-top:14px">
   <form method="post" action="/export/run">
-    <h3 style="margin-top:0">보고서 양식</h3>
+    <h3 style="margin-top:0">JSON 진단결과에서 생성</h3>
+    <p class="muted" style="margin:0 0 12px">업로드된 호스트 JSON으로 보고서를 만듭니다. 엑셀에서 고친 판정은 반영되지 않습니다.</p>
+    <h3>보고서 양식</h3>
     <div class="checks">
       <label><input type="checkbox" name="detail" {% if not options or options.detail %}checked{% endif %} /> 상세결과보고서 (.xlsx)</label>
-      <label><input type="checkbox" name="summary" {% if options and options.summary %}checked{% endif %} /> 위험관리 계획서 (.xlsm)</label>
-      <label><input type="checkbox" name="action_plan" {% if options and options.action_plan %}checked{% endif %} /> 위험 분석 평가표 (.xlsm)</label>
+      <label><input type="checkbox" name="summary" {% if options and options.summary %}checked{% endif %} /> 위험분석 및 평가 보고서 (.xlsm)</label>
     </div>
     <h3>자산 유형</h3>
     <div class="checks">

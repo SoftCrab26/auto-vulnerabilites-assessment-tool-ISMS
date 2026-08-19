@@ -130,6 +130,7 @@ input, select, textarea, button {
   border-radius: 6px;
   padding: 8px 10px;
 }
+select { max-width: 100%; }
 textarea { width: 100%; min-height: 120px; resize: vertical; }
 button, .btn {
   background: var(--accent);

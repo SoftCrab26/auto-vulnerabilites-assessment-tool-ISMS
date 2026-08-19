@@ -16,6 +16,9 @@ LOW_ITEMS = {16, 42, 43, 59}
 DBMS_HIGH_ITEMS = {1, 2, 4, 7, 8, 10, 12, 14, 19, 23, 25, 26}
 DBMS_LOW_ITEMS = {13, 16, 24}
 
+PC_HIGH_ITEMS = {1, 2, 4, 5, 7, 10, 11, 12, 13, 14, 15, 17}
+PC_LOW_ITEMS = {6}
+
 RAW_PREVIEW_LIMIT = 1500
 
 FALLBACK_REMEDIATION = (
@@ -83,9 +86,43 @@ def dbms_severity(code: str) -> str:
     return "Medium"
 
 
+def pc_category(code: str) -> str:
+    if not code.upper().startswith("PC-"):
+        return "기타"
+    try:
+        num = int(code.split("-", 1)[1])
+    except ValueError:
+        return "기타"
+    if 1 <= num <= 3:
+        return "계정 관리"
+    if 4 <= num <= 9:
+        return "접근 관리"
+    if 10 <= num <= 11:
+        return "패치 관리"
+    if 12 <= num <= 18:
+        return "보안 관리"
+    return "기타"
+
+
+def pc_severity(code: str) -> str:
+    if not code.upper().startswith("PC-"):
+        return "Medium"
+    try:
+        num = int(code.split("-", 1)[1])
+    except ValueError:
+        return "Medium"
+    if num in PC_HIGH_ITEMS:
+        return "High"
+    if num in PC_LOW_ITEMS:
+        return "Low"
+    return "Medium"
+
+
 def linux_category(code: str) -> str:
     if code.upper().startswith("D-"):
         return dbms_category(code)
+    if code.upper().startswith("PC-"):
+        return pc_category(code)
     if not code.startswith("U-"):
         return "기타 서비스"
     try:
@@ -106,6 +143,8 @@ def linux_category(code: str) -> str:
 def linux_severity(code: str) -> str:
     if code.upper().startswith("D-"):
         return dbms_severity(code)
+    if code.upper().startswith("PC-"):
+        return pc_severity(code)
     if not code.startswith("U-"):
         return "Medium"
     try:
@@ -123,6 +162,8 @@ def guide_os_type(target_os: str, code: str = "") -> str:
     """Map host OS / item code to guidelines.os_type key."""
     code_u = (code or "").strip().upper()
     os_l = (target_os or "").lower()
+    if code_u.startswith("PC-"):
+        return "PC"
     if code_u.startswith("D-") or any(x in os_l for x in ("dbms", "oracle", "mssql", "mysql", "postgres")):
         return "DBMS"
     if "windows" in os_l:
@@ -206,6 +247,8 @@ def parse_filename_meta(filename: str) -> tuple[str, str, str]:
         target_os = "AIX"
     if lower_base.startswith("oracle_") or lower_base.startswith("dbms_"):
         target_os = "Oracle" if lower_base.startswith("oracle_") else "DBMS"
+    if re.search(r"-pc-\d{4}", lower_base) or lower_base.startswith("pc_"):
+        target_os = "Windows"
 
     if len(parts) >= 3:
         first = parts[0].strip()
@@ -233,6 +276,15 @@ def parse_filename_meta(filename: str) -> tuple[str, str, str]:
 
 
 def infer_os_from_items(items: list[dict[str, Any]], fallback: str) -> str:
+    codes = [
+        str(item.get("Code") or item.get("code") or "").strip().upper()
+        for item in items[:20]
+        if isinstance(item, dict)
+    ]
+    if any(c.startswith("PC-") for c in codes):
+        return "Windows"
+    if any(c.startswith("D-") for c in codes):
+        return fallback if any(x in (fallback or "").upper() for x in ("ORACLE", "DBMS", "MSSQL", "MYSQL")) else "DBMS"
     # Scan enough of RawConfig — AIX markers often sit past the first few KB
     # (e.g. sendmail.cf headers with src/bos/...).
     chunks: list[str] = []
@@ -416,10 +468,10 @@ def convert_check_results(
         report.diagnostics.append(
             ParsedDiagnostic(
                 code=code,
-                category=dbms_category(code) if code.upper().startswith("D-") else linux_category(code),
+                category=linux_category(code),
                 title=description,
                 status=status_str,
-                severity=dbms_severity(code) if code.upper().startswith("D-") else linux_severity(code),
+                severity=linux_severity(code),
                 description=description,
                 evidence=_build_evidence(
                     status_str=status_str,
